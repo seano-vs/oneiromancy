@@ -28,7 +28,7 @@ import {
 } from '@/lib/mockData';
 import {DEFAULT_CHAOS_LAMBDA, isPlayerSigned} from '@/lib/scoring';
 import {deriveEligiblePositions, getSeasonContext} from '@/lib/sleeper';
-import {computeWaiverMoves, elementRelation, sleeperLeagueUrl, statsPoints} from '@/lib/oracle';
+import {computeWaiverMoves, elementRelation, statsPoints} from '@/lib/oracle';
 import {PairBars} from '@/components/oneiromancy/WeeklyMoves';
 import {
   CosmicPlayer,
@@ -45,7 +45,6 @@ import {
   ChevronRight,
   Droplet,
   Eye,
-  ExternalLink,
   Flame,
   Mountain,
   RefreshCw,
@@ -774,13 +773,6 @@ export const PlayerMarketplace: React.FC<PlayerMarketplaceProps> = ({
                     {elementRelation(move.add.elemental_traits?.element, move.drop.elemental_traits?.element)}
                   </span>
                   <div className="flex flex-wrap gap-2">
-                    <a
-                      href={sleeperLeagueUrl(isLiveMode ? context.draftState?.settings?.league_id : null)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-cyan-400 text-slate-950 text-xs font-semibold hover:bg-cyan-300">
-                      Open in Sleeper <ExternalLink className="w-3 h-3" />
-                    </a>
                     <button
                       type="button"
                       onClick={() => setInspectedPlayer(move.add)}

@@ -17,7 +17,6 @@
 'use client';
 
 import React, { useMemo } from 'react';
-import { ExternalLink } from 'lucide-react';
 import { useOneiromancy } from '@/context/OneiromancyContext';
 import { DEFAULT_CHAOS_LAMBDA } from '@/lib/scoring';
 import { getSeasonContext } from '@/lib/sleeper';
@@ -26,7 +25,6 @@ import {
   computeLineupCheck,
   computeTradePartners,
   computeWaiverMoves,
-  sleeperLeagueUrl,
   type LineupSwap,
 } from '@/lib/oracle';
 
@@ -97,7 +95,6 @@ export const WeeklyMoves: React.FC = () => {
   const teams = draftState.competitor_teams ?? NO_COMPETITOR_TEAMS;
   const season = getSeasonContext();
   const currentWeek = season?.currentWeek ?? draftState.weekly_matchup?.week;
-  const leagueUrl = sleeperLeagueUrl(draftState.isLive ? draftState.settings?.league_id : null);
 
   const swaps = useMemo(() => computeLineupCheck(roster, lambda), [roster, lambda]);
   const waiver = useMemo(
@@ -110,16 +107,6 @@ export const WeeklyMoves: React.FC = () => {
   );
   const trade = useMemo(() => computeTradePartners(teams, board, roster)[0], [teams, board, roster]);
 
-  const sleeperButton = (label: string) => (
-    <a
-      href={leagueUrl}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-cyan-400 text-slate-950 text-xs font-semibold hover:bg-cyan-300"
-    >
-      {label} <ExternalLink className="w-3 h-3" />
-    </a>
-  );
   const tabButton = (label: string, tab: string) => (
     <button
       type="button"
@@ -155,7 +142,6 @@ export const WeeklyMoves: React.FC = () => {
             <PairBars label="Stats" a={s.statsIn} b={s.statsOut} format={(n) => n.toFixed(1)} tone="stats" />
             <PairBars label="Stars" a={s.starsIn} b={s.starsOut} format={(n) => n.toFixed(0)} tone="stars" />
             <span className="text-xs font-mono text-slate-300">{lineupVerdict(s, lambda)}</span>
-            <div className="flex flex-wrap gap-2">{sleeperButton('Set lineup in Sleeper')}</div>
           </MoveCard>
         ))}
 
@@ -166,7 +152,6 @@ export const WeeklyMoves: React.FC = () => {
             </span>
             <span className="text-xs text-slate-400">{waiver.reason}</span>
             <div className="flex flex-wrap gap-2">
-              {sleeperButton('Open waivers in Sleeper')}
               {tabButton('All waiver moves', 'market')}
             </div>
           </MoveCard>

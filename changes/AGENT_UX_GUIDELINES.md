@@ -46,9 +46,11 @@ behind a disclosure.
 6. **Stars must reach the lineup.** A celestial score that never changes a
    start, add, drop or trade is decoration. When stats and stars disagree, say
    so in one sentence and let the λ dial break the tie.
-7. **Every recommendation has an action.** Give the move one primary button
-   that leaves for Sleeper (`https://sleeper.com/leagues/<league_id>`), plus
-   the player names. Never label a recommendation "read-only".
+7. **The app is read-only, by design.** It advises; it never acts on Sleeper.
+   No buttons or links that set lineups, claim waivers or propose trades, and
+   no "do it in Sleeper" calls to action. Every recommendation is still a
+   concrete move: name both players, the slot, and the reason, so the manager
+   can make the change themselves.
 8. **Recommendations respect the league.** Lineup slots (FLEX, SUPER_FLEX),
    positional depth (superflex teams need QBs), byes, and injuries all apply.
    Never suggest dropping a player only because their team is on bye this

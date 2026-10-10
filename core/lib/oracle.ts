@@ -554,11 +554,3 @@ export function teamStacks(players: CosmicPlayer[]): string[] {
   });
   return out;
 }
-
-// ---------------------------------------------------------------------------
-// Sleeper links
-// ---------------------------------------------------------------------------
-
-export function sleeperLeagueUrl(leagueId?: string | null): string {
-  return leagueId ? `https://sleeper.com/leagues/${leagueId}` : 'https://sleeper.com';
-}

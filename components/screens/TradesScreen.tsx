@@ -17,7 +17,6 @@
 'use client';
 
 import React, { useMemo, useState } from 'react';
-import { ExternalLink } from 'lucide-react';
 import UserAvatar from '@/components/common/UserAvatar';
 import PositionalBadge from '@/components/common/PositionalBadge';
 import PlayerMarketplace from '@/components/screens/PlayerMarketplace';
@@ -26,7 +25,6 @@ import {
   computeTradePartners,
   dominantElements,
   elementRelation,
-  sleeperLeagueUrl,
   statsPoints,
 } from '@/lib/oracle';
 import type { CompetitorTeam, CosmicPlayer, ElementType, RosterSlot } from '@/types/oneiromancy';
@@ -52,7 +50,6 @@ export const TradesScreen: React.FC = () => {
   const me = teams.find((t) => t.is_user);
   const myStarters = (me?.starters ?? []).map((id) => byId.get(String(id))).filter((p): p is CosmicPlayer => Boolean(p));
   const myMix = dominantElements(myStarters);
-  const leagueUrl = sleeperLeagueUrl(draftState.isLive ? draftState.settings?.league_id : null);
 
   return (
     <div className="flex flex-col gap-5 w-full max-w-5xl mx-auto">
@@ -151,14 +148,6 @@ export const TradesScreen: React.FC = () => {
                   >
                     {isOpen ? 'Hide their roster' : 'See their roster'}
                   </button>
-                  <a
-                    href={leagueUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-cyan-400 text-slate-950 text-xs font-semibold hover:bg-cyan-300"
-                  >
-                    Propose in Sleeper <ExternalLink className="w-3 h-3" />
-                  </a>
                 </div>
                 {isOpen && (
                   <ul className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 pt-2 border-t border-white/10">
