@@ -105,7 +105,10 @@ export const WeeklyMoves: React.FC = () => {
     () => (currentWeek ? computeByeOutlook(roster, currentWeek, 3)[0] : undefined),
     [roster, currentWeek],
   );
-  const trade = useMemo(() => computeTradePartners(teams, board, roster)[0], [teams, board, roster]);
+  const trade = useMemo(
+    () => computeTradePartners(teams, board, roster, lambda)[0],
+    [teams, board, roster, lambda],
+  );
 
   const tabButton = (label: string, tab: string) => (
     <button

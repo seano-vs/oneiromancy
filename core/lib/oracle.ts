@@ -382,7 +382,13 @@ export interface TradePiece {
   player: CosmicPlayer;
   /** The starter this player would replace on the receiving team. */
   replaces: CosmicPlayer;
+  /** Oracle points gained by the receiving lineup (stats and stars, by λ). */
   gain: number;
+}
+
+/** "Oracle 61.2 (15.3 pts · Stars 72)": a player's value, never stats alone. */
+export function describeValue(p: CosmicPlayer, lambda: number): string {
+  return `Oracle ${oracleScore(p, lambda).toFixed(1)} (${statsPoints(p).toFixed(1)} pts · Stars ${starsScore(p).toFixed(0)})`;
 }
 
 export interface TradePartner {
@@ -403,20 +409,21 @@ const POS_ORDER: NFLPosition[] = ['QB', 'RB', 'WR', 'TE', 'K', 'DEF'];
 
 /**
  * Best bench player on `from` who would start over a starter of `to` at the
- * same position, by this week's projection.
+ * same position, by Oracle score (stats and stars weighed by λ).
  */
 function bestUpgrade(
   fromBench: CosmicPlayer[],
   toStarters: CosmicPlayer[],
   canGive: (p: CosmicPlayer) => boolean,
+  lambda: number,
 ): TradePiece | null {
   let best: TradePiece | null = null;
   for (const p of fromBench) {
     if (!canGive(p) || isUnavailable(p)) continue;
     const sameSpot = toStarters.filter((s) => s.position === p.position);
     if (sameSpot.length === 0) continue;
-    const weakest = sameSpot.reduce((w, s) => (statsPoints(s) < statsPoints(w) ? s : w));
-    const gain = statsPoints(p) - statsPoints(weakest);
+    const weakest = sameSpot.reduce((w, s) => (oracleScore(s, lambda) < oracleScore(w, lambda) ? s : w));
+    const gain = oracleScore(p, lambda) - oracleScore(weakest, lambda);
     if (gain >= 1 && (!best || gain > best.gain)) {
       best = { player: p, replaces: weakest, gain: Math.round(gain * 10) / 10 };
     }
@@ -433,6 +440,7 @@ export function computeTradePartners(
   teams: CompetitorTeam[],
   board: CosmicPlayer[],
   roster: RosterSlot[],
+  lambda: number,
 ): TradePartner[] {
   const byId = new Map(board.map((p) => [String(p.id), p]));
   const depth = minimumDepth(roster);
@@ -465,20 +473,20 @@ export function computeTradePartners(
     const youCanOffer = theyNeed.filter((pos) => mySurplus.includes(pos));
     const theirCanGive = (p: CosmicPlayer) => (counts[p.position] ?? 0) > (depth[p.position] ?? 1);
 
-    const give = bestUpgrade(mine.bench, theirs.starters, canGiveMine);
-    const get = bestUpgrade(theirs.bench, mine.starters, theirCanGive);
+    const give = bestUpgrade(mine.bench, theirs.starters, canGiveMine, lambda);
+    const get = bestUpgrade(theirs.bench, mine.starters, theirCanGive, lambda);
     if (!(give && get) && youCanOffer.length === 0) continue;
 
     const name = t.name.replace(/\s*\(You\)$/, '');
     const parts: string[] = [];
     if (give) {
       parts.push(
-        `${name} starts ${give.replaces.name} (${statsPoints(give.replaces).toFixed(1)} pts) at ${give.player.position}; your bench ${give.player.name} projects ${statsPoints(give.player).toFixed(1)}.`,
+        `${name} starts ${give.replaces.name}, ${describeValue(give.replaces, lambda)}, at ${give.player.position}; your bench ${give.player.name} rates ${describeValue(give.player, lambda)}.`,
       );
     }
     if (get) {
       parts.push(
-        `Their bench ${get.player.name} (${statsPoints(get.player).toFixed(1)}) would start over your ${get.replaces.name} (${statsPoints(get.replaces).toFixed(1)}).`,
+        `Their bench ${get.player.name}, ${describeValue(get.player, lambda)}, would start over your ${get.replaces.name}, ${describeValue(get.replaces, lambda)}.`,
       );
     }
     if (youCanOffer.length) {

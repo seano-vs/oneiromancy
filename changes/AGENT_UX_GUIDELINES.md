@@ -65,6 +65,15 @@ behind a disclosure.
     projection in league scoring), **Stars** (this week's favorability,
     0–100), and **Oracle** (their blend by λ; this drives every ranking).
     Everything else lives in the player drawer.
+    **Never present a player's value as projections alone.** This is a
+    celestial app first: wherever a player is valued, compared, ranked or
+    traded (trades, waivers, league rosters, lineup checks), show Stars and
+    Oracle alongside Stats, and rank or compare by Oracle, never by
+    projected points. Gains are stated in Oracle points ("+12.4 Oracle"),
+    with points and Stars as supporting detail. Projected points standing
+    alone as "value" is a bug. Team scoreboards (projected and live game
+    scores) are results, not player value, and may show points, but pair
+    them with the team's Stars when there's room.
 11. **One semantic color scale.** Green favored, amber neutral, red challenged,
     applied through one helper (`favorabilityTone` in `core/lib/oracle.ts`).
     A label must match the number it sits next to, which means classifying the
@@ -118,6 +127,8 @@ behind a disclosure.
       overflow.
 - [ ] Rendered data compared with Sleeper's API by script where the change
       touches real-world data.
-- [ ] Each new recommendation answers one of the four weekly calls and has an
-      action.
+- [ ] Each new recommendation answers one of the four weekly calls and names
+      a concrete move (players, slot, reason) without acting on Sleeper.
+- [ ] Every player value shown carries Stars and Oracle, and every ranking
+      or "would start" comparison uses Oracle, not projected points.
 - [ ] A `changes/` entry records what changed, why, and how it was verified.

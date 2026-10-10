@@ -406,6 +406,12 @@ export const OneiromancyDashboard: React.FC<OneiromancyDashboardProps> = ({
                     Proj Pts
                   </span>
                 </div>
+                {typeof weeklyMatchup.team_comparison?.user_astral_favorability === 'number' && (
+                  <div className="text-[11px] font-mono text-purple-200">
+                    Stars {weeklyMatchup.team_comparison.user_astral_favorability.toFixed(1)}{' '}
+                    <span className="text-slate-500">avg starter</span>
+                  </div>
+                )}
                 {weeklyMatchup.status === 'active' && weeklyMatchup.score_user !== undefined && (
                   <div className="text-[11px] font-mono text-emerald-300">
                     Live: {weeklyMatchup.score_user.toFixed(2)}
@@ -484,6 +490,12 @@ export const OneiromancyDashboard: React.FC<OneiromancyDashboardProps> = ({
                     Proj Pts
                   </span>
                 </div>
+                {typeof weeklyMatchup.team_comparison?.opponent_astral_favorability === 'number' && (
+                  <div className="text-[11px] font-mono text-purple-200">
+                    Stars {weeklyMatchup.team_comparison.opponent_astral_favorability.toFixed(1)}{' '}
+                    <span className="text-slate-500">avg starter</span>
+                  </div>
+                )}
                 {weeklyMatchup.status === 'active' && weeklyMatchup.score_opponent !== undefined && (
                   <div className="text-[11px] font-mono text-emerald-300">
                     Live: {weeklyMatchup.score_opponent.toFixed(2)}

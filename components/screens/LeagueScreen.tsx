@@ -21,7 +21,8 @@ import CelestialLeaderboardGraph from '@/components/oneiromancy/CelestialLeaderb
 import PositionalBadge from '@/components/common/PositionalBadge';
 import UserAvatar from '@/components/common/UserAvatar';
 import { useOneiromancy } from '@/context/OneiromancyContext';
-import { TONE_LABEL, TONE_PILL, favorabilityTone, starsScore, statsPoints } from '@/lib/oracle';
+import { TONE_LABEL, TONE_PILL, favorabilityTone, oracleScore, starsScore, statsPoints } from '@/lib/oracle';
+import { DEFAULT_CHAOS_LAMBDA } from '@/lib/scoring';
 import type { CompetitorTeam, CosmicPlayer, RosterSlot } from '@/types/oneiromancy';
 
 // Stable empty defaults so memo dependencies don't change every render.
@@ -35,6 +36,7 @@ export const LeagueScreen: React.FC = () => {
   const { draftState } = useOneiromancy();
   const teams = draftState.competitor_teams ?? NO_COMPETITOR_TEAMS;
   const board = draftState.cosmic_board ?? NO_COSMIC_BOARD;
+  const lambda = draftState.settings?.chaos_lambda ?? DEFAULT_CHAOS_LAMBDA;
   const byId = useMemo(() => new Map(board.map((p) => [String(p.id), p])), [board]);
   const me = teams.find((t) => t.is_user);
   const [selected, setSelected] = useState<number | undefined>(undefined);
@@ -49,13 +51,13 @@ export const LeagueScreen: React.FC = () => {
     .filter((id) => !starterIds.has(String(id)))
     .map((id) => byId.get(String(id)))
     .filter((p): p is CosmicPlayer => Boolean(p))
-    .sort((a, b) => statsPoints(b) - statsPoints(a));
+    .sort((a, b) => oracleScore(b, lambda) - oracleScore(a, lambda));
 
   const row = (p: CosmicPlayer | null, label: string, key: string) => {
     if (!p) {
       return (
         <li key={key} className="flex items-center gap-2 py-1.5 text-xs text-slate-500">
-          <span className="w-10 font-mono">{label}</span> Empty
+          <span className="w-8 sm:w-10 shrink-0 font-mono">{label}</span> Empty
         </li>
       );
     }
@@ -63,10 +65,10 @@ export const LeagueScreen: React.FC = () => {
     const tone = favorabilityTone(stars);
     return (
       <li key={key} className="flex items-center gap-2 py-1.5 text-xs">
-        <span className="w-10 font-mono text-slate-500">{label}</span>
+        <span className="w-8 sm:w-10 shrink-0 font-mono text-slate-500">{label}</span>
         <PositionalBadge position={p.position} size="sm" />
         <span className="text-slate-100 min-w-0 truncate">{p.name}</span>
-        <span className="font-mono text-slate-500 shrink-0">
+        <span className="hidden sm:inline font-mono text-slate-500 shrink-0">
           {p.team} · Bye {p.bye_week || '—'}
         </span>
         {p.injury_status && (
@@ -74,7 +76,13 @@ export const LeagueScreen: React.FC = () => {
             {p.injury_status.toUpperCase()}
           </span>
         )}
-        <span className="ml-auto font-mono text-slate-200 tabular-nums shrink-0">{statsPoints(p).toFixed(1)}</span>
+        <span
+          title={`Oracle at λ ${lambda.toFixed(2)}`}
+          className="ml-auto font-mono font-semibold text-purple-200 tabular-nums shrink-0 w-10 text-right"
+        >
+          {oracleScore(p, lambda).toFixed(1)}
+        </span>
+        <span className="font-mono text-slate-400 tabular-nums shrink-0 w-9 sm:w-10 text-right">{statsPoints(p).toFixed(1)}</span>
         <span
           title={TONE_LABEL[tone]}
           className={`font-mono text-[11px] px-1 rounded border shrink-0 w-9 text-center ${TONE_PILL[tone]}`}
@@ -139,7 +147,12 @@ export const LeagueScreen: React.FC = () => {
               </div>
             </div>
             <div>
-              <div className="text-[10px] font-mono uppercase tracking-widest text-cyan-300 mb-1">Starters</div>
+              <div className="flex items-center gap-2 text-[10px] font-mono uppercase tracking-widest mb-1">
+                <span className="text-cyan-300">Starters</span>
+                <span className="ml-auto w-10 text-right text-purple-200">Oracle</span>
+                <span className="w-9 sm:w-10 text-right text-slate-500">Pts</span>
+                <span className="w-9 text-center text-slate-500">Stars</span>
+              </div>
               <ul className="divide-y divide-white/5">
                 {starters.length > 0
                   ? starters.map((p, i) => row(p, SLOT_LABEL[slots[i]] ?? slots[i] ?? '', `s-${i}`))
@@ -150,7 +163,9 @@ export const LeagueScreen: React.FC = () => {
             </div>
             {bench.length > 0 && (
               <div>
-                <div className="text-[10px] font-mono uppercase tracking-widest text-purple-300 mb-1">Bench</div>
+                <div className="text-[10px] font-mono uppercase tracking-widest text-purple-300 mb-1">
+                  Bench · by Oracle
+                </div>
                 <ul className="divide-y divide-white/5">{bench.map((p, i) => row(p, 'BN', `b-${i}`))}</ul>
               </div>
             )}

@@ -748,8 +748,8 @@ export const PlayerMarketplace: React.FC<PlayerMarketplaceProps> = ({
                   className="p-4 rounded-xl bg-slate-900/70 border border-white/10 flex flex-col gap-2">
                   <span className="text-[10px] font-mono uppercase tracking-widest text-emerald-300">
                     Priority {idx + 1} · {move.wouldStart ? 'would start' : 'bench depth'} ·{' '}
-                    {move.statsGain >= 0 ? '+' : ''}
-                    {move.statsGain.toFixed(1)} pts/wk
+                    +{move.oracleGain.toFixed(1)} Oracle ({move.statsGain >= 0 ? '+' : ''}
+                    {move.statsGain.toFixed(1)} pts, Stars {move.starsAdd.toFixed(0)} vs {move.starsDrop.toFixed(0)})
                   </span>
                   <span className="text-base font-semibold text-slate-100">
                     Add {move.add.name} <span className="font-normal text-slate-400">for</span> {move.drop.name}
