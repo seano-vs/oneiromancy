@@ -831,9 +831,6 @@ export const PlayerMarketplace: React.FC<PlayerMarketplaceProps> = ({
                           <span className="text-cyan-300 font-bold">
                             {ppgProposed.toFixed(1)}
                           </span>
-                          <span className="text-slate-500 block text-[8px]">
-                            ({proposed.projected_points.toFixed(1)} tot)
-                          </span>
                         </div>
                         <div className="bg-slate-900/80 p-1.5 rounded border border-white/5">
                           <span className="text-slate-500 block text-[9px]">
@@ -867,7 +864,7 @@ export const PlayerMarketplace: React.FC<PlayerMarketplaceProps> = ({
                         <div className="bg-slate-900/80 p-1.5 rounded border border-white/5 flex justify-between items-center">
                           <span className="text-slate-500">Team / Bye</span>
                           <span className="text-slate-200 font-bold">
-                            {proposed.team} (Wk {proposed.bye_week})
+                            {proposed.team} (Wk {proposed.bye_week || '—'})
                           </span>
                         </div>
                         <div className="bg-slate-900/80 p-1.5 rounded border border-white/5 flex justify-between items-center">
@@ -963,9 +960,6 @@ export const PlayerMarketplace: React.FC<PlayerMarketplaceProps> = ({
                           <span className="text-slate-300 font-bold">
                             {ppgDrop.toFixed(1)}
                           </span>
-                          <span className="text-slate-500 block text-[8px]">
-                            ({drop.projected_points.toFixed(1)} tot)
-                          </span>
                         </div>
                         <div className="bg-slate-950/80 p-1.5 rounded border border-white/5">
                           <span className="text-slate-500 block text-[9px]">
@@ -999,7 +993,7 @@ export const PlayerMarketplace: React.FC<PlayerMarketplaceProps> = ({
                         <div className="bg-slate-950/80 p-1.5 rounded border border-white/5 flex justify-between items-center">
                           <span className="text-slate-500">Team / Bye</span>
                           <span className="text-slate-300 font-bold">
-                            {drop.team} (Wk {drop.bye_week})
+                            {drop.team} (Wk {drop.bye_week || '—'})
                           </span>
                         </div>
                         <div className="bg-slate-950/80 p-1.5 rounded border border-white/5 flex justify-between items-center">
@@ -1156,22 +1150,32 @@ export const PlayerMarketplace: React.FC<PlayerMarketplaceProps> = ({
                         </tr>
                         <tr>
                           <td className="py-1 text-slate-500">Bye Week</td>
-                          <td className="py-1">Wk {proposed.bye_week}</td>
-                          <td className="py-1">Wk {drop.bye_week}</td>
+                          <td className="py-1">Wk {proposed.bye_week || '—'}</td>
+                          <td className="py-1">Wk {drop.bye_week || '—'}</td>
                           <td className="py-1 text-right text-slate-400">
                             Coverage Shift
                           </td>
                         </tr>
                         <tr>
                           <td className="py-1 text-slate-500">Injury Status</td>
-                          <td className="py-1 text-emerald-400">
+                          <td
+                            className={`py-1 ${
+                              proposed.injury_status ? 'text-amber-400' : 'text-emerald-400'
+                            }`}>
                             {proposed.injury_status || 'Healthy'}
                           </td>
                           <td className="py-1 text-slate-400">
                             {drop.injury_status || 'Healthy'}
                           </td>
-                          <td className="py-1 text-right text-emerald-400">
-                            Zero Risk
+                          <td
+                            className={`py-1 text-right ${
+                              proposed.injury_status ? 'text-amber-400' : 'text-emerald-400'
+                            }`}>
+                            {proposed.injury_status
+                              ? 'Injury Risk'
+                              : drop.injury_status
+                                ? 'Health Upgrade'
+                                : 'No Change'}
                           </td>
                         </tr>
                       </tbody>
@@ -1218,11 +1222,14 @@ export const PlayerMarketplace: React.FC<PlayerMarketplaceProps> = ({
           ) : filteredTrades.length === 0 ? (
             <GlassCard variant="panel" className="p-8 text-center space-y-2">
               <p className="text-sm font-serif text-slate-300">
-                No complementary trades identified
+                {isLiveMode
+                  ? 'Divine Swaps are not available for live leagues yet'
+                  : 'No complementary trades identified'}
               </p>
               <p className="text-xs text-slate-500 font-mono">
-                No league rival currently exhibits complementary deficits
-                matching your surplus.
+                {isLiveMode
+                  ? 'Trade proposals are only generated for the Mock Oneiromancy Engine.'
+                  : 'No league rival currently exhibits complementary deficits matching your surplus.'}
               </p>
             </GlassCard>
           ) : (

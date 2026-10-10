@@ -118,6 +118,25 @@ export interface WeeklyPlayerFavorabilityOptions {
   stadiumScore?: number;
 }
 
+
+export type WeeklyFavorabilityVerdict =
+  | 'HEAVILY FAVORED'
+  | 'ASTRALLY FAVORED'
+  | 'NEUTRAL'
+  | 'CELESTIALLY CHALLENGED';
+
+/**
+ * Weekly favorability tier. Classifies the score as displayed (rounded to a
+ * whole number) so the label always matches the number next to it.
+ */
+export function classifyWeeklyFavorability(score: number): WeeklyFavorabilityVerdict {
+  const s = Math.round(score);
+  if (s >= 84) return 'HEAVILY FAVORED';
+  if (s >= 75) return 'ASTRALLY FAVORED';
+  if (s >= 65) return 'NEUTRAL';
+  return 'CELESTIALLY CHALLENGED';
+}
+
 export function computeWeeklyPlayerFavorability(
   spiritOrOptions: number | WeeklyPlayerFavorabilityOptions,
   weeklyProjArg?: number,
@@ -179,14 +198,7 @@ export function computeWeeklyPlayerFavorability(
     ) / 10;
   const score = clamp(raw, 0.0, 100.0);
 
-  const verdict =
-    score >= 84
-      ? 'HEAVILY FAVORED'
-      : score >= 75
-        ? 'ASTRALLY FAVORED'
-        : score >= 65
-          ? 'NEUTRAL'
-          : 'CELESTIALLY CHALLENGED';
+  const verdict = classifyWeeklyFavorability(score);
 
   return {
     score,
@@ -629,9 +641,20 @@ export function computeRosterHarmony(
     is_locked: false,
   }));
 
-  const trineBonus = calculateWesternTrinesBonus(elementCounts);
+  // Trine thresholds are defined for an 8-player lineup; scale larger rosters
+  // to that basis so a full bench doesn't guarantee the maximum bonus.
+  const lineupScale = validPlayers.length > 8 ? 8 / validPlayers.length : 1;
+  const scaledCounts: Record<ElementType, number> = {
+    Fire: elementCounts.Fire * lineupScale,
+    Earth: elementCounts.Earth * lineupScale,
+    Air: elementCounts.Air * lineupScale,
+    Water: elementCounts.Water * lineupScale,
+  };
+  const trineBonus = calculateWesternTrinesBonus(scaledCounts);
+  // Count each QB/pass-catcher stack once, from the pass catcher's side.
   let stackBonus = 0;
   for (const p of validPlayers) {
+    if (p.position === 'QB') continue;
     stackBonus += calculateStackMultiplier(
       p,
       rosterSlots.filter((s) => s.player?.id !== p.id),
@@ -990,15 +1013,15 @@ export function calculateTeamCelestialMetrics(
   // Resolve players from picks or players list if cosmicBoard is available
   let resolvedPlayers: CosmicPlayer[] = [];
   if (cosmicBoard && cosmicBoard.length > 0) {
+    // Current roster when known; draft picks only before rosters exist.
     const playerIds = new Set<string>();
-    if (team.picks && team.picks.length > 0) {
-      for (const pick of team.picks) {
-        if (pick.player_id) playerIds.add(String(pick.player_id));
-      }
-    }
     if (team.players && team.players.length > 0) {
       for (const pid of team.players) {
         if (pid) playerIds.add(String(pid));
+      }
+    } else if (team.picks && team.picks.length > 0) {
+      for (const pick of team.picks) {
+        if (pick.player_id) playerIds.add(String(pick.player_id));
       }
     }
     if (playerIds.size > 0) {
@@ -1021,7 +1044,10 @@ export function calculateTeamCelestialMetrics(
     );
     spiritScore = Math.round((totalSpirit / resolvedPlayers.length) * 10) / 10;
     draftScore = Math.round((totalDraft / resolvedPlayers.length) * 10) / 10;
-    harmonyScore = computeRosterHarmony(resolvedPlayers);
+    // Squad harmony describes the active lineup, so score starters when known.
+    const starterIds = new Set((team.starters || []).map(String));
+    const lineup = resolvedPlayers.filter((p) => starterIds.has(String(p.id)));
+    harmonyScore = computeRosterHarmony(lineup.length > 0 ? lineup : resolvedPlayers);
   } else {
     // Restrict SLOT_ZODIAC_SEEDS[slot] fallback strictly to when a team has 0 resolved players
     spiritScore = team.avg_spirit_score ?? seed.seedSpirit;
@@ -1035,26 +1061,12 @@ export function calculateTeamCelestialMetrics(
       (spiritScore * 0.4 + draftScore * 0.3 + harmonyScore * 0.3) * 10,
     ) / 10;
 
-  // Deterministic verdict based on composite score:
-  // >= 90: ✨ Favorable (Apex)
-  // >= 80: ⚖️ Harmonic (Stable)
-  // >= 70: 🌀 Volatile (Flux)
-  // < 70: 🌑 Discordant (Shadow)
-  let verdict: string;
-  let tier: 'Favorable' | 'Harmonic' | 'Volatile' | 'Discordant';
-  if (compositeScore >= 85.0) {
-    verdict = '✨ Favorable (Apex)';
-    tier = 'Favorable';
-  } else if (compositeScore >= 80.0) {
-    verdict = '⚖️ Harmonic (Stable)';
-    tier = 'Harmonic';
-  } else if (compositeScore >= 70.0) {
-    verdict = '🌀 Volatile (Flux)';
-    tier = 'Volatile';
-  } else {
-    verdict = '🌑 Discordant (Shadow)';
-    tier = 'Discordant';
-  }
+  // A team's rating is its SpiritScore tier, matching the on-screen
+  // "SpiritScore & Harmony Calibration Spectrum" legend (classifySpiritScoreTier):
+  // >= 85 Favorable, >= 75 Harmonic, else Discordant.
+  const tierInfo = classifySpiritScoreTier(spiritScore);
+  const verdict = tierInfo.badgeLabel;
+  const tier: 'Favorable' | 'Harmonic' | 'Volatile' | 'Discordant' = tierInfo.tier;
 
   return {
     spiritScore,

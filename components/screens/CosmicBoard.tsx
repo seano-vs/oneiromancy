@@ -27,6 +27,7 @@ import PositionalBadge from '@/components/common/PositionalBadge';
 import PlayerDetailModal from '@/components/modals/PlayerDetailModal';
 import RecommendedPickHero from '@/components/oneiromancy/RecommendedPickHero';
 import {useOneiromancy} from '@/context/OneiromancyContext';
+import {classifyWeeklyFavorability} from '@/lib/scoring';
 import {CosmicPlayer} from '@/types/oneiromancy';
 import {Eye, LayoutGrid, RefreshCw, Sparkles} from 'lucide-react';
 import React, {useCallback, useMemo, useState} from 'react';
@@ -286,7 +287,9 @@ export const CosmicBoard: React.FC<CosmicBoardProps> = ({
             <span>Divination Spotlight Pick (Read-Only)</span>
           </span>
           <span className="text-[10px] font-mono text-slate-400">
-            Round {context.draftState?.current_pick?.round || 5} Target
+            {context.draftState?.status === 'complete'
+              ? 'Top Available Free Agent'
+              : `Round ${context.draftState?.current_pick?.round || 5} Target`}
           </span>
         </div>
         <RecommendedPickHero
@@ -434,7 +437,7 @@ export const CosmicBoard: React.FC<CosmicBoardProps> = ({
                         <PositionalBadge position={player.position} size="sm" />
                       </td>
                       <td className="py-2.5 px-3 text-slate-400">
-                        {player.team} ({player.bye_week})
+                        {player.team} ({player.bye_week || '—'})
                       </td>
                       <td className="py-2.5 px-3 text-right">
                         <span className="text-slate-200 font-bold">
@@ -470,11 +473,14 @@ export const CosmicBoard: React.FC<CosmicBoardProps> = ({
                           }>
                           <span>{(player.favorability_score ?? 70).toFixed(0)}</span>
                           <span className="text-[8px] opacity-80 uppercase">
-                            {(player.favorability_score ?? 70) >= 84
-                              ? 'APEX'
-                              : (player.favorability_score ?? 70) >= 75
-                                ? 'FAV'
-                                : 'CHG'}
+                            {
+                              {
+                                'HEAVILY FAVORED': 'APEX',
+                                'ASTRALLY FAVORED': 'FAV',
+                                NEUTRAL: 'NEU',
+                                'CELESTIALLY CHALLENGED': 'CHG',
+                              }[classifyWeeklyFavorability(player.favorability_score ?? 70)]
+                            }
                           </span>
                         </span>
                       </td>

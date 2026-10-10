@@ -392,6 +392,11 @@ export const OneiromancyDashboard: React.FC<OneiromancyDashboardProps> = ({
                     Proj Pts
                   </span>
                 </div>
+                {weeklyMatchup.status === 'active' && weeklyMatchup.score_user !== undefined && (
+                  <div className="text-[11px] font-mono text-emerald-300">
+                    Live: {weeklyMatchup.score_user.toFixed(2)}
+                  </div>
+                )}
               </div>
             </div>
 
@@ -465,6 +470,11 @@ export const OneiromancyDashboard: React.FC<OneiromancyDashboardProps> = ({
                     Proj Pts
                   </span>
                 </div>
+                {weeklyMatchup.status === 'active' && weeklyMatchup.score_opponent !== undefined && (
+                  <div className="text-[11px] font-mono text-emerald-300">
+                    Live: {weeklyMatchup.score_opponent.toFixed(2)}
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -951,7 +961,7 @@ export const OneiromancyDashboard: React.FC<OneiromancyDashboardProps> = ({
                         </div>
                         <div className="flex justify-between items-center text-[10px] font-mono text-slate-400">
                           <span>
-                            {player.team} • Bye {player.bye_week}
+                            {player.team} • Bye {player.bye_week || '—'}
                           </span>
                           <div className="flex items-center gap-1.5">
                             <span className="text-emerald-400 font-bold">
@@ -1039,7 +1049,7 @@ export const OneiromancyDashboard: React.FC<OneiromancyDashboardProps> = ({
                         </div>
                         <div className="flex justify-between items-center text-[10px] font-mono text-slate-400">
                           <span>
-                            {player.team} • Bye {player.bye_week}
+                            {player.team} • Bye {player.bye_week || '—'}
                           </span>
                           <div className="flex items-center gap-1.5">
                             <span className="text-emerald-400 font-bold">
@@ -1272,8 +1282,10 @@ export const OneiromancyDashboard: React.FC<OneiromancyDashboardProps> = ({
               const spiritScore = metrics.spiritScore;
               const draftScore = metrics.draftScore;
               const harmonyScore = metrics.harmonyScore;
+              // The card's legend and equilibrium gauge describe SpiritScore, so
+              // its rating badge classifies SpiritScore with the same tiers.
               const tierInfo = classifySpiritScoreTier(spiritScore);
-              const verdict = metrics.verdict;
+              const verdict = tierInfo.badgeLabel;
 
               return (
                 <div
@@ -1447,7 +1459,49 @@ export const OneiromancyDashboard: React.FC<OneiromancyDashboardProps> = ({
                     </div>
                   </div>
 
-                  {/* Picks list */}
+                  {/* Current roster (once rosters exist), otherwise draft picks */}
+                  {team.players && team.players.length > 0 ? (
+                    <div className="space-y-1 pt-1">
+                      {(() => {
+                        const starterIds = new Set((team.starters || []).map(String));
+                        const pickByPlayer = new Map(
+                          (team.picks || []).map((pk) => [String(pk.player_id), pk]),
+                        );
+                        return [...team.players]
+                          .map(String)
+                          .sort((a, b) => Number(starterIds.has(b)) - Number(starterIds.has(a)))
+                          .map((pid) => {
+                            const p = cosmicBoard.find((cp) => String(cp.id) === pid);
+                            const pick = pickByPlayer.get(pid);
+                            return (
+                              <div
+                                key={pid}
+                                className="flex justify-between items-center text-[10px]">
+                                <div className="flex items-center gap-1.5 truncate">
+                                  <PositionalBadge
+                                    position={p?.position || pick?.metadata.position || 'WR'}
+                                    size="sm"
+                                  />
+                                  <span
+                                    className={`truncate ${
+                                      starterIds.has(pid) ? 'text-slate-200' : 'text-slate-400'
+                                    }`}>
+                                    {p?.name ||
+                                      (pick
+                                        ? `${pick.metadata.first_name} ${pick.metadata.last_name}`
+                                        : pid)}
+                                  </span>
+                                </div>
+                                <span className="text-slate-500 shrink-0 ml-1">
+                                  {starterIds.has(pid) ? 'Starter · ' : ''}
+                                  {pick ? `Rd ${pick.round}` : 'Added'}
+                                </span>
+                              </div>
+                            );
+                          });
+                      })()}
+                    </div>
+                  ) : (
                   <div className="space-y-1 pt-1">
                     {team.picks && team.picks.length > 0 ? (
                       team.picks.map((pick) => (
@@ -1475,6 +1529,7 @@ export const OneiromancyDashboard: React.FC<OneiromancyDashboardProps> = ({
                       </div>
                     )}
                   </div>
+                  )}
                 </div>
               );
             });

@@ -293,6 +293,11 @@ export interface CompetitorTeam {
   favorability_tier?: 'Favorable' | 'Harmonic' | 'Discordant';
   favorability_label?: string;
   is_user?: boolean;
+  /** Season record and points from the Sleeper roster settings. */
+  wins?: number;
+  losses?: number;
+  ties?: number;
+  points_for?: number;
 }
 
 export interface MatchupTeam {
@@ -404,6 +409,12 @@ export interface MatchupWeekData {
 export interface WeeklyMatchup {
   week: number;
   matchup_id: number;
+  status?: 'active' | 'upcoming' | 'completed';
+  date_range?: string;
+  /** Actual points from Sleeper: final for completed weeks, live for the active week. */
+  score_user?: number;
+  score_opponent?: number;
+  result?: 'W' | 'L' | 'T';
   user_team: MatchupTeam;
   opponent_team: MatchupTeam;
   win_probability?: number;

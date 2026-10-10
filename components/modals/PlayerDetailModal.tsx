@@ -16,11 +16,11 @@
 
 'use client';
 
-import React, { useContext } from 'react';
+import React, { useContext, useEffect } from 'react';
 import PositionalBadge from '@/components/common/PositionalBadge';
 import { CosmicPlayer, RosterSlot } from '@/types/oneiromancy';
 import { useOptionalOneiromancy } from '@/context/OneiromancyContext';
-import { haversineDistance } from '@/lib/scoring';
+import { classifyWeeklyFavorability, haversineDistance } from '@/lib/scoring';
 import { X, Sparkles, Compass, Shield, ArrowRightLeft } from 'lucide-react';
 
 export interface PlayerDetailModalProps {
@@ -38,6 +38,14 @@ export const PlayerDetailModal: React.FC<PlayerDetailModalProps> = ({
   roster: propRoster,
 }) => {
   const ctx = useOptionalOneiromancy();
+  useEffect(() => {
+    if (!isOpen || typeof window === 'undefined') return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [isOpen, onClose]);
   if (!isOpen || !player) return null;
 
   const activeRoster: RosterSlot[] = propRoster || ctx?.draftState?.my_roster || [];
@@ -173,7 +181,7 @@ export const PlayerDetailModal: React.FC<PlayerDetailModalProps> = ({
             <div className="flex items-center gap-2 flex-wrap">
               <PositionalBadge position={player.position} size="md" />
               <span className="text-xs font-mono text-cyan-300 bg-cyan-950/80 px-2 py-0.5 rounded border border-cyan-500/30">
-                {player.team} • Bye {player.bye_week} • #{player.jersey_number}
+                {player.team} • Bye {player.bye_week || '—'} • #{player.jersey_number}
               </span>
               {player.injury_status && (
                 <span
@@ -226,13 +234,13 @@ export const PlayerDetailModal: React.FC<PlayerDetailModalProps> = ({
               </div>
               <div className="p-2 rounded bg-slate-900/60 border border-white/10">
                 <span className="text-[10px] text-slate-400 block uppercase font-bold">
-                  NFL Standard Proj
+                  NFL PPR Proj
                 </span>
                 <span className="text-lg font-bold text-slate-200">
                   {nflProj.toFixed(1)} pts
                 </span>
                 <span className="text-[9px] text-slate-400 block">
-                  Standard Half-PPR Baseline
+                  Standard PPR Baseline (4-pt pass TD)
                 </span>
               </div>
             </div>
@@ -271,7 +279,7 @@ export const PlayerDetailModal: React.FC<PlayerDetailModalProps> = ({
               {candidateFav.toFixed(0)}
             </span>
             <span className="text-[8px] block text-emerald-400 font-mono truncate">
-              {player.favorability_verdict || (candidateFav >= 84 ? 'HEAVILY FAV' : candidateFav >= 75 ? 'ASTRALLY FAV' : 'CHALLENGED')}
+              {classifyWeeklyFavorability(candidateFav)}
             </span>
           </div>
           <div className="p-2.5 rounded-xl bg-purple-950/40 border border-purple-500/30">
@@ -354,7 +362,7 @@ export const PlayerDetailModal: React.FC<PlayerDetailModalProps> = ({
                           {rosterPlayer.name}
                         </span>
                         <span className="text-[10px] text-slate-400">
-                          {rosterPlayer.team} (Bye {rosterPlayer.bye_week})
+                          {rosterPlayer.team} (Bye {rosterPlayer.bye_week || '—'})
                         </span>
                         {rosterPlayer.injury_status && (
                           <span className="text-[9px] font-bold px-1 py-0.2 rounded bg-rose-950/70 text-rose-300 border border-rose-500/40">

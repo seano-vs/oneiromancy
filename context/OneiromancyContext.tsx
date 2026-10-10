@@ -54,6 +54,7 @@ import {
   deriveWeeklyMatchup,
   isRateLimitError,
   DEFAULT_LIVE_SETTINGS,
+  setSeasonContext,
 } from '@/lib/sleeper';
 import {
   calculateHarmony,
@@ -78,6 +79,8 @@ import {
 export const ACTIVE_INTERVAL_MS = 5000;
 export const IDLE_INTERVAL_MS = 10000;
 export const BACKGROUND_INTERVAL_MS = 30000;
+// Once the draft is complete only in-season data (scores, rosters) changes.
+export const COMPLETE_INTERVAL_MS = 60000;
 
 export const POLLING_CONFIG = {
   ACTIVE_INTERVAL_MS,
@@ -253,8 +256,13 @@ export const OneiromancyProvider: React.FC<OneiromancyProviderProps> = ({
 
   // Persistent active user slot and username refs to anchor identity across background poll cycles and syncs
   const activeSlotRef = useRef<number | undefined>(undefined);
+  // In the browser, start from the saved username (or none) rather than the
+  // demo persona: child components' mount effects run before the provider's
+  // hydration effect, and must not trigger a sync for a placeholder user.
   const activeUsernameRef = useRef<string>(
-    initialDraftState.settings?.sleeper_username ?? 'OneiroVanguard'
+    typeof window === 'undefined' || hasUrlLaunchParams()
+      ? initialDraftState.settings?.sleeper_username ?? 'OneiroVanguard'
+      : getSavedSleeperUsername() ?? ''
   );
 
   // Runtime background enrichment for NFL players on initialization
@@ -664,6 +672,7 @@ export const OneiromancyProvider: React.FC<OneiromancyProviderProps> = ({
   // --------------------------------------------------------------------------
   const loadMockData = useCallback(() => {
     setModeState('mock');
+    setSeasonContext(null);
     const mockUsername = activeUsernameRef.current || 'OneiroVanguard';
     activeUsernameRef.current = mockUsername;
     if (typeof window !== 'undefined') {
@@ -767,6 +776,7 @@ export const OneiromancyProvider: React.FC<OneiromancyProviderProps> = ({
   );
 
   const inFlightSyncRef = useRef<Promise<void> | null>(null);
+  const inFlightSyncKeyRef = useRef<string>('');
 
   // --------------------------------------------------------------------------
   // Action: performLiveSync (Dynamic Sleeper League Resolution & Ingestion)
@@ -793,7 +803,13 @@ export const OneiromancyProvider: React.FC<OneiromancyProviderProps> = ({
         return;
       }
 
-      if (inFlightSyncRef.current && !isForcedOverride) {
+      // Concurrent callers share the in-flight sync: unforced ones always, and
+      // forced ones when they request the same user/league/draft.
+      const syncKey = `${forcedDraftId ?? ''}|${forcedLeagueId ?? ''}|${forcedUsername ?? ''}`;
+      if (
+        inFlightSyncRef.current &&
+        (!isForcedOverride || inFlightSyncKeyRef.current === syncKey)
+      ) {
         return inFlightSyncRef.current;
       }
 
@@ -996,7 +1012,9 @@ export const OneiromancyProvider: React.FC<OneiromancyProviderProps> = ({
               .map((pid) => recomputedBoard.find((cb) => String(cb.id) === String(pid)))
               .filter((p): p is CosmicPlayer => Boolean(p));
 
-            const pList = pickPlayers.length > 0 ? pickPlayers : rosterPlayers;
+            const pList = rosterPlayers.length > 0 ? rosterPlayers : pickPlayers;
+            const starterIds = new Set(((t as any).starters || []).map(String));
+            const lineup = pList.filter((p) => starterIds.has(String(p.id)));
             const meanSp =
               pList.length > 0
                 ? pList.reduce((sum, p) => sum + (p.spirit_score || 78.0), 0) / pList.length
@@ -1007,7 +1025,7 @@ export const OneiromancyProvider: React.FC<OneiromancyProviderProps> = ({
                 : (t.avg_draft_score ?? 76.0);
             const harmScore =
               pList.length > 0
-                ? computeRosterHarmony(pList)
+                ? computeRosterHarmony(lineup.length > 0 ? lineup : pList)
                 : (t.harmony_score ?? 77.0);
 
             const avgSpirit = Math.round(meanSp * 10) / 10;
@@ -1211,6 +1229,7 @@ export const OneiromancyProvider: React.FC<OneiromancyProviderProps> = ({
       })();
 
       inFlightSyncRef.current = syncTask;
+      inFlightSyncKeyRef.current = syncKey;
       return syncTask;
     },
     [computeSleeperDataFingerprint]
@@ -1330,6 +1349,7 @@ export const OneiromancyProvider: React.FC<OneiromancyProviderProps> = ({
     (newMode: 'live' | 'mock') => {
       setModeState(newMode);
       if (newMode === 'mock') {
+        setSeasonContext(null);
         setSyncError(null);
         setSyncWarning(null);
         setStatusType('offline');
@@ -1460,6 +1480,17 @@ export const OneiromancyProvider: React.FC<OneiromancyProviderProps> = ({
 
   // Trigger immediate refreshDraft() when draft_id, username, or league_id changes (user_slot is managed locally)
   useEffect(() => {
+    // No Sleeper account configured yet (first visit): nothing to sync. The
+    // initial render still carries the demo persona's username, which must
+    // not be mistaken for a user-initiated change.
+    if (
+      typeof window !== 'undefined' &&
+      !activeUsernameRef.current &&
+      !getSavedSleeperUsername() &&
+      !hasUrlLaunchParams()
+    ) {
+      return;
+    }
     const currentDraftId = draftState.draft_id || draftState.settings?.draft_id;
     const currentUsername = draftState.settings?.sleeper_username;
     const currentLeagueId = draftState.settings?.league_id;
@@ -1490,19 +1521,28 @@ export const OneiromancyProvider: React.FC<OneiromancyProviderProps> = ({
     if (!isAutoUpdate) return;
 
     let timerId: NodeJS.Timeout | null = null;
+    // Set on cleanup so a refresh still in flight doesn't schedule an orphaned
+    // poll loop after this effect has been torn down.
+    let cancelled = false;
 
     const schedulePoll = () => {
+      if (cancelled) return;
       const isHidden = typeof document !== 'undefined' && document.visibilityState === 'hidden';
       const currentDraft = draftStateRef.current;
       const isDrafting = currentDraft.status === 'drafting';
+      const isComplete = currentDraft.status === 'complete';
 
       // When visible: if actively drafting, use configured interval (default 5,000ms);
       // if idle (pre_draft, paused, complete), downshift to 10,000ms.
       const configuredInterval = currentDraft.settings?.poll_interval_ms ?? ACTIVE_INTERVAL_MS;
-      const baseInterval = isDrafting ? configuredInterval : IDLE_INTERVAL_MS;
+      const baseInterval = isDrafting
+        ? configuredInterval
+        : isComplete
+          ? COMPLETE_INTERVAL_MS
+          : IDLE_INTERVAL_MS;
 
-      // When hidden in background tab: throttle to 30,000ms.
-      const interval = isHidden ? 30000 : baseInterval;
+      // When hidden in background tab: throttle to at least 30,000ms.
+      const interval = isHidden ? Math.max(30000, baseInterval) : baseInterval;
 
       timerId = setTimeout(async () => {
         await refreshDraft();
@@ -1522,6 +1562,7 @@ export const OneiromancyProvider: React.FC<OneiromancyProviderProps> = ({
     }
 
     return () => {
+      cancelled = true;
       if (timerId) clearTimeout(timerId);
       if (typeof document !== 'undefined') {
         document.removeEventListener('visibilitychange', handleVisibilityChange);

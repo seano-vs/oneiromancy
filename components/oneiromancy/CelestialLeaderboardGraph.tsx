@@ -23,7 +23,7 @@ import { CompetitorTeam, CosmicPlayer } from '@/types/oneiromancy';
 import { calculateTeamCelestialMetrics } from '@/lib/scoring';
 import { Trophy, ChevronDown, ChevronUp } from 'lucide-react';
 
-export type LeaderboardMetric = 'overall' | 'spirit' | 'draft' | 'harmony';
+export type LeaderboardMetric = 'standings' | 'overall' | 'spirit' | 'draft' | 'harmony';
 
 export interface CelestialLeaderboardGraphProps {
   competitorTeams: CompetitorTeam[];
@@ -38,7 +38,10 @@ export const CelestialLeaderboardGraph: React.FC<CelestialLeaderboardGraphProps>
   userSlot,
   className = '',
 }) => {
-  const [metric, setMetric] = useState<LeaderboardMetric>('overall');
+  const hasRecords = competitorTeams.some((t) => typeof t.wins === 'number');
+  const [selectedMetric, setMetric] = useState<LeaderboardMetric | null>(null);
+  const metric: LeaderboardMetric =
+    selectedMetric ?? (hasRecords ? 'standings' : 'overall');
   const [showAllTeams, setShowAllTeams] = useState<boolean>(true);
 
   // Compute deterministic metrics for every team (strictly invariant to active user)
@@ -52,7 +55,16 @@ export const CelestialLeaderboardGraph: React.FC<CelestialLeaderboardGraphProps>
       let displayValue = metrics.compositeScore.toFixed(1);
       let metricUnit = 'PTS';
 
-      if (metric === 'spirit') {
+      if (metric === 'standings') {
+        const w = team.wins ?? 0;
+        const l = team.losses ?? 0;
+        const t = team.ties ?? 0;
+        const pf = team.points_for ?? 0;
+        // Wins first, ties as half a win, then points for as the tiebreaker.
+        value = (w + t / 2) * 100000 + pf;
+        displayValue = `${w}-${l}${t ? `-${t}` : ''} · ${pf.toFixed(1)} PF`;
+        metricUnit = 'RECORD';
+      } else if (metric === 'spirit') {
         value = metrics.spiritScore;
         displayValue = metrics.spiritScore.toFixed(1);
         metricUnit = 'SPIRIT';
@@ -150,6 +162,20 @@ export const CelestialLeaderboardGraph: React.FC<CelestialLeaderboardGraphProps>
 
         {/* Metric Selector Pills */}
         <div className="flex items-center gap-1 p-1 rounded-lg bg-slate-950/80 border border-white/10 text-xs font-mono self-stretch sm:self-auto justify-between sm:justify-start">
+          {hasRecords && (
+            <button
+              type="button"
+              data-testid="leaderboard-toggle-standings"
+              onClick={() => setMetric('standings')}
+              className={`px-2.5 py-1 rounded text-[11px] transition-all font-bold ${
+                metric === 'standings'
+                  ? 'bg-amber-500 text-slate-950 shadow-[0_0_8px_rgba(245,158,11,0.4)]'
+                  : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              Standings
+            </button>
+          )}
           <button
             type="button"
             data-testid="leaderboard-toggle-overall"

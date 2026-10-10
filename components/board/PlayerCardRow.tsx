@@ -86,7 +86,7 @@ export const PlayerCardRow: React.FC<PlayerCardRowProps> = ({
               </span>
             )}
             <span className="font-mono text-[11px] text-slate-400 ml-1 shrink-0">
-              {player.team} ({player.bye_week})
+              {player.team} ({player.bye_week || '—'})
             </span>
           </div>
         </div>

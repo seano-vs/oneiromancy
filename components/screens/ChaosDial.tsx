@@ -519,7 +519,7 @@ export const ChaosDial: React.FC<ChaosDialProps> = ({
               <div>
                 <strong className="text-slate-200 block text-[11px] uppercase tracking-wide font-mono">What It Means:</strong>
                 <span>
-                  Every zodiac sign is governed by a classical planetary ruler (Mars rules Aries, Venus rules Taurus/Libra, Mercury rules Gemini/Virgo, Moon rules Cancer, Sun rules Leo, Pluto rules Scorpio, Jupiter rules Sagittarius, Saturn rules Capricorn, Uranus rules Aquarius, Neptune rules Pisces). A planet in its home domicile operates with unadulterated strength.
+                  Every zodiac sign is governed by a planetary ruler (Mars rules Aries, Venus rules Taurus/Libra, Mercury rules Gemini/Virgo, Moon rules Cancer, Sun rules Leo, Jupiter rules Sagittarius, Saturn rules Capricorn; modern astrology assigns Pluto to Scorpio, Uranus to Aquarius and Neptune to Pisces, whose classical rulers are Mars, Saturn and Jupiter). A planet in its home domicile operates with unadulterated strength.
                 </span>
               </div>
 

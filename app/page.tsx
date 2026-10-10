@@ -16,7 +16,7 @@
 
 'use client';
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { OneiromancyProvider, useOneiromancy } from '@/context/OneiromancyContext';
 import NavigationShell from '@/components/common/NavigationShell';
 import OneiromancyDashboard from '@/components/screens/OneiromancyDashboard';
@@ -42,6 +42,17 @@ function OneiromancyApp() {
     draftState,
   } = useOneiromancy();
 
+  // In mock mode the settings hold the demo persona; the Live button should
+  // still name the user's own saved Sleeper account.
+  const [savedUsername, setSavedUsername] = useState<string | null>(null);
+  useEffect(() => {
+    try {
+      setSavedUsername(localStorage.getItem('oneiromancy_active_username'));
+    } catch {
+      setSavedUsername(null);
+    }
+  }, [mode, draftState.settings?.sleeper_username]);
+
   return (
     <NavigationShell
       activeTab={activeTab}
@@ -54,7 +65,11 @@ function OneiromancyApp() {
       syncError={syncError}
       syncWarning={syncWarning}
       onRetrySync={refreshDraft}
-      sleeperUsername={draftState.settings?.sleeper_username || 'OneiroVanguard'}
+      sleeperUsername={
+        (mode === 'mock' && savedUsername) ||
+        draftState.settings?.sleeper_username ||
+        'OneiroVanguard'
+      }
       leagueId={draftState.settings?.league_id || '9000000000000000001'}
       draftId={draftState.draft_id}
       userAvatarUrl={draftState.user_avatar_url || draftState.avatar_url}

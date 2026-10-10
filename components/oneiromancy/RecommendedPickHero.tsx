@@ -20,6 +20,7 @@ import React, { useState } from 'react';
 import GlassCard from '@/components/common/GlassCard';
 import PositionalBadge from '@/components/common/PositionalBadge';
 import { CosmicPlayer } from '@/types/oneiromancy';
+import { classifyWeeklyFavorability } from '@/lib/scoring';
 import { Sparkles, ChevronDown, ChevronUp } from 'lucide-react';
 
 export interface RecommendedPickHeroProps {
@@ -114,11 +115,11 @@ export const RecommendedPickHero: React.FC<RecommendedPickHeroProps> = ({
         <p className="font-mono text-xs text-slate-400 flex flex-wrap gap-2 items-center">
           <span>{player.team}</span>
           <span>•</span>
-          <span>Bye {player.bye_week}</span>
+          <span>Bye {player.bye_week || '—'}</span>
           <span>•</span>
           <span>#{player.jersey_number}</span>
           <span>•</span>
-          <span>ADP {player.adp.toFixed(1)}</span>
+          <span>ADP {player.adp ? player.adp.toFixed(1) : '—'}</span>
         </p>
       </div>
 
@@ -177,11 +178,14 @@ export const RecommendedPickHero: React.FC<RecommendedPickHeroProps> = ({
             {(player.favorability_score ?? 75).toFixed(0)}
           </span>
           <span className="text-[9px] font-mono text-slate-500">
-            {(player.favorability_score ?? 75) >= 84
-              ? 'Heavily Favored'
-              : (player.favorability_score ?? 75) >= 75
-                ? 'Astrally Favored'
-                : 'Challenged Transit'}
+            {
+              {
+                'HEAVILY FAVORED': 'Heavily Favored',
+                'ASTRALLY FAVORED': 'Astrally Favored',
+                NEUTRAL: 'Neutral Transit',
+                'CELESTIALLY CHALLENGED': 'Challenged Transit',
+              }[classifyWeeklyFavorability(player.favorability_score ?? 75)]
+            }
           </span>
         </div>
       </div>

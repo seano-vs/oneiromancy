@@ -255,7 +255,7 @@ export const NavigationShell: React.FC<NavigationShellProps> = ({
       )}
 
       {/* Live State Sub-Banner when in live mode and synced without error */}
-      {mode === 'live' && !syncError && (
+      {mode === 'live' && !syncError && statusType !== 'offline' && (
         <div
           data-testid="sleeper-live-sync-banner"
           className="bg-emerald-950/40 border-b border-emerald-500/20 px-4 py-1.5 flex items-center justify-between text-[11px] font-mono text-emerald-300/90"

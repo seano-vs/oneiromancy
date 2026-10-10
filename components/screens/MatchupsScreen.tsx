@@ -28,7 +28,11 @@ import {
   mockWeeklyMatchup,
 } from '@/lib/mockData';
 import {calculateWinProbability} from '@/lib/scoring';
-import {deriveEligiblePositions, deriveWeeklyMatchup} from '@/lib/sleeper';
+import {
+  deriveEligiblePositions,
+  deriveWeeklyMatchup,
+  getSeasonContext,
+} from '@/lib/sleeper';
 import {
   MatchupWeekData,
   NFLPosition,
@@ -127,6 +131,23 @@ export const MatchupsScreen: React.FC<MatchupsScreenProps> = ({
       (!selectedWeek || existingMatchup.week === selectedWeek)
     ) {
       return existingMatchup;
+    }
+
+    if (
+      existingMatchup &&
+      selectedWeek &&
+      selectedWeek !== existingMatchup.week &&
+      getSeasonContext() &&
+      context.draftState?.competitor_teams?.length
+    ) {
+      return deriveWeeklyMatchup(
+        activeRosterId,
+        context.draftState.competitor_teams,
+        null,
+        context.draftState.cosmic_board,
+        context.draftState.my_roster,
+        selectedWeek,
+      );
     }
 
     if (
@@ -262,7 +283,7 @@ export const MatchupsScreen: React.FC<MatchupsScreenProps> = ({
           : selectedWeek < (context.draftState?.weekly_matchup?.week || 2)
             ? ('completed' as const)
             : ('upcoming' as const),
-      date_range: 'Sep 4 - Sep 8, 2025',
+      date_range: matchupData.date_range || `Week ${selectedWeek}`,
     };
   }, [
     matchupWeeks,
@@ -669,9 +690,16 @@ export const MatchupsScreen: React.FC<MatchupsScreenProps> = ({
                 (Solid Harmonic Alignment)
               </span>
               <span className="flex items-center gap-1">
+                <span className="w-2 h-2 rounded-full bg-slate-400" />
+                <strong className="text-slate-300">
+                  65–74 NEUTRAL
+                </strong>{' '}
+                (Balanced Transit)
+              </span>
+              <span className="flex items-center gap-1">
                 <span className="w-2 h-2 rounded-full bg-rose-400" />
                 <strong className="text-rose-300">
-                  &lt;75 CELESTIALLY CHALLENGED
+                  &lt;65 CELESTIALLY CHALLENGED
                 </strong>{' '}
                 (Planetary Friction / Injury Risk)
               </span>
@@ -742,11 +770,19 @@ export const MatchupsScreen: React.FC<MatchupsScreenProps> = ({
                 Mgr: {matchupData.user_team.owner_name}
               </div>
               <div className="text-base font-mono font-bold text-cyan-400 mt-0.5">
-                {matchupData.user_team.projected_points.toFixed(2)}{' '}
+                {(matchupData.status === 'completed' && matchupData.score_user !== undefined
+                  ? matchupData.score_user
+                  : matchupData.user_team.projected_points
+                ).toFixed(2)}{' '}
                 <span className="text-[10px] text-slate-400 font-normal">
-                  Proj Pts
+                  {matchupData.status === 'completed' ? 'Final' : 'Proj Pts'}
                 </span>
               </div>
+              {matchupData.status === 'active' && matchupData.score_user !== undefined && (
+                <div className="text-[11px] font-mono text-emerald-300">
+                  Live: {matchupData.score_user.toFixed(2)}
+                </div>
+              )}
             </div>
           </div>
 
@@ -755,6 +791,23 @@ export const MatchupsScreen: React.FC<MatchupsScreenProps> = ({
             <span className="text-xs font-serif font-bold text-slate-400 px-2.5 py-1 rounded-full bg-slate-900 border border-white/10">
               VS
             </span>
+            {matchupData.status === 'completed' && matchupData.result ? (
+              <div className="mt-2 flex flex-col items-center gap-1">
+                <span
+                  className={`text-lg font-mono font-bold ${
+                    matchupData.result === 'W'
+                      ? 'text-emerald-400'
+                      : matchupData.result === 'L'
+                        ? 'text-rose-400'
+                        : 'text-slate-300'
+                  }`}>
+                  {matchupData.result === 'W' ? 'WIN' : matchupData.result === 'L' ? 'LOSS' : 'TIE'}
+                </span>
+                <span className="text-[8px] font-mono uppercase tracking-wider text-slate-400">
+                  Final
+                </span>
+              </div>
+            ) : (
             <div className="mt-2 flex flex-col items-center gap-1">
               <span
                 className={`text-xs font-mono font-bold ${
@@ -780,6 +833,7 @@ export const MatchupsScreen: React.FC<MatchupsScreenProps> = ({
                 />
               </div>
             </div>
+            )}
           </div>
 
           {/* Opponent Team */}
@@ -804,11 +858,19 @@ export const MatchupsScreen: React.FC<MatchupsScreenProps> = ({
                 Mgr: {matchupData.opponent_team.owner_name}
               </div>
               <div className="text-base font-mono font-bold text-purple-300 mt-0.5">
-                {matchupData.opponent_team.projected_points.toFixed(2)}{' '}
+                {(matchupData.status === 'completed' && matchupData.score_opponent !== undefined
+                  ? matchupData.score_opponent
+                  : matchupData.opponent_team.projected_points
+                ).toFixed(2)}{' '}
                 <span className="text-[10px] text-slate-400 font-normal">
-                  Proj Pts
+                  {matchupData.status === 'completed' ? 'Final' : 'Proj Pts'}
                 </span>
               </div>
+              {matchupData.status === 'active' && matchupData.score_opponent !== undefined && (
+                <div className="text-[11px] font-mono text-emerald-300">
+                  Live: {matchupData.score_opponent.toFixed(2)}
+                </div>
+              )}
             </div>
           </div>
         </div>
