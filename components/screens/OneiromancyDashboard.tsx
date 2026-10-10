@@ -28,7 +28,9 @@ import {
   mockCompetitorTeams,
   mockWeeklyMatchup,
 } from '@/lib/mockData';
-import {deriveWeeklyMatchup} from '@/lib/sleeper';
+import {deriveWeeklyMatchup, getSeasonContext} from '@/lib/sleeper';
+import WeeklyMoves from '@/components/oneiromancy/WeeklyMoves';
+import {TONE_PILL, favorabilityTone, starsScore, statsPoints} from '@/lib/oracle';
 import {
   calculateTeamCelestialMetrics,
   calculateWinProbability,
@@ -258,6 +260,14 @@ export const OneiromancyDashboard: React.FC<OneiromancyDashboardProps> = ({
     );
   }, [draftState?.status, rosteredPlayers.length, ascensionPath]);
 
+  const [isHarmonyOpen, setIsHarmonyOpen] = useState(false);
+  const remainingCoverage = useMemo(() => {
+    const season = getSeasonContext();
+    if (!season) return weeklyCoverage;
+    return weeklyCoverage.filter(
+      (w) => w.week >= season.currentWeek && w.week <= season.lastRegularWeek,
+    );
+  }, [weeklyCoverage]);
   const [isAscensionExpanded, setIsAscensionExpanded] =
     useState<boolean>(!isDraftComplete);
 
@@ -323,16 +333,21 @@ export const OneiromancyDashboard: React.FC<OneiromancyDashboardProps> = ({
   return (
     <div
       className={`flex flex-col gap-6 w-full max-w-5xl mx-auto ${className}`}>
-      {/* Screen Title & Mystical Subheading */}
-      <div className="text-center space-y-1">
-        <h2 className="font-serif text-2xl sm:text-3xl font-bold text-slate-100 tracking-wide">
+      {/* Screen title: plain name first, the Oneiromancy name as the eyebrow */}
+      <div className="space-y-1">
+        <span className="text-[10px] font-mono uppercase tracking-widest text-purple-300/80">
           Ideal Team & League Telemetry
+        </span>
+        <h2 className="font-serif text-2xl sm:text-3xl font-bold text-slate-100 tracking-wide">
+          This Week
         </h2>
-        <p className="text-xs text-slate-400 max-w-xl mx-auto font-sans">
-          Squad telemetry, harmony alignment, bye week coverage, and competitor
-          draft states.
+        <p className="text-xs text-slate-400 font-sans">
+          {weeklyMatchup?.week ? `Week ${weeklyMatchup.week}` : 'Your week'}
+          {weeklyMatchup?.date_range ? ` · ${weeklyMatchup.date_range}` : ''} · what to start, add, and plan for.
         </p>
       </div>
+
+      <WeeklyMoves />
 
       {/* 1. Weekly Matchup & Start/Sit Oracle Summary */}
       {weeklyMatchup && (
@@ -350,8 +365,7 @@ export const OneiromancyDashboard: React.FC<OneiromancyDashboardProps> = ({
                   </span>
                 </h3>
                 <p className="text-[11px] font-sans text-slate-400">
-                  Head-to-head matchup divination against league competitor and
-                  elemental start/sit guidance.
+                  {weeklyMatchup.opponent_team.team_name} · {weeklyMatchup.date_range || `Week ${weeklyMatchup.week}`}
                 </p>
               </div>
             </div>
@@ -479,74 +493,32 @@ export const OneiromancyDashboard: React.FC<OneiromancyDashboardProps> = ({
             </div>
           </div>
 
-          {/* Quick Start / Sit Preview */}
-          {weeklyMatchup.start_sit_recommendations &&
-            weeklyMatchup.start_sit_recommendations.length > 0 && (
-              <div className="p-3 rounded-lg bg-slate-900/60 border border-white/5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 text-xs font-mono">
-                <div className="flex items-center gap-2">
-                  <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
-                    START
-                  </span>
-                  <span className="text-slate-200 font-bold">
-                    {
-                      weeklyMatchup.start_sit_recommendations[0]
-                        ?.recommended_start?.name ||
-                      (weeklyMatchup.start_sit_recommendations[0] as any)
-                        ?.start_player_name ||
-                      'Starter'
-                    }
-                  </span>
-                  <span className="text-slate-500">vs</span>
-                  <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40">
-                    SIT
-                  </span>
-                  <span className="text-slate-400">
-                    {
-                      weeklyMatchup.start_sit_recommendations[0]
-                        ?.recommended_sit?.name ||
-                      (weeklyMatchup.start_sit_recommendations[0] as any)
-                        ?.sit_player_name ||
-                      'Bench Reserve'
-                    }
-                  </span>
-                </div>
-                <span className="text-[11px] text-slate-400 italic">
-                  {weeklyMatchup.start_sit_recommendations[0]?.synergy_reason ||
-                    (weeklyMatchup.start_sit_recommendations[0] as any)?.rationale ||
-                    ''}
-                </span>
-              </div>
-            )}
-
-          {/* Call-to-action to dedicated Matchups Screen */}
-          <div className="pt-2 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-3">
-            <span className="text-xs font-mono text-slate-400 flex items-center gap-1.5">
-              <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
-              Full celestial favorability comparison, stadium coordinates &
-              player transits in Matchups tab
-            </span>
-            <button
-              type="button"
-              onClick={() => context.setTab?.('matchups' as any)}
-              className="px-3.5 py-1.5 rounded-lg bg-cyan-950/80 border border-cyan-500/40 text-cyan-300 hover:bg-cyan-900/80 font-mono text-xs font-semibold flex items-center gap-1.5 transition-all shadow-[0_0_10px_rgba(6,182,212,0.2)] cursor-pointer">
-              <span>
-                View Full Celestial Matchup Analysis & Stadium Transits
-              </span>
-              <ArrowRight className="w-3.5 h-3.5" />
-            </button>
-          </div>
+          <a
+            href="#matchup-details-heading"
+            className="self-start text-xs font-mono text-cyan-300 hover:underline"
+          >
+            Player-by-player matchup details ↓
+          </a>
         </GlassCard>
       )}
 
-      {/* 2. Top Telemetry Bar */}
-      <TelemetryBar
-        totalProjectedPoints={totalProjectedPoints}
-        totalVOR={totalVOR}
-        elementalDistribution={elementalDistribution}
-        activeStacks={activeAspects}
-      />
-
-      {/* 4. Harmony Score & Metaphysical Team Synergy */}
+      {/* 4. Harmony Score & Metaphysical Team Synergy (on demand) */}
+      <button
+        type="button"
+        onClick={() => setIsHarmonyOpen((v) => !v)}
+        aria-expanded={isHarmonyOpen}
+        className="flex items-center justify-between gap-3 p-4 rounded-xl bg-slate-900/70 border border-white/10 text-left hover:border-amber-500/40">
+        <span className="flex items-center gap-2">
+          <Trophy className="w-4 h-4 text-amber-400" />
+          <span className="font-serif text-base font-bold text-slate-100">Team harmony</span>
+          <span className="text-xs font-mono text-amber-300">{harmonyScore} / 100</span>
+        </span>
+        <span className="text-xs font-mono text-slate-400 flex items-center gap-1">
+          {isHarmonyOpen ? 'Hide' : 'Elements, aspects and stacks'}
+          {isHarmonyOpen ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+        </span>
+      </button>
+      {isHarmonyOpen && (
       <GlassCard variant="panel" className="p-4 sm:p-6 space-y-5">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b border-white/10 pb-3">
           <div className="flex items-center gap-2">
@@ -888,6 +860,8 @@ export const OneiromancyDashboard: React.FC<OneiromancyDashboardProps> = ({
         </div>
       </GlassCard>
 
+      )}
+
       {/* 5. Your Team's Current State: Roster Slots */}
       <GlassCard variant="panel" className="p-4 sm:p-6 space-y-4">
         <div className="flex justify-between items-center border-b border-white/10 pb-3">
@@ -964,17 +938,13 @@ export const OneiromancyDashboard: React.FC<OneiromancyDashboardProps> = ({
                             {player.team} • Bye {player.bye_week || '—'}
                           </span>
                           <div className="flex items-center gap-1.5">
-                            <span className="text-emerald-400 font-bold">
-                              {(
-                                player.projected_points ||
-                                player.sleeper_projected_points ||
-                                0
-                              ).toFixed(1)}{' '}
-                              pts
+                            <span className="text-cyan-300 font-bold" title="Stats: this week's projection">
+                              {statsPoints(player).toFixed(1)} pts
                             </span>
-                            <span className="text-slate-600">•</span>
-                            <span className="text-cyan-400 font-bold">
-                              {player.draft_score.toFixed(1)} DS
+                            <span
+                              title="Stars: this week's favorability"
+                              className={`px-1 rounded border ${TONE_PILL[favorabilityTone(starsScore(player))]}`}>
+                              ★ {starsScore(player).toFixed(0)}
                             </span>
                           </div>
                         </div>
@@ -1052,17 +1022,13 @@ export const OneiromancyDashboard: React.FC<OneiromancyDashboardProps> = ({
                             {player.team} • Bye {player.bye_week || '—'}
                           </span>
                           <div className="flex items-center gap-1.5">
-                            <span className="text-emerald-400 font-bold">
-                              {(
-                                player.projected_points ||
-                                player.sleeper_projected_points ||
-                                0
-                              ).toFixed(1)}{' '}
-                              pts
+                            <span className="text-cyan-300 font-bold" title="Stats: this week's projection">
+                              {statsPoints(player).toFixed(1)} pts
                             </span>
-                            <span className="text-slate-600">•</span>
-                            <span className="text-purple-300 font-bold">
-                              {player.draft_score.toFixed(1)} DS
+                            <span
+                              title="Stars: this week's favorability"
+                              className={`px-1 rounded border ${TONE_PILL[favorabilityTone(starsScore(player))]}`}>
+                              ★ {starsScore(player).toFixed(0)}
                             </span>
                           </div>
                         </div>
@@ -1087,16 +1053,16 @@ export const OneiromancyDashboard: React.FC<OneiromancyDashboardProps> = ({
               <Calendar className="w-4 h-4 text-purple-400" />
               <div>
                 <h3 className="font-serif text-lg font-bold text-slate-100">
-                  18-Week Bye Week Coverage & Schedule Matrix
+                  Bye outlook
                 </h3>
                 <p className="text-[11px] font-sans text-slate-400">
-                  Simulated weekly starting lineups, conflict triage, and
-                  championship playoff depth.
+                  Remaining weeks with real NFL byes. Points are this week&apos;s projections with
+                  bye players removed.
                 </p>
               </div>
             </div>
             <span className="text-xs font-mono text-purple-300 bg-purple-950/60 border border-purple-500/30 px-2 py-0.5 rounded">
-              Weeks 1–18
+              Weeks {remainingCoverage[0]?.week ?? 1}–{remainingCoverage[remainingCoverage.length - 1]?.week ?? 18}
             </span>
           </div>
 
@@ -1151,7 +1117,7 @@ export const OneiromancyDashboard: React.FC<OneiromancyDashboardProps> = ({
           </details>
 
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
-            {weeklyCoverage.map((node) => {
+            {remainingCoverage.map((node) => {
               const isHighConflict = node.conflict_severity === 'high';
               const isLowConflict = node.conflict_severity === 'low';
 
@@ -1192,353 +1158,8 @@ export const OneiromancyDashboard: React.FC<OneiromancyDashboardProps> = ({
         </GlassCard>
       )}
 
-      {/* 6.5 Celestial Leaderboard & Standings */}
-      <CelestialLeaderboardGraph
-        competitorTeams={competitorTeams}
-        cosmicBoard={cosmicBoard}
-        userSlot={userSlot}
-      />
-
-      {/* 7. Other Teams' States & League Draft Overview with Authentic Sleeper Team Names */}
-      <GlassCard variant="panel" className="p-4 sm:p-6 space-y-4">
-        <div className="flex justify-between items-center border-b border-white/10 pb-3">
-          <div className="flex items-center gap-2">
-            <Users className="w-4 h-4 text-cyan-400" />
-            <div>
-              <h3 className="font-serif text-lg font-bold text-slate-100">
-                League Draft Status & Competitor Rosters
-              </h3>
-              <p className="text-[11px] font-sans text-slate-400">
-                12-Team Sleeper League • Authentic Team Names & Draft Picks
-              </p>
-            </div>
-          </div>
-          <span className="text-xs font-mono text-cyan-300 bg-cyan-950/60 border border-cyan-500/30 px-2.5 py-1 rounded-lg">
-            LIVE SYNC
-          </span>
-        </div>
-
-        {/* SpiritScore Scale & Calibration Legend */}
-        <div className="p-3 rounded-xl bg-slate-900/80 border border-white/10 space-y-2 text-xs font-mono">
-          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/5 pb-2">
-            <span className="font-bold text-slate-200 uppercase tracking-wider text-[11px] flex items-center gap-1.5">
-              <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
-              SpiritScore & Harmony Calibration Spectrum
-            </span>
-            <span className="text-[10px] text-slate-400">
-              Threshold Baseline: 75.0 Equilibrium Line
-            </span>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-[10px]">
-            <div className="p-2 rounded-lg bg-emerald-950/40 border border-emerald-500/30 flex items-center justify-between">
-              <div>
-                <span className="font-bold text-emerald-400 block">
-                  ✨ Favorable (Apex)
-                </span>
-                <span className="text-slate-400 text-[9px]">
-                  Score &ge; 85.0 • High Astral Resonance
-                </span>
-              </div>
-              <span className="text-emerald-300 font-bold px-1.5 py-0.5 rounded bg-emerald-900/60 border border-emerald-500/30">
-                Top Tier
-              </span>
-            </div>
-            <div className="p-2 rounded-lg bg-sky-950/40 border border-sky-500/30 flex items-center justify-between">
-              <div>
-                <span className="font-bold text-sky-400 block">
-                  ⚖️ Harmonic (Stable)
-                </span>
-                <span className="text-slate-400 text-[9px]">
-                  75.0 &ndash; 84.9 • Elemental Balance
-                </span>
-              </div>
-              <span className="text-sky-300 font-bold px-1.5 py-0.5 rounded bg-sky-900/60 border border-sky-500/30">
-                Mid Tier
-              </span>
-            </div>
-            <div className="p-2 rounded-lg bg-rose-950/40 border border-rose-500/30 flex items-center justify-between">
-              <div>
-                <span className="font-bold text-rose-400 block">
-                  ⚠️ Discordant (At Risk)
-                </span>
-                <span className="text-slate-400 text-[9px]">
-                  Score &lt; 75.0 • Astral Friction
-                </span>
-              </div>
-              <span className="text-rose-300 font-bold px-1.5 py-0.5 rounded bg-rose-900/60 border border-rose-500/30">
-                Low Tier
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* Competitor Rosters Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          {(() => {
-            return competitorTeams.map((team, idx) => {
-              const slotNum = team.slot || team.roster_id || idx + 1;
-              const isUser = slotNum === userSlot;
-              const metrics = calculateTeamCelestialMetrics(team, cosmicBoard);
-              const spiritScore = metrics.spiritScore;
-              const draftScore = metrics.draftScore;
-              const harmonyScore = metrics.harmonyScore;
-              // The card's legend and equilibrium gauge describe SpiritScore, so
-              // its rating badge classifies SpiritScore with the same tiers.
-              const tierInfo = classifySpiritScoreTier(spiritScore);
-              const verdict = tierInfo.badgeLabel;
-
-              return (
-                <div
-                  key={team.roster_id || slotNum}
-                  data-testid={
-                    isUser
-                      ? 'user-competitor-card'
-                      : `competitor-card-slot-${slotNum}`
-                  }
-                  title={
-                    isUser
-                      ? 'Active Persona (You)'
-                      : `${team.name} (Slot ${slotNum})`
-                  }
-                  className={`p-3.5 rounded-xl border text-xs font-mono space-y-2.5 transition-all relative ${
-                    isUser
-                      ? 'border-purple-400 ring-2 ring-purple-500/70 shadow-lg shadow-purple-500/25 bg-purple-950/40'
-                      : tierInfo.tier === 'Favorable'
-                        ? 'bg-emerald-950/20 border-emerald-500/30 shadow-[0_0_10px_rgba(16,185,129,0.1)]'
-                        : tierInfo.tier === 'Discordant'
-                          ? 'bg-rose-950/20 border-rose-500/30'
-                          : 'bg-slate-900/60 border-white/10'
-                  }`}>
-                  {/* Top luminous accent line for user team */}
-                  {isUser && (
-                    <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-purple-500 via-amber-400 to-purple-500 rounded-t-xl" />
-                  )}
-
-                  {/* Team Header */}
-                  <div
-                    className={`flex items-center gap-2.5 border-b pb-2 ${
-                      isUser ? 'border-purple-500/30' : 'border-white/5'
-                    }`}>
-                    <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                      {/* Circular Avatar Thumbnail */}
-                      <UserAvatar
-                        src={team.avatar_url || team.avatar}
-                        alt={`${team.owner_display_name || team.name} avatar`}
-                        fallbackText={team.owner_display_name || team.name}
-                        size="md"
-                        isUser={isUser}
-                        testId={`team-avatar-slot-${slotNum}`}
-                        data-testid={`team-avatar-slot-${slotNum}`}
-                      />
-
-                      <div className="min-w-0 flex-1">
-                        <div className="flex flex-wrap items-center gap-1.5">
-                          <span
-                            data-testid={`team-name-slot-${slotNum}`}
-                            className={`font-bold break-words leading-snug ${
-                              isUser
-                                ? 'text-purple-200 font-extrabold text-sm drop-shadow-[0_0_8px_rgba(168,85,247,0.4)]'
-                                : 'text-slate-200'
-                            }`}>
-                            {team.name}
-                          </span>
-                          {isUser && (
-                            <span
-                              data-testid="user-team-badge"
-                              className="text-[10px] tracking-wide text-amber-200 bg-gradient-to-r from-purple-800 via-purple-700 to-indigo-900 px-2.5 py-0.5 rounded-full border border-amber-400/80 shadow-[0_0_10px_rgba(234,179,8,0.4)] shrink-0 font-bold flex items-center gap-1">
-                              YOUR TEAM
-                            </span>
-                          )}
-                        </div>
-                        {team.owner_display_name && (
-                          <span className="text-[10px] text-slate-400 block break-words font-sans mt-0.5">
-                            Mgr: {team.owner_display_name}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Team Aggregated Scores & Rating Table */}
-                  <div
-                    className={`p-2 rounded border space-y-1.5 ${
-                      isUser
-                        ? 'bg-purple-950/60 border-purple-500/30'
-                        : 'bg-slate-950/60 border-white/5'
-                    }`}>
-                    <div className="flex items-center justify-between border-b border-white/10 pb-1.5">
-                      <span className="text-[8px] font-mono uppercase tracking-wider text-slate-400">
-                        Rating
-                      </span>
-                      <span
-                        data-testid={`team-verdict-slot-${slotNum}`}
-                        className={`text-[9px] font-bold px-2 py-0.5 rounded-full border ${
-                          tierInfo.tier === 'Favorable'
-                            ? 'bg-emerald-950/80 border-emerald-500/40 text-emerald-300 shadow-[0_0_8px_rgba(16,185,129,0.3)]'
-                            : tierInfo.tier === 'Discordant'
-                              ? 'bg-rose-950/80 border-rose-500/40 text-rose-300'
-                              : 'bg-sky-950/80 border-sky-500/40 text-sky-300'
-                        }`}>
-                        {verdict || tierInfo.badgeLabel}
-                      </span>
-                    </div>
-
-                    <div className="grid grid-cols-3 gap-1 text-center font-mono text-[10px]">
-                      <div>
-                        <span className="text-slate-500 block text-[8px] uppercase">
-                          Spirit
-                        </span>
-                        <strong
-                          className={`font-bold ${
-                            tierInfo.tier === 'Favorable'
-                              ? 'text-emerald-300'
-                              : tierInfo.tier === 'Discordant'
-                                ? 'text-rose-300'
-                                : 'text-purple-300'
-                          }`}>
-                          {spiritScore.toFixed(1)}
-                        </strong>
-                      </div>
-                      <div>
-                        <span className="text-slate-500 block text-[8px] uppercase">
-                          Draft
-                        </span>
-                        <strong
-                          className={
-                            isUser
-                              ? 'text-amber-300 font-bold'
-                              : 'text-cyan-300 font-bold'
-                          }>
-                          {draftScore.toFixed(1)}
-                        </strong>
-                      </div>
-                      <div>
-                        <span className="text-slate-500 block text-[8px] uppercase">
-                          Harmony
-                        </span>
-                        <strong className="text-amber-300 font-bold">
-                          {harmonyScore.toFixed(0)}%
-                        </strong>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Visual Equilibrium Mini-Gauge (75.0 line of equilibrium) */}
-                  <div className="space-y-1">
-                    <div className="flex justify-between text-[8px] font-mono text-slate-500">
-                      <span>Equilibrium (75.0)</span>
-                      <span
-                        className={
-                          spiritScore >= 75.0
-                            ? 'text-emerald-400'
-                            : 'text-rose-400'
-                        }>
-                        {spiritScore >= 75.0
-                          ? `+${(spiritScore - 75.0).toFixed(1)}`
-                          : (spiritScore - 75.0).toFixed(1)}
-                      </span>
-                    </div>
-                    <div className="relative w-full h-1.5 bg-slate-800 rounded-full overflow-hidden border border-white/5">
-                      {/* 75.0 Equilibrium Marker Line at 50% relative to 50-100 scale */}
-                      <div
-                        className="absolute left-1/2 top-0 bottom-0 w-0.5 bg-white/30 z-10"
-                        title="75.0 Equilibrium"
-                      />
-                      <div
-                        className={`h-full rounded-full transition-all duration-500 ${
-                          tierInfo.tier === 'Favorable'
-                            ? 'bg-gradient-to-r from-emerald-500 to-cyan-400'
-                            : tierInfo.tier === 'Discordant'
-                              ? 'bg-gradient-to-r from-rose-600 to-amber-500'
-                              : 'bg-gradient-to-r from-sky-500 to-blue-400'
-                        }`}
-                        style={{
-                          width: `${Math.min(Math.max(((spiritScore - 50) / 50) * 100, 5), 100)}%`,
-                        }}
-                      />
-                    </div>
-                  </div>
-
-                  {/* Current roster (once rosters exist), otherwise draft picks */}
-                  {team.players && team.players.length > 0 ? (
-                    <div className="space-y-1 pt-1">
-                      {(() => {
-                        const starterIds = new Set((team.starters || []).map(String));
-                        const pickByPlayer = new Map(
-                          (team.picks || []).map((pk) => [String(pk.player_id), pk]),
-                        );
-                        return [...team.players]
-                          .map(String)
-                          .sort((a, b) => Number(starterIds.has(b)) - Number(starterIds.has(a)))
-                          .map((pid) => {
-                            const p = cosmicBoard.find((cp) => String(cp.id) === pid);
-                            const pick = pickByPlayer.get(pid);
-                            return (
-                              <div
-                                key={pid}
-                                className="flex justify-between items-center text-[10px]">
-                                <div className="flex items-center gap-1.5 truncate">
-                                  <PositionalBadge
-                                    position={p?.position || pick?.metadata.position || 'WR'}
-                                    size="sm"
-                                  />
-                                  <span
-                                    className={`truncate ${
-                                      starterIds.has(pid) ? 'text-slate-200' : 'text-slate-400'
-                                    }`}>
-                                    {p?.name ||
-                                      (pick
-                                        ? `${pick.metadata.first_name} ${pick.metadata.last_name}`
-                                        : pid)}
-                                  </span>
-                                </div>
-                                <span className="text-slate-500 shrink-0 ml-1">
-                                  {starterIds.has(pid) ? 'Starter · ' : ''}
-                                  {pick ? `Rd ${pick.round}` : 'Added'}
-                                </span>
-                              </div>
-                            );
-                          });
-                      })()}
-                    </div>
-                  ) : (
-                  <div className="space-y-1 pt-1">
-                    {team.picks && team.picks.length > 0 ? (
-                      team.picks.map((pick) => (
-                        <div
-                          key={pick.pick_no}
-                          className="flex justify-between items-center text-[10px]">
-                          <div className="flex items-center gap-1.5 truncate">
-                            <PositionalBadge
-                              position={pick.metadata.position}
-                              size="sm"
-                            />
-                            <span className="text-slate-300 truncate">
-                              {pick.metadata.first_name}{' '}
-                              {pick.metadata.last_name}
-                            </span>
-                          </div>
-                          <span className="text-slate-500 shrink-0 ml-1">
-                            Rd {pick.round} (#{pick.pick_no})
-                          </span>
-                        </div>
-                      ))
-                    ) : (
-                      <div className="text-[10px] font-mono text-slate-500 italic">
-                        No picks registered yet
-                      </div>
-                    )}
-                  </div>
-                  )}
-                </div>
-              );
-            });
-          })()}
-        </div>
-      </GlassCard>
-
-      {/* 8. Path of Ascension Timeline (Read-Only) with Collapsible Toggle */}
-      {!isAscensionExpanded ? (
+      {/* 8. Path of Ascension: a draft tool, hidden once the draft is complete */}
+      {!isDraftComplete && (!isAscensionExpanded ? (
         <GlassCard
           variant="panel"
           className="p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
@@ -1586,7 +1207,7 @@ export const OneiromancyDashboard: React.FC<OneiromancyDashboardProps> = ({
             onInspectPlayerById={handleInspectById}
           />
         </div>
-      )}
+      ))}
 
       {/* Detail Modal (Read-Only) */}
       <PlayerDetailModal

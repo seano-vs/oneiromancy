@@ -67,6 +67,7 @@ import {
   WeeklyMatchup,
   WeeklyPositionSlot,
 } from '../types/oneiromancy';
+import {dominantElements, teamStacks} from '@/lib/oracle';
 import {
   mock_oneiromancy_draft_2025,
   mockCompetitorTeams,
@@ -2409,14 +2410,10 @@ export function synthesizeCosmicPlayerFromId(
     divination_breakdown: divinationBreakdown,
     status,
     injury_status: injuryStatus,
-    catalysts: [
-      'High volume red-zone target share',
-      'Positive game script in high-scoring offense',
-    ],
-    risks: [
-      'Tough division matchup concentration',
-      'High target competition in receiving corps',
-    ],
+    // No real per-player catalyst data exists; leave empty rather than repeat
+    // the same lines on every player.
+    catalysts: [],
+    risks: [],
   };
 }
 
@@ -2925,13 +2922,10 @@ export function generateMatchupWeeks(
           Math.round((opp.avg_spirit_score ?? 80.0) * 10) / 10,
         user_harmony_score: userHarmony,
         opponent_harmony_score: oppHarmony,
-        user_elemental_dominance: 'Fire & Air',
-        opponent_elemental_dominance: 'Earth & Water',
-        elemental_dominance: {user: 'Fire & Air', opponent: 'Earth & Water'},
-        celestial_conjunctions: [
-          'Jupiter Trine Mars (+14.2)',
-          'Sun Sextile Mercury (+8.5)',
-        ],
+        user_elemental_dominance: '—',
+        opponent_elemental_dominance: '—',
+        elemental_dominance: {user: '—', opponent: '—'},
+        celestial_conjunctions: [],
         verdict_summary: `${userTeam.name} holds ${
           winProbability >= 50 ? 'favorable' : 'contested'
         } astral alignment with ${userHarmony} Squad Harmony vs ${opp.name}'s ${oppHarmony}.`,
@@ -3950,6 +3944,11 @@ export function deriveWeeklyMatchup(
     );
   });
 
+  const userStarterPlayers = userPlayers.filter((p) => userStartersSet.has(String(p.id)));
+  const oppStarterPlayers = oppPlayers.filter((p) => oppStartersSet.has(String(p.id)));
+  const userElements = dominantElements(userStarterPlayers);
+  const oppElements = dominantElements(oppStarterPlayers);
+
   const teamComparison: TeamCelestialComparison = {
     user_favorability_index:
       Math.round((userTeam.avg_spirit_score ?? 85.0) * 10) / 10,
@@ -3961,13 +3960,11 @@ export function deriveWeeklyMatchup(
       Math.round((oppTeam.avg_spirit_score ?? 80.0) * 10) / 10,
     user_harmony_score: userHarmony,
     opponent_harmony_score: oppHarmony,
-    user_elemental_dominance: 'Fire & Air',
-    opponent_elemental_dominance: 'Earth & Water',
-    elemental_dominance: {user: 'Fire & Air', opponent: 'Earth & Water'},
-    celestial_conjunctions: [
-      'Jupiter Trine Mars (+14.2)',
-      'Sun Sextile Mercury (+8.5)',
-    ],
+    user_elemental_dominance: userElements,
+    opponent_elemental_dominance: oppElements,
+    elemental_dominance: {user: userElements, opponent: oppElements},
+    // Real QB + pass-catcher stacks among each side's starters.
+    celestial_conjunctions: [...teamStacks(userStarterPlayers), ...teamStacks(oppStarterPlayers)],
     verdict_summary: `${userTeam.name} holds ${winProbability >= 50 ? 'favorable' : 'contested'} astral alignment with ${userHarmony} Squad Harmony vs ${oppTeam.name}'s ${oppHarmony}.`,
   };
 
@@ -5510,8 +5507,20 @@ export function transformToDraftState(
             p.draft_slot === slot,
         );
 
+        // This week's lineup lives on the current-week matchup; the roster's
+        // own starters field can lag behind it.
+        const weekMatch = Array.isArray(leagueMatchups)
+          ? leagueMatchups.find((m: any) => Number(m.roster_id) === Number(r.roster_id))
+          : undefined;
+        const lineupSource =
+          Array.isArray(weekMatch?.starters) && weekMatch.starters.length > 0
+            ? weekMatch.starters
+            : r.starters;
+        const teamStarters = Array.isArray(lineupSource)
+          ? lineupSource.filter((id: any) => id && String(id) !== '0').map(String)
+          : [];
         const teamMetrics = calculateTeamCelestialMetrics(
-          { slot, roster_id: r.roster_id, picks: teamPicks, players: r.players, starters: r.starters },
+          { slot, roster_id: r.roster_id, picks: teamPicks, players: r.players, starters: teamStarters },
           scoredCosmicBoard,
         );
         const avg_spirit_score = teamMetrics.spiritScore;
@@ -5523,9 +5532,6 @@ export function transformToDraftState(
           teamMetrics.tier === 'Volatile' ? 'Harmonic' : teamMetrics.tier;
         const favorability_label = teamMetrics.verdict;
 
-        const teamStarters = Array.isArray(r.starters)
-          ? r.starters.filter((id: any) => id && String(id) !== '0').map(String)
-          : [];
         const teamPlayersList = Array.isArray(r.players)
           ? r.players.filter(Boolean).map(String)
           : [];

@@ -1,0 +1,552 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<!-- Published as a Claude artifact: https://claude.ai/artifact/38vLJZaPyHqBPzEbXHBKG6 -->
+<title>Oneiromancy UX Review</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: a single reading column (findings, structure, copy) that widens to a
+   two-up grid for the mock frames, which render in the app's own night palette. */
+:root{
+  --bg:#f5f6fa; --surface:#ffffff; --ink:#1b1d2a; --muted:#5d6278; --line:#dcdfea;
+  --accent:#4f46c8; --accent-soft:#ecebfb;
+  --p1:#b4233a; --p1-soft:#fbe9ec; --p2:#9a5b00; --p2-soft:#fbf0dc; --p3:#45506b; --p3-soft:#eceff5;
+  --serif:"Instrument Serif", "Iowan Old Style", Georgia, serif;
+  --sans:"IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono:"IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  /* mock frames: the app's own dark world, fixed in both themes */
+  --m-bg:#121219; --m-panel:#1a1b25; --m-line:#2a2c3a; --m-ink:#e8e9f2; --m-dim:#8b8fa6;
+  --m-cyan:#3fd0e0; --m-violet:#a78bfa; --m-gold:#f0c060; --m-good:#4ade80; --m-warn:#f5b84a; --m-bad:#f2738a;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0f1017; --surface:#171925; --ink:#e7e8f1; --muted:#9a9fb6; --line:#2a2d3d;
+    --accent:#9d95ff; --accent-soft:#232347;
+    --p1:#ff8197; --p1-soft:#3a1b24; --p2:#f2b75b; --p2-soft:#352812; --p3:#b6bdd4; --p3-soft:#232737;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0f1017; --surface:#171925; --ink:#e7e8f1; --muted:#9a9fb6; --line:#2a2d3d;
+  --accent:#9d95ff; --accent-soft:#232347;
+  --p1:#ff8197; --p1-soft:#3a1b24; --p2:#f2b75b; --p2-soft:#352812; --p3:#b6bdd4; --p3-soft:#232737;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font:400 15.5px/1.6 var(--sans);padding-inline:20px;padding-block:0 64px}
+.wrap{max-width:1080px;margin:0 auto}
+.read{max-width:720px}
+h1,h2,h3{text-wrap:balance;margin:0}
+h1{font:400 clamp(40px,7vw,64px)/1.02 var(--serif);letter-spacing:-.01em}
+h2{font:400 34px/1.1 var(--serif)}
+h3{font:600 17px/1.35 var(--sans)}
+p{margin:0}
+a{color:var(--accent)}
+.eyebrow{font:500 12px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.stack{display:flex;flex-direction:column;gap:14px}
+section{padding-block:56px 8px;border-top:1px solid var(--line);margin-top:48px}
+header.top{padding-block:56px 8px;display:flex;flex-direction:column;gap:18px}
+.lede{font-size:19px;line-height:1.55;max-width:660px}
+.meta{font:400 13px/1.6 var(--mono);color:var(--muted)}
+.toc{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
+.toc a{font:500 13px/1 var(--sans);text-decoration:none;color:var(--ink);border:1px solid var(--line);background:var(--surface);padding:8px 12px;border-radius:999px}
+.toc a:hover,.toc a:focus-visible{border-color:var(--accent);outline:none}
+
+/* verdict */
+.verdict{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px;margin-top:8px}
+.verdict div{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px;display:flex;flex-direction:column;gap:6px}
+.verdict b{font:500 12px/1 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+
+/* loop */
+.loop{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-top:20px}
+.step{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px;display:flex;flex-direction:column;gap:8px;min-width:0}
+.step .q{font:400 22px/1.15 var(--serif)}
+.step .now{font-size:13px;color:var(--muted)}
+.step .gap{font-size:13px;color:var(--p1)}
+@media (max-width:760px){.loop{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:440px){.loop{grid-template-columns:1fr}}
+
+/* findings */
+.filters{display:flex;flex-wrap:wrap;gap:8px;margin-top:18px}
+.filters button{font:500 13px/1 var(--sans);color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:8px 13px;cursor:pointer}
+.filters button[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.filters button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.findings{display:flex;flex-direction:column;gap:12px;margin-top:18px}
+.f{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:18px 18px 18px 16px;display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 14px}
+.f > :not(.sev){grid-column:2}
+.sev{grid-column:1;grid-row:1 / span 4;font:600 12px/1 var(--mono);padding:6px 8px;border-radius:6px;height:max-content;letter-spacing:.04em}
+.sev.p1{color:var(--p1);background:var(--p1-soft)} .sev.p2{color:var(--p2);background:var(--p2-soft)} .sev.p3{color:var(--p3);background:var(--p3-soft)}
+.f .where{font:400 12px/1.4 var(--mono);color:var(--muted)}
+.f .ev{font-size:14.5px;color:var(--muted)}
+.f .fix{font-size:14.5px}
+.f .fix::before{content:"Change: ";font-weight:600;color:var(--ink)}
+.count{font:400 13px/1 var(--mono);color:var(--muted);margin-top:14px}
+
+/* IA */
+.ia{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-top:20px}
+.ia div{border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:16px;display:flex;flex-direction:column;gap:8px}
+.ia .from{font:400 12px/1.5 var(--mono);color:var(--muted)}
+.ia .tabname{font:400 26px/1 var(--serif)}
+.ia .sub{font:500 12px/1 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+
+/* mocks */
+.mocks{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px;margin-top:22px}
+.mocks .wide{grid-column:1/-1}
+@media (max-width:860px){.mocks{grid-template-columns:1fr}}
+figure{margin:0;display:flex;flex-direction:column;gap:10px;min-width:0}
+figcaption{font-size:14px;color:var(--muted)}
+figcaption b{color:var(--ink)}
+.mock{background:var(--m-bg);color:var(--m-ink);border-radius:14px;border:1px solid var(--m-line);overflow:hidden;font:400 13px/1.45 var(--sans);min-width:0}
+.m-bar{display:flex;align-items:center;gap:14px;padding:12px 16px;border-bottom:1px solid var(--m-line);flex-wrap:wrap}
+.m-logo{font:400 19px/1 var(--serif);letter-spacing:.06em;color:var(--m-ink)}
+.m-tabs{display:flex;gap:4px;flex-wrap:wrap}
+.m-tabs span{padding:6px 10px;border-radius:7px;color:var(--m-dim);font-size:12.5px}
+.m-tabs span.on{background:#20223a;color:var(--m-ink)}
+.m-right{margin-left:auto;display:flex;gap:10px;align-items:center;font:400 11.5px/1 var(--mono);color:var(--m-dim)}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--m-good);display:inline-block}
+.oracle-chip{border:1px solid #3b3566;background:#1c1a33;color:var(--m-violet);padding:5px 9px;border-radius:999px}
+.m-body{padding:18px 16px;display:flex;flex-direction:column;gap:14px}
+.m-h{font:400 26px/1.1 var(--serif);color:var(--m-ink)}
+.m-sub{color:var(--m-dim);font-size:12.5px}
+.score{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:12px;align-items:center;background:var(--m-panel);border:1px solid var(--m-line);border-radius:12px;padding:14px}
+.score .t{display:flex;flex-direction:column;gap:2px;min-width:0}
+.score .t:last-child{text-align:right}
+.score .nm{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.score .big{font:500 24px/1.1 var(--mono);font-variant-numeric:tabular-nums}
+.score .sm{font:400 11.5px/1.3 var(--mono);color:var(--m-dim)}
+.score .mid{text-align:center;font:500 12px/1.3 var(--mono);color:var(--m-good)}
+.moves{display:flex;flex-direction:column;gap:10px}
+.move{background:var(--m-panel);border:1px solid var(--m-line);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:10px}
+.move .k{font:500 10.5px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase}
+.k.lineup{color:var(--m-cyan)} .k.waiver{color:var(--m-good)} .k.plan{color:var(--m-gold)} .k.trade{color:var(--m-violet)}
+.move .act{font-size:15px;font-weight:600}
+.move .why{color:var(--m-dim);font-size:12.5px}
+.vs{display:grid;grid-template-columns:52px minmax(0,1fr) 74px;gap:6px 8px;align-items:center;font:400 11.5px/1 var(--mono);color:var(--m-dim)}
+.bar{height:7px;border-radius:4px;background:#262838;position:relative;overflow:hidden}
+.bar i{position:absolute;left:0;top:0;bottom:0;border-radius:4px}
+.bar i.stats{background:var(--m-cyan)} .bar i.stars{background:var(--m-violet)}
+.vs .val{text-align:right;font-variant-numeric:tabular-nums;color:var(--m-ink)}
+.btns{display:flex;gap:8px;flex-wrap:wrap}
+.btn{font:500 12px/1 var(--sans);padding:8px 11px;border-radius:8px;border:1px solid var(--m-line);color:var(--m-ink);background:#20223a}
+.btn.pri{background:var(--m-cyan);border-color:var(--m-cyan);color:#06222a}
+.verdict-line{font:500 12px/1.35 var(--mono);color:var(--m-ink)}
+.verdict-line em{font-style:normal;color:var(--m-violet)}
+
+/* player list mock */
+.plist{display:flex;flex-direction:column}
+.prow{display:grid;grid-template-columns:minmax(0,1fr) 62px 62px 74px;gap:10px;align-items:center;padding:11px 14px;border-top:1px solid var(--m-line)}
+@media (max-width:480px){.prow{grid-template-columns:minmax(0,1fr) 40px 44px 50px;gap:8px;padding:11px 12px}.pn span{white-space:normal}}
+.prow.head{font:500 10.5px/1 var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--m-dim);border-top:none;position:sticky;top:0;background:var(--m-bg)}
+.pn{display:flex;flex-direction:column;gap:3px;min-width:0}
+.pn b{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pn span{font:400 11px/1.2 var(--mono);color:var(--m-dim)}
+.num{font:500 14px/1 var(--mono);font-variant-numeric:tabular-nums;text-align:right}
+.tier{font:500 11px/1 var(--mono);padding:5px 7px;border-radius:6px;text-align:center}
+.tier.hi{background:#173527;color:var(--m-good)} .tier.mid{background:#3a2e14;color:var(--m-warn)} .tier.lo{background:#3a1b25;color:var(--m-bad)}
+.addbtn{font:500 11.5px/1 var(--sans);padding:7px 8px;border-radius:7px;background:#173527;color:var(--m-good);text-align:center;border:1px solid #24553d}
+
+/* standings mock */
+.st{display:grid;grid-template-columns:22px minmax(0,1fr) 46px 64px 84px;gap:10px;align-items:center;padding:10px 14px;border-top:1px solid var(--m-line);font-variant-numeric:tabular-nums}
+.st.head{font:500 10.5px/1 var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--m-dim);border-top:none}
+.st .rk{font:500 12px/1 var(--mono);color:var(--m-dim)}
+.st .tm{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.st .tm small{font-weight:400;color:var(--m-cyan);margin-left:6px;font-size:11px}
+.st .rec{font:500 13px/1 var(--mono)}
+.st .pf{font:400 12.5px/1 var(--mono);color:var(--m-dim);text-align:right}
+.spirit{font:400 11px/1 var(--mono);color:var(--m-dim);display:flex;align-items:center;gap:6px;justify-content:flex-end}
+.spirit i{width:34px;height:5px;border-radius:3px;background:#262838;position:relative;display:inline-block;overflow:hidden}
+.spirit i::after{content:"";position:absolute;inset:0 auto 0 0;width:var(--w);background:var(--m-violet)}
+.st.me{background:#191a30}
+
+/* dial mock */
+.dial{display:flex;flex-direction:column;gap:12px}
+.track{position:relative;height:10px;border-radius:6px;background:linear-gradient(90deg,var(--m-cyan),var(--m-violet))}
+.knob{position:absolute;top:50%;left:35%;width:20px;height:20px;border-radius:50%;background:var(--m-ink);border:3px solid var(--m-bg);transform:translate(-50%,-50%);box-shadow:0 0 0 1px var(--m-line)}
+.ends{display:flex;justify-content:space-between;font:400 11.5px/1 var(--mono);color:var(--m-dim)}
+.changes{display:flex;flex-direction:column;gap:6px;font-size:12.5px}
+.changes div{display:flex;justify-content:space-between;gap:10px;border:1px solid var(--m-line);border-radius:8px;padding:8px 10px;background:var(--m-panel)}
+.changes span:last-child{font:400 11.5px/1.3 var(--mono);color:var(--m-dim);text-align:right}
+
+/* copy table */
+.tblwrap{overflow-x:auto;margin-top:18px;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;min-width:620px;font-size:14px}
+th,td{text-align:left;padding:11px 14px;border-top:1px solid var(--line);vertical-align:top}
+thead th{border-top:none;font:500 11.5px/1 var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+td:first-child{font-family:var(--mono);font-size:13px;color:var(--muted)}
+td:nth-child(2){font-weight:600}
+
+/* plan */
+.plan{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px;margin-top:20px}
+.plan div{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px;display:flex;flex-direction:column;gap:8px}
+.plan ol{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px;font-size:14.5px}
+.plan h3 span{font:400 12px/1 var(--mono);color:var(--muted);margin-left:6px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+<header class="top">
+  <span class="eyebrow">Design review · one.seance.sh · 2026 week 5</span>
+  <h1>Oneiromancy UX Review</h1>
+  <p class="lede">The app now shows real league data and has a voice nobody else has. What it lacks is a point of view about the manager's week. Every screen shows celestial scores; almost none of them end in a decision. This review proposes organizing the app around the four calls a Sleeper manager makes, with the stars as a lens you can turn up or down.</p>
+  <p class="meta">Reviewed live in Chromium at 1440×900 and 390×844 as McTwerkface (ASStrologians, Toxic Trash Talkers, 12-team dynasty superflex). Every number below is from that session.</p>
+  <nav class="toc" aria-label="Sections">
+    <a href="#job">The job</a><a href="#findings">Findings</a><a href="#structure">Structure</a><a href="#mocks">Mocks</a><a href="#copy">Copy</a><a href="#plan">Plan</a>
+  </nav>
+  <div class="verdict">
+    <div><b>Keep</b><p>The voice and visual world. Real Sleeper data end to end. Week selector, roster slots, bye matrix, standings.</p></div>
+    <div><b>Fix first</b><p>No screen answers "what should I do this week". Stars never turn into start, add, drop or trade calls.</p></div>
+    <div><b>Cut or fold</b><p>Draft-day leftovers, repeated explainers, a second nav bar, four status badges, filler text that repeats on every player.</p></div>
+  </div>
+</header>
+
+<section id="job">
+  <div class="read stack">
+    <span class="eyebrow">01 · The job</span>
+    <h2>A manager's week is four questions</h2>
+    <p>The app's goal is to help a Sleeper manager acquire and position players using celestial standings. In season that means four recurring calls. Today the answers are spread across five tabs, and none of the tabs ends in one.</p>
+  </div>
+  <div class="loop">
+    <div class="step"><span class="eyebrow">Positioning</span><span class="q">Who do I start?</span><span class="now">Now: a start/sit pair that compares a starter with a same-position bench player (Taylor 18.9 over Braelon Allen 15.3).</span><span class="gap">Missing: a lineup check across all slots.</span></div>
+    <div class="step"><span class="eyebrow">Acquiring</span><span class="q">Who do I add?</span><span class="now">Now: a 196-row board plus 5 waiver cards on another tab, ranked by a draft-era "DraftScore".</span><span class="gap">Missing: need-aware picks and a path to Sleeper.</span></div>
+    <div class="step"><span class="eyebrow">Acquiring</span><span class="q">Who do I trade with?</span><span class="now">Now: 12 roster cards with 180 rows, and Divine Swaps, which is empty in live leagues.</span><span class="gap">Missing: any trade framing at all.</span></div>
+    <div class="step"><span class="eyebrow">Context</span><span class="q">Where do I stand?</span><span class="now">Now: Standings tab (added this week), bye matrix, matchup history.</span><span class="gap">Mostly there; needs to lead, not trail.</span></div>
+  </div>
+</section>
+
+<section id="findings">
+  <div class="read stack">
+    <span class="eyebrow">02 · Findings</span>
+    <h2>Seventeen findings, worst first</h2>
+    <p>P1 blocks the app's purpose. P2 costs trust or time on every visit. P3 is polish. Each finding names where it shows up, what I saw, and the change.</p>
+  </div>
+  <div class="filters" role="group" aria-label="Filter findings by priority">
+    <button type="button" data-f="all" aria-pressed="true">All</button>
+    <button type="button" data-f="p1" aria-pressed="false">P1 · purpose</button>
+    <button type="button" data-f="p2" aria-pressed="false">P2 · trust and time</button>
+    <button type="button" data-f="p3" aria-pressed="false">P3 · polish</button>
+  </div>
+  <p class="count" id="count" aria-live="polite">Showing 17 findings</p>
+  <div class="findings" id="findings-list">
+
+    <article class="f" data-p="p1"><span class="sev p1">P1</span>
+      <h3>Nothing answers "what should I do this week"</h3>
+      <p class="where">Oneiromancy tab (home)</p>
+      <p class="ev">Home opens on "Ideal Team &amp; League Telemetry": a matchup card, four stat tiles, a radar chart and an aspect reader. Actions live on Matchups, Player Board and Marketplace. A manager has to visit three tabs and synthesize them alone.</p>
+      <p class="fix">Make home a short, ranked list of this week's moves (lineup, waiver, plan ahead, trade idea), each with a one-line reason in both stats and stars. See mock A.</p>
+    </article>
+
+    <article class="f" data-p="p1"><span class="sev p1">P1</span>
+      <h3>Star scores never reach the lineup</h3>
+      <p class="where">Matchups → player favorability cards; home → start/sit</p>
+      <p class="ev">Malachi Fields (WR2) is "Celestially Challenged" at 61.6 and projects 5.4 points. Kalif Raymond sits on your bench at 7.6 points. Nothing connects the two. The start/sit card only ever compares a starter with a bench player at the same position, so it recommends the obvious (start Jonathan Taylor).</p>
+      <p class="fix">Run a lineup check over every slot, including FLEX and SUPER_FLEX. When stats and stars disagree, say so and let the λ dial break the tie, e.g. "Stats favor Raymond by 2.2 pts, stars favor Fields 62 to 50. At λ 0.35, start Raymond."</p>
+    </article>
+
+    <article class="f" data-p="p1"><span class="sev p1">P1</span>
+      <h3>Ten scores, no hierarchy</h3>
+      <p class="where">Every player and team surface</p>
+      <p class="ev">One player carries DraftScore, Spirit, Harmony, Wk Fav, VOR, projection (two kinds), and a 5-tier breakdown. Teams add Composite, Astral Favorability Index and Squad Harmony. All are 0–100 and none is marked as the one to act on. "DS" is never expanded on the board.</p>
+      <p class="fix">Show two numbers per player everywhere: Stats (this week's projection) and Stars (this week's favorability), plus one Oracle score that blends them by λ and drives every ranking. Move the rest into the player drawer.</p>
+    </article>
+
+    <article class="f" data-p="p1"><span class="sev p1">P1</span>
+      <h3>The λ dial is hidden on its own tab</h3>
+      <p class="where">Scoring Model</p>
+      <p class="ev">λ is the one control that expresses "how much do I trust the stars", and it reorders every list in the app. It sits below a decorative astrolabe, previews only Josh Allen (not available to you), and is duplicated in Settings.</p>
+      <p class="fix">Put λ in the header as a chip ("Oracle 0.35"). Opening it shows which of your moves change if you move it. See mock F.</p>
+    </article>
+
+    <article class="f" data-p="p1"><span class="sev p1">P1</span>
+      <h3>No path from advice to Sleeper</h3>
+      <p class="where">Waiver cards, Player Board, spotlight</p>
+      <p class="ev">"Recommended upgrade: +42.7 DS gain" has no button. The spotlight is labelled "read-only". The user has to switch apps and search for the player by hand.</p>
+      <p class="fix">Every move gets one primary action that opens the league in Sleeper, plus the player name ready to copy.</p>
+    </article>
+
+    <article class="f" data-p="p2"><span class="sev p2">P2</span>
+      <h3>Colors contradict their own legends</h3>
+      <p class="where">Player Board Wk Fav pill; Matchups legend vs cards; standings badges</p>
+      <p class="ev">Cade Otton's "75 FAV" pill is red, the same red as "50 CHG". The Matchups legend marks Astrally Favored amber and Neutral grey; the cards render them green and amber with a warning triangle. BakchodLaunde (4-0, first place) wears a red "Discordant (At Risk)" badge beside its record.</p>
+      <p class="fix">One semantic scale used everywhere: green favored, amber neutral, red challenged. Use the accent hue only for brand. Show spirit tier on standings as a quiet secondary bar, never as a warning. See mock E.</p>
+    </article>
+
+    <article class="f" data-p="p2"><span class="sev p2">P2</span>
+      <h3>Repeated celestial text reads as fake</h3>
+      <p class="where">Matchups; player catalysts and risks; marketplace cards</p>
+      <p class="ev">Every matchup shows "Fire &amp; Air" vs "Earth &amp; Water" and "Jupiter Trine Mars (+14.2)". Every player lists "High volume red-zone target share" and "Tough division matchup concentration". These are constants in the code. The marketplace marks Fire vs Water "Aligned".</p>
+      <p class="fix">Derive these from each team's and player's actual traits, or remove them. Once a reader spots one repeated line, they stop trusting the whole page.</p>
+    </article>
+
+    <article class="f" data-p="p2"><span class="sev p2">P2</span>
+      <h3>Pages are very long and say things several times</h3>
+      <p class="where">All tabs, worst on phone</p>
+      <p class="ev">Home is 7 screens tall on desktop and 16 on a phone. Player Board is 12 and 27. Each waiver card is about 900 px and states the same swap four times: header chips, two side cards, a comparison table, then a quote and a footer.</p>
+      <p class="fix">One summary line per item with details on demand. Waiver cards fit in about 140 px (mock C). Paginate or virtualize the board and make its header sticky.</p>
+    </article>
+
+    <article class="f" data-p="p2"><span class="sev p2">P2</span>
+      <h3>Explainers sit on top of the content</h3>
+      <p class="where">Matchups, Dashboard, Scoring Model</p>
+      <p class="ev">Matchups opens with a four-factor explainer and a legend before the matchup. Every page's subtitle describes the software ("High-density mobile data grid with instant search…") instead of the user's task.</p>
+      <p class="fix">Lead with the answer. Move explanations behind an info button or into a single Oracle guide.</p>
+    </article>
+
+    <article class="f" data-p="p2"><span class="sev p2">P2</span>
+      <h3>Competitor rosters are a wall, not a tool</h3>
+      <p class="where">Home → League Draft Status &amp; Competitor Rosters</p>
+      <p class="ev">Twelve cards and 180 rows, mostly red "Discordant" badges, with starters out of lineup order (a TE listed first). The data holds real trade leverage: BakchodLaunde and The Squeal Queens roster only 2 QBs in a superflex league; you roster 3.</p>
+      <p class="fix">Turn this into a Trades tab that ranks partners by need against your surplus. See mock D.</p>
+    </article>
+
+    <article class="f" data-p="p2"><span class="sev p2">P2</span>
+      <h3>Waiver suggestions ignore positional need</h3>
+      <p class="where">Marketplace</p>
+      <p class="ev">Four of five suggestions add a tight end. One drops a quarterback (Tua) in a superflex league to add a TE you would not start over Ferguson or Likely. The checkbox "Allow signed players to swap for free agents" is hard to parse.</p>
+      <p class="fix">Weight suggestions by lineup need and bye coverage. Rename the toggle "Suggest dropping players on an NFL roster".</p>
+    </article>
+
+    <article class="f" data-p="p2"><span class="sev p2">P2</span>
+      <h3>Draft-day features linger after the draft</h3>
+      <p class="where">Path of Ascension, DraftScore, "Slot N" labels, Ascension timeline</p>
+      <p class="ev">"15-round divination roadmap collapsed. Roster is fully ascended." still takes a panel on home in week 5. Standings rows lead with draft slot.</p>
+      <p class="fix">Switch modes when the draft is complete: hide draft panels, rename DraftScore to Oracle score, drop slot labels.</p>
+    </article>
+
+    <article class="f" data-p="p3"><span class="sev p3">P3</span>
+      <h3>Two navigation bars on desktop, four status badges</h3>
+      <p class="where">Global header</p>
+      <p class="ev">The top tab row and the phone bottom bar both show at 1440 px. The header carries a Live/Mock switch, a LIVE pill, a "LIVE SYNC" strip, and raw league and draft IDs.</p>
+      <p class="fix">Bottom bar on phones only. One sync indicator ("Synced 2 min ago"). Move Mock and the IDs into Settings.</p>
+    </article>
+
+    <article class="f" data-p="p3"><span class="sev p3">P3</span>
+      <h3>Phone layout overflows on the Player Board</h3>
+      <p class="where">Player Board at 390 px</p>
+      <p class="ev">The page is 415 px wide on a 390 px screen; the position chip row pushes it. Names truncate ("Michael M…", "Pat Freier…") while each card shows both an "AVAILABLE" and an "OPEN" chip.</p>
+      <p class="fix">Let the chip row scroll inside its own container, drop the duplicate status chip, give the name the full first line.</p>
+    </article>
+
+    <article class="f" data-p="p3"><span class="sev p3">P3</span>
+      <h3>Table details</h3>
+      <p class="where">Player Board table</p>
+      <p class="ev">Team cells wrap on some rows ("DAL / (14)") and not others. The bye number in parentheses has no label. "PROJ (SLP / NFL)" is two numbers that usually match.</p>
+      <p class="fix">Fixed column widths, "Bye 10" spelled out, one projection column with league scoring.</p>
+    </article>
+
+    <article class="f" data-p="p3"><span class="sev p3">P3</span>
+      <h3>Weight sliders say locked while they move</h3>
+      <p class="where">Scoring Model → Divination Tier Weights</p>
+      <p class="ev">Each weight has a slider and a second, redundant progress bar. The total reads "100% CANONICAL HARMONY (LOCKED)". Factor names here (Stadium Feng Shui, Jersey Gematria) differ from the Matchups factors (Spirit Baseline, Astral Transit).</p>
+      <p class="fix">One control per weight, a live total, and one vocabulary for factors across the app.</p>
+    </article>
+
+    <article class="f" data-p="p3"><span class="sev p3">P3</span>
+      <h3>Decoration takes the first screen of Scoring Model</h3>
+      <p class="where">Scoring Model</p>
+      <p class="ev">The animated astrolabe fills the viewport with badges like "SPEED 2.0x" and "&lt;0.1ms" that mean nothing to a manager.</p>
+      <p class="fix">Shrink it to a header ornament, or use it as the λ dial itself.</p>
+    </article>
+  </div>
+</section>
+
+<section id="structure">
+  <div class="read stack">
+    <span class="eyebrow">03 · Structure</span>
+    <h2>Four tabs, one dial</h2>
+    <p>Reorganize around the weekly calls. The method (λ, weights, the encyclopedia) moves into one Oracle panel opened from the header chip.</p>
+  </div>
+  <div class="ia">
+    <div><span class="sub">Positioning</span><span class="tabname">This Week</span><p>Matchup score, ranked moves, lineup check, bye warnings for the next three weeks.</p><span class="from">from: Oneiromancy, Matchups, start/sit, bye matrix</span></div>
+    <div><span class="sub">Acquiring</span><span class="tabname">Waivers</span><p>Need-aware suggestions on top, the full free-agent list below with Stats, Stars and Oracle.</p><span class="from">from: Player Board, Marketplace waivers, spotlight</span></div>
+    <div><span class="sub">Acquiring</span><span class="tabname">Trades</span><p>Partners ranked by need against your surplus, with element complements as the celestial angle.</p><span class="from">from: competitor rosters, Divine Swaps</span></div>
+    <div><span class="sub">Context</span><span class="tabname">League</span><p>Standings first, matchup history, each team's roster on tap.</p><span class="from">from: leaderboard, roster cards</span></div>
+  </div>
+</section>
+
+<section id="mocks">
+  <div class="read stack">
+    <span class="eyebrow">04 · Mocks</span>
+    <h2>What it could look like</h2>
+    <p>Built in the app's own palette with your real week-5 data. Verdicts that depend on the blend are illustrative; the numbers come from Sleeper and the current app.</p>
+  </div>
+  <div class="mocks">
+
+    <figure class="wide">
+      <div class="mock" role="img" aria-label="Mock of the This Week home screen">
+        <div class="m-bar">
+          <span class="m-logo">✦ ONEIROMANCY</span>
+          <span class="m-tabs"><span class="on">This Week</span><span>Waivers</span><span>Trades</span><span>League</span></span>
+          <span class="m-right"><span class="oracle-chip">Oracle λ 0.35 · mostly stats</span><span><span class="dot"></span> Synced 2 min ago</span></span>
+        </div>
+        <div class="m-body">
+          <div><div class="m-h">Week 5 · Oct 8 – 12</div><div class="m-sub">Three moves for this week, one to plan for.</div></div>
+          <div class="score">
+            <div class="t"><span class="nm">ASStrologians</span><span class="big">19.10</span><span class="sm">live · proj 127.15</span></div>
+            <div class="mid">61.8%<br>to win</div>
+            <div class="t"><span class="nm">toots n' scoots</span><span class="big">0.00</span><span class="sm">live · proj 121.21</span></div>
+          </div>
+          <div class="moves">
+            <div class="move">
+              <span class="k lineup">Lineup · WR2</span>
+              <span class="act">Start Kalif Raymond over Malachi Fields</span>
+              <div class="vs"><span>Stats</span><span class="bar"><i class="stats" style="width:76%"></i></span><span class="val">7.6 / 5.4</span><span>Stars</span><span class="bar"><i class="stars" style="width:50%"></i></span><span class="val">50 / 62</span></div>
+              <span class="verdict-line">Stats favor Raymond, stars favor Fields. <em>At λ 0.35 the stats win.</em></span>
+              <div class="btns"><span class="btn pri">Set lineup in Sleeper ↗</span><span class="btn">Why?</span></div>
+            </div>
+            <div class="move">
+              <span class="k waiver">Waiver · TE</span>
+              <span class="act">Add Cade Otton (TB), drop Caleb Douglas</span>
+              <span class="why">Douglas is Out (ankle). Otton projects 8.7 and reads 75, Astrally Favored.</span>
+              <div class="btns"><span class="btn pri">Open waivers in Sleeper ↗</span><span class="btn">Compare</span></div>
+            </div>
+            <div class="move">
+              <span class="k plan">Plan ahead · Week 8</span>
+              <span class="act">Winston, Fields and Likely share the NYG bye</span>
+              <span class="why">You lose your QB1 and WR2. Week 6 also loses St. Brown and Chase Brown, but you still project 88.6 to FantaCTE's 63.9.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <figcaption><b>A · This Week.</b> The home screen answers the week in order of urgency. Each move shows Stats and Stars side by side and says which way λ tipped it. One primary button leaves for Sleeper.</figcaption>
+    </figure>
+
+    <figure>
+      <div class="mock" role="img" aria-label="Mock of the waiver list with Stats, Stars and Oracle columns">
+        <div class="m-body" style="padding-bottom:6px"><div class="m-h" style="font-size:22px">Waivers</div><div class="m-sub">Best for your lineup at λ 0.35</div></div>
+        <div class="plist">
+          <div class="prow head"><span>Player</span><span style="text-align:right">Stats</span><span style="text-align:center">Stars</span><span></span></div>
+          <div class="prow"><div class="pn"><b>Cade Otton</b><span>TE · TB · Bye 10</span></div><span class="num">8.7</span><span class="tier hi">75</span><span class="addbtn">Add</span></div>
+          <div class="prow"><div class="pn"><b>Tre' Harris</b><span>WR · LAC · Bye 7</span></div><span class="num">9.3</span><span class="tier mid">72</span><span class="addbtn">Add</span></div>
+          <div class="prow"><div class="pn"><b>Tyson Bagent</b><span>QB · CHI · Bye 10</span></div><span class="num">14.4</span><span class="tier mid">65</span><span class="addbtn">Add</span></div>
+          <div class="prow"><div class="pn"><b>Michael Mayer</b><span>TE · LV · Bye 13</span></div><span class="num">7.3</span><span class="tier lo">50</span><span class="addbtn">Add</span></div>
+        </div>
+      </div>
+      <figcaption><b>B · Player list.</b> Two numbers per player, with tier color tied to the number shown. The full name gets the whole first line, and the bye is spelled out.</figcaption>
+    </figure>
+
+    <figure>
+      <div class="mock" role="img" aria-label="Mock of a compact waiver move">
+        <div class="m-body">
+          <div class="move">
+            <span class="k waiver">Priority 1 · +8.7 pts/wk</span>
+            <span class="act">Cade Otton <span style="color:var(--m-dim);font-weight:400">for</span> Caleb Douglas</span>
+            <div class="vs"><span>Stats</span><span class="bar"><i class="stats" style="width:87%"></i></span><span class="val">8.7 / 0.0</span><span>Stars</span><span class="bar"><i class="stars" style="width:75%"></i></span><span class="val">75 / 38</span></div>
+            <span class="why">Douglas: Out (ankle), MIA bye week 6. Otton: healthy, TB bye week 10.</span>
+            <div class="btns"><span class="btn pri">Open in Sleeper ↗</span><span class="btn">Full comparison</span></div>
+          </div>
+        </div>
+      </div>
+      <figcaption><b>C · Waiver move.</b> The same swap in about 140 px instead of about 900. The lead number is the one that matters (points per week), and the rest sits behind "Full comparison".</figcaption>
+    </figure>
+
+    <figure>
+      <div class="mock" role="img" aria-label="Mock of a trade partner suggestion">
+        <div class="m-body">
+          <div class="move">
+            <span class="k trade">Trade partner · need match</span>
+            <span class="act">BakchodLaunde needs a third QB</span>
+            <span class="why">Superflex, 4-0, and only Prescott and Stafford rostered. Their byes are weeks 14 and 11, so they need cover. They roster 6 RBs; you roster 3 QBs.</span>
+            <div class="vs"><span>You give</span><span class="bar"><i class="stars" style="width:40%"></i></span><span class="val">QB</span><span>You get</span><span class="bar"><i class="stats" style="width:70%"></i></span><span class="val">RB/WR</span></div>
+            <div class="btns"><span class="btn pri">See their roster</span><span class="btn">Propose in Sleeper ↗</span></div>
+          </div>
+        </div>
+      </div>
+      <figcaption><b>D · Trades.</b> Competitor rosters become leverage: who is short where you are deep. Element complements can rank partners once those traits are real per team.</figcaption>
+    </figure>
+
+    <figure>
+      <div class="mock" role="img" aria-label="Mock of the standings table">
+        <div class="plist">
+          <div class="st head"><span>#</span><span>Team</span><span>W-L</span><span style="text-align:right">PF</span><span style="text-align:right">Spirit</span></div>
+          <div class="st"><span class="rk">1</span><span class="tm">BakchodLaunde</span><span class="rec">4-0</span><span class="pf">570.4</span><span class="spirit">72.6 <i style="--w:45%"></i></span></div>
+          <div class="st"><span class="rk">2</span><span class="tm">Skwheel Kweenz</span><span class="rec">3-1</span><span class="pf">585.1</span><span class="spirit">74.1 <i style="--w:48%"></i></span></div>
+          <div class="st"><span class="rk">3</span><span class="tm">The Wheezing Warriors</span><span class="rec">3-1</span><span class="pf">522.8</span><span class="spirit">75.6 <i style="--w:51%"></i></span></div>
+          <div class="st"><span class="rk">4</span><span class="tm">toots n' scoots</span><span class="rec">3-1</span><span class="pf">510.4</span><span class="spirit">73.5 <i style="--w:47%"></i></span></div>
+          <div class="st"><span class="rk">5</span><span class="tm">Neel before me</span><span class="rec">2-2</span><span class="pf">528.8</span><span class="spirit">73.3 <i style="--w:47%"></i></span></div>
+          <div class="st me"><span class="rk">6</span><span class="tm">ASStrologians<small>you</small></span><span class="rec">2-2</span><span class="pf">520.7</span><span class="spirit">73.6 <i style="--w:47%"></i></span></div>
+        </div>
+      </div>
+      <figcaption><b>E · League.</b> Record and points lead. Spirit stays visible as a quiet bar instead of a red warning on the first-place team.</figcaption>
+    </figure>
+
+    <figure>
+      <div class="mock" role="img" aria-label="Mock of the Oracle dial panel">
+        <div class="m-body dial">
+          <div class="m-h" style="font-size:22px">Oracle</div>
+          <div class="m-sub">How much should the stars move your decisions?</div>
+          <div class="track"><span class="knob"></span></div>
+          <div class="ends"><span>Stats only</span><span>λ 0.35</span><span>Stars only</span></div>
+          <div class="changes">
+            <div><span>Raising λ past 0.55</span><span>WR2 flips to Fields</span></div>
+            <div><span>Waiver #1</span><span>Otton at any λ</span></div>
+            <div><span>Board top 10</span><span>4 players change</span></div>
+          </div>
+        </div>
+      </div>
+      <figcaption><b>F · Oracle dial.</b> Opened from the header chip. It previews what changes in your own moves, not in an example player's score. The 0.55 flip point is illustrative.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<section id="copy">
+  <div class="read stack">
+    <span class="eyebrow">05 · Copy</span>
+    <h2>Keep the voice, add the plain label</h2>
+    <p>The mystical names are the product's charm. Pair each one with what it does so a new user can act on it without the encyclopedia.</p>
+  </div>
+  <div class="tblwrap">
+    <table>
+      <thead><tr><th>Now</th><th>Proposed</th><th>Why</th></tr></thead>
+      <tbody>
+        <tr><td>Ideal Team &amp; League Telemetry</td><td>This Week</td><td>Names the task, not the data.</td></tr>
+        <tr><td>Celestial Matchup Divination</td><td>Matchup · Week 5</td><td>Keep "divination" as the subtitle flourish.</td></tr>
+        <tr><td>Alchemical Transmutations</td><td>Waivers <span style="font-weight:400;color:var(--muted)">· Alchemical transmutations</span></td><td>Sleeper users look for "waivers".</td></tr>
+        <tr><td>High-density mobile data grid with instant search…</td><td>Free agents ranked for your lineup</td><td>Describe the user's job, not the component.</td></tr>
+        <tr><td>DraftScore · DS</td><td>Oracle score</td><td>The draft is over, and "DS" is never expanded.</td></tr>
+        <tr><td>Wk Fav · CHG / NEU / FAV</td><td>Stars this week · Challenged / Neutral / Favored</td><td>Abbreviations save little width on desktop.</td></tr>
+        <tr><td>Discordant (At Risk)</td><td>Low spirit</td><td>"At risk" on a 4-0 team reads as an error.</td></tr>
+        <tr><td>Allow signed players to swap for free agents</td><td>Suggest dropping players on an NFL roster</td><td>States what the toggle changes.</td></tr>
+        <tr><td>Divination Equilibrium</td><td>Oracle settings</td><td>It's a settings panel; the dial is the hero.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="plan">
+  <div class="read stack">
+    <span class="eyebrow">06 · Plan</span>
+    <h2>Suggested order</h2>
+  </div>
+  <div class="plan">
+    <div><h3>Quick wins<span>days</span></h3><ol><li>Fix the tier colors and the Matchups legend.</li><li>Hide the bottom nav on desktop; collapse header status into one indicator.</li><li>Fix the phone overflow on the Player Board.</li><li>Rewrite subtitles and labels per the copy table.</li><li>Hide draft panels once the draft is complete.</li><li>Remove or derive the constant transit, element and catalyst text.</li></ol></div>
+    <div><h3>Core rework<span>1–2 weeks</span></h3><ol><li>Stats / Stars / Oracle as the only three player numbers.</li><li>Lineup check across all slots, with λ as the tie-break.</li><li>This Week home with ranked moves and Sleeper links.</li><li>λ as a header chip with a live preview panel.</li><li>Compact waiver cards with need-aware ranking.</li></ol></div>
+    <div><h3>New capability<span>later</span></h3><ol><li>Trades tab from roster need and surplus.</li><li>Real per-team element mix for matchup and trade copy.</li><li>Bye planning that suggests pickups two to three weeks ahead.</li></ol></div>
+  </div>
+</section>
+</div>
+
+<script>
+(function(){
+  var buttons=[].slice.call(document.querySelectorAll('.filters button'));
+  var items=[].slice.call(document.querySelectorAll('#findings-list .f'));
+  var count=document.getElementById('count');
+  function apply(f){
+    var n=0;
+    items.forEach(function(el){var show=f==='all'||el.getAttribute('data-p')===f;el.hidden=!show;if(show)n++;});
+    buttons.forEach(function(b){b.setAttribute('aria-pressed',String(b.getAttribute('data-f')===f));});
+    count.textContent='Showing '+n+' finding'+(n===1?'':'s');
+    try{localStorage.setItem('ux-review-filter',f);}catch(e){}
+  }
+  buttons.forEach(function(b){b.addEventListener('click',function(){apply(b.getAttribute('data-f'));});});
+  var saved='all';try{saved=localStorage.getItem('ux-review-filter')||'all';}catch(e){}
+  apply(saved);
+})();
+</script>
+</body>
+</html>

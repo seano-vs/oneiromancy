@@ -20,7 +20,8 @@ import React, { useContext, useEffect } from 'react';
 import PositionalBadge from '@/components/common/PositionalBadge';
 import { CosmicPlayer, RosterSlot } from '@/types/oneiromancy';
 import { useOptionalOneiromancy } from '@/context/OneiromancyContext';
-import { classifyWeeklyFavorability, haversineDistance } from '@/lib/scoring';
+import { DEFAULT_CHAOS_LAMBDA, classifyWeeklyFavorability, haversineDistance } from '@/lib/scoring';
+import { TONE_PILL, favorabilityTone, oracleScore, starsScore } from '@/lib/oracle';
 import { X, Sparkles, Compass, Shield, ArrowRightLeft } from 'lucide-react';
 
 export interface PlayerDetailModalProps {
@@ -38,6 +39,7 @@ export const PlayerDetailModal: React.FC<PlayerDetailModalProps> = ({
   roster: propRoster,
 }) => {
   const ctx = useOptionalOneiromancy();
+  const modalLambda = ctx?.draftState?.settings?.chaos_lambda ?? DEFAULT_CHAOS_LAMBDA;
   useEffect(() => {
     if (!isOpen || typeof window === 'undefined') return;
     const onKeyDown = (e: KeyboardEvent) => {
@@ -270,16 +272,14 @@ export const PlayerDetailModal: React.FC<PlayerDetailModalProps> = ({
         {/* 5 Score Summary Cards */}
         <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 text-center font-mono">
           <div className="p-2.5 rounded-xl bg-cyan-950/40 border border-cyan-500/30">
-            <span className="text-[9px] text-cyan-400 uppercase font-bold block">DraftScore</span>
-            <span className="text-xl font-bold text-cyan-300">{player.draft_score.toFixed(1)}</span>
+            <span className="text-[9px] text-cyan-400 uppercase font-bold block">Oracle (λ {modalLambda.toFixed(2)})</span>
+            <span className="text-xl font-bold text-cyan-300">{oracleScore(player, modalLambda).toFixed(1)}</span>
           </div>
-          <div className="p-2.5 rounded-xl bg-emerald-950/40 border border-emerald-500/30">
-            <span className="text-[9px] text-emerald-300 uppercase font-bold block">Wk Favorability</span>
-            <span className="text-xl font-bold text-emerald-300">
-              {candidateFav.toFixed(0)}
-            </span>
-            <span className="text-[8px] block text-emerald-400 font-mono truncate">
-              {classifyWeeklyFavorability(candidateFav)}
+          <div className={`p-2.5 rounded-xl border ${TONE_PILL[favorabilityTone(starsScore(player))]}`}>
+            <span className="text-[9px] uppercase font-bold block">Stars this week</span>
+            <span className="text-xl font-bold">{starsScore(player).toFixed(0)}</span>
+            <span className="text-[8px] block font-mono truncate">
+              {classifyWeeklyFavorability(starsScore(player))}
             </span>
           </div>
           <div className="p-2.5 rounded-xl bg-purple-950/40 border border-purple-500/30">
@@ -325,7 +325,7 @@ export const PlayerDetailModal: React.FC<PlayerDetailModalProps> = ({
                 const rosFav = rosterPlayer.favorability_score ?? 70;
 
                 const projDiff = candidateProj - rosProj;
-                const dsDiff = player.draft_score - rosterPlayer.draft_score;
+                const dsDiff = oracleScore(player, modalLambda) - oracleScore(rosterPlayer, modalLambda);
                 const vorDiff = player.market_vor - rosterPlayer.market_vor;
                 const spiritDiff = player.spirit_score - rosterPlayer.spirit_score;
                 const harmDiff = player.harmony_score - rosterPlayer.harmony_score;
@@ -383,8 +383,8 @@ export const PlayerDetailModal: React.FC<PlayerDetailModalProps> = ({
                         {isSelf
                           ? 'CURRENTLY INSPECTED'
                           : isUpgrade
-                            ? `⚡ UPGRADE (${fmtDiff(projDiff)} PTS / ${fmtDiff(dsDiff)} DS)`
-                            : `HOLD ${rosterPlayer.name.split(' ')[1] || rosterPlayer.name} (${fmtDiff(dsDiff)} DS)`}
+                            ? `UPGRADE (${fmtDiff(projDiff)} pts, ${fmtDiff(dsDiff)} Oracle)`
+                            : `KEEP ${rosterPlayer.name} (${fmtDiff(dsDiff)} Oracle)`}
                       </span>
                     </div>
 
@@ -405,9 +405,9 @@ export const PlayerDetailModal: React.FC<PlayerDetailModalProps> = ({
                       </div>
 
                       <div className="p-1.5 rounded bg-slate-950/70">
-                        <span className="text-[8px] text-slate-500 uppercase block">DraftScore</span>
+                        <span className="text-[8px] text-slate-500 uppercase block">Oracle</span>
                         <span className="text-slate-200 font-bold">
-                          {player.draft_score.toFixed(1)} vs {rosterPlayer.draft_score.toFixed(1)}
+                          {oracleScore(player, modalLambda).toFixed(1)} vs {oracleScore(rosterPlayer, modalLambda).toFixed(1)}
                         </span>
                         <span
                           className={`block font-bold ${

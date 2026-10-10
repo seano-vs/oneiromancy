@@ -45,6 +45,7 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
     refreshDraft,
     loadMockData,
     setMode,
+    mode,
     syncError,
   } = useOneiromancy();
 
@@ -445,32 +446,6 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
           )}
         </div>
 
-        {/* Chaos Lambda Slider */}
-        <div className="space-y-1.5 font-mono text-xs">
-          <div className="flex justify-between items-center">
-            <label htmlFor="chaos-lambda-slider" className="text-slate-300 font-semibold block">
-              Sacred Chaos Factor (λ)
-            </label>
-            <span className="text-purple-300 font-bold">
-              {(draftState?.settings?.chaos_lambda ?? 0.65).toFixed(2)}
-            </span>
-          </div>
-          <input
-            id="chaos-lambda-slider"
-            type="range"
-            min="0"
-            max="1"
-            step="0.01"
-            value={draftState?.settings?.chaos_lambda ?? 0.65}
-            onChange={(e) => updateChaosLambda && updateChaosLambda(parseFloat(e.target.value))}
-            aria-label="Chaos Factor (λ) Slider"
-            className="w-full accent-purple-500 cursor-pointer"
-          />
-          <span className="text-[10px] text-slate-500 block">
-            Balances pure mathematical VOR (0.0) with sacred tarot and elemental divination (1.0).
-          </span>
-        </div>
-
         {/* Action Buttons: Apply & Sync and Load Mock Data */}
         <div className="space-y-2">
           <button
@@ -495,6 +470,18 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
             <Sparkles className="w-3.5 h-3.5 text-purple-200" />
             <span>🔮 Load Mock Oneiromancy Engine</span>
           </button>
+          {mode === 'mock' && hasConfiguredUsername && (
+            <button
+              type="button"
+              onClick={() => {
+                setMode && setMode('live');
+                onClose();
+              }}
+              className="w-full py-2 px-4 rounded-xl border border-cyan-500/40 text-cyan-300 font-mono text-xs hover:bg-cyan-950/40"
+            >
+              Back to my live league
+            </button>
+          )}
         </div>
 
         {/* Auto-Update Polling Status Switch */}
@@ -645,31 +632,11 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
             </span>
           </div>
           <div className="flex justify-between items-center text-[10px]">
-            <span className="text-slate-400">Oracle Weight Pillars:</span>
-            <span className="text-slate-300 font-mono">30 / 25 / 20 / 15 / 10 %</span>
+            <span className="text-slate-400">Draft ID:</span>
+            <span className="text-cyan-300 font-mono">
+              {hasConfiguredUsername && draftState?.draft_id ? draftState.draft_id : 'None'}
+            </span>
           </div>
-        </div>
-
-        {/* Cloud Run & Outbound Egress Info */}
-        <div className="p-3 rounded-xl bg-slate-950/80 border border-white/5 font-mono text-[11px] text-slate-400 space-y-1">
-          <div className="flex justify-between items-center">
-            <div className="flex items-center gap-1.5 text-cyan-400 font-bold">
-              <Globe className="w-3.5 h-3.5" />
-              <span>Outbound Egress Status</span>
-            </div>
-            <a
-              href="https://docs.sleeper.com/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-[10px] text-cyan-400 hover:text-cyan-300 underline flex items-center gap-1"
-            >
-              <span>docs.sleeper.com</span>
-              <ExternalLink className="w-2.5 h-2.5" />
-            </a>
-          </div>
-          <div>Target API: https://api.sleeper.app/v1/</div>
-          <div>Specs &amp; Rate Limits: &lt;1,000 req/min (<a href="https://docs.sleeper.com/" target="_blank" rel="noopener noreferrer" className="text-cyan-400 underline hover:text-cyan-300">Official Docs</a>)</div>
-          <div>Environment: Standalone Cloud Run / App Engine Container</div>
         </div>
 
         {/* Drawer Footer Actions */}

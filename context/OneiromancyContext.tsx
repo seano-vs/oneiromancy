@@ -100,10 +100,15 @@ export type OneiromancyTab =
   | 'dial'
   | 'chaos'
   | 'market'
-  | 'matchup';
+  | 'matchup'
+  | 'trades'
+  | 'league';
 export type SyncStatusType = 'live' | 'syncing' | 'offline';
 
-export function normalizeTab(tab: string): 'oneiromancy' | 'matchups' | 'board' | 'market' | 'chaos' {
+export function normalizeTab(
+  tab: string,
+): 'oneiromancy' | 'matchups' | 'board' | 'market' | 'chaos' | 'trades' | 'league' {
+  if (tab === 'trades' || tab === 'league') return tab;
   if (tab === 'marketplace' || tab === 'market') return 'market';
   if (tab === 'matchups' || tab === 'matchup') return 'matchups';
   if (tab === 'dial' || tab === 'chaos') return 'chaos';
@@ -1593,10 +1598,15 @@ export const OneiromancyProvider: React.FC<OneiromancyProviderProps> = ({
       if (!isAutoUpdate) return 'PAUSED / OFFLINE';
       return 'OFFLINE / CACHED';
     }
+    if (draftState.status === 'complete' || !draftState.current_pick) {
+      const t = new Date(lastSyncTimestamp);
+      const hh = String(t.getHours()).padStart(2, '0');
+      const mm = String(t.getMinutes()).padStart(2, '0');
+      return `Synced ${hh}:${mm}`;
+    }
     const currentPick = draftState.current_pick;
-    if (!currentPick) return 'LIVE';
     return `LIVE • RD ${currentPick.round} PK ${currentPick.pick_no}`;
-  }, [effectiveStatusType, mode, isAutoUpdate, draftState.current_pick]);
+  }, [effectiveStatusType, mode, isAutoUpdate, draftState.current_pick, draftState.status, lastSyncTimestamp]);
 
   // --------------------------------------------------------------------------
   // Centralized Active User Team Resolution

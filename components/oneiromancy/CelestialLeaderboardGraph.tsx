@@ -149,13 +149,13 @@ export const CelestialLeaderboardGraph: React.FC<CelestialLeaderboardGraphProps>
           </div>
           <div>
             <h3 className="font-serif text-lg font-bold text-slate-100 flex items-center gap-2">
-              <span>Celestial Leaderboard & Standings</span>
+              <span>Standings</span>
               <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-amber-950/80 border border-amber-500/40 text-amber-300 font-normal">
                 12-TEAM MATRIX
               </span>
             </h3>
             <p className="text-[11px] font-sans text-slate-400">
-              Comparative astrological rankings across Spirit, Draft, and Harmony metrics.
+              Records and points from Sleeper. Other tabs rank teams by their roster&apos;s Oracle metrics.
             </p>
           </div>
         </div>
@@ -271,9 +271,11 @@ export const CelestialLeaderboardGraph: React.FC<CelestialLeaderboardGraphProps>
                   />
 
                   <div className="truncate flex items-center gap-1.5 min-w-0">
-                    <span className="text-[10px] text-slate-500 font-mono shrink-0">
-                      Slot {item.slotNum}
-                    </span>
+                    {!hasRecords && (
+                      <span className="text-[10px] text-slate-500 font-mono shrink-0">
+                        Slot {item.slotNum}
+                      </span>
+                    )}
                     <span
                       className={`font-bold truncate ${
                         item.isUser
@@ -297,18 +299,17 @@ export const CelestialLeaderboardGraph: React.FC<CelestialLeaderboardGraphProps>
 
                 {/* Score & Verdict Badges */}
                 <div className="flex items-center gap-2 shrink-0">
+                  {/* Spirit as quiet secondary information, never a warning */}
                   <span
-                    className={`text-[9px] px-1.5 py-0.5 rounded-full border whitespace-nowrap hidden sm:inline ${
-                      item.metrics.tier === 'Favorable'
-                        ? 'bg-emerald-950/60 border-emerald-500/30 text-emerald-300'
-                        : item.metrics.tier === 'Volatile'
-                        ? 'bg-amber-950/60 border-amber-500/30 text-amber-300'
-                        : item.metrics.tier === 'Discordant'
-                        ? 'bg-rose-950/60 border-rose-500/30 text-rose-300'
-                        : 'bg-sky-950/60 border-sky-500/30 text-sky-300'
-                    }`}
-                  >
-                    {item.metrics.verdict}
+                    title={item.metrics.verdict}
+                    className="hidden sm:flex items-center gap-1.5 text-[10px] font-mono text-slate-400 whitespace-nowrap">
+                    Spirit {item.metrics.spiritScore.toFixed(1)}
+                    <span className="w-10 h-1 rounded bg-slate-800 overflow-hidden">
+                      <span
+                        className="block h-full bg-purple-400/70"
+                        style={{ width: `${Math.max(0, Math.min(100, (item.metrics.spiritScore - 50) * 2))}%` }}
+                      />
+                    </span>
                   </span>
 
                   <span

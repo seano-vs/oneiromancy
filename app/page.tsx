@@ -21,10 +21,13 @@ import { OneiromancyProvider, useOneiromancy } from '@/context/OneiromancyContex
 import NavigationShell from '@/components/common/NavigationShell';
 import OneiromancyDashboard from '@/components/screens/OneiromancyDashboard';
 import CosmicBoard from '@/components/screens/CosmicBoard';
-import ChaosDial from '@/components/screens/ChaosDial';
 import PlayerMarketplace from '@/components/screens/PlayerMarketplace';
 import MatchupsScreen from '@/components/screens/MatchupsScreen';
+import TradesScreen from '@/components/screens/TradesScreen';
+import LeagueScreen from '@/components/screens/LeagueScreen';
 import SettingsDrawer from '@/components/settings/SettingsDrawer';
+import OraclePanel from '@/components/oracle/OraclePanel';
+import { DEFAULT_CHAOS_LAMBDA } from '@/lib/scoring';
 
 function OneiromancyApp() {
   const {
@@ -41,6 +44,15 @@ function OneiromancyApp() {
     refreshDraft,
     draftState,
   } = useOneiromancy();
+
+  const [isOracleOpen, setIsOracleOpen] = useState(false);
+  // Legacy deep links to the old Scoring Model tab open the Oracle panel.
+  useEffect(() => {
+    if (activeTab === 'chaos' || activeTab === 'dial') {
+      setIsOracleOpen(true);
+      setTab('oneiromancy');
+    }
+  }, [activeTab, setTab]);
 
   // In mock mode the settings hold the demo persona; the Live button should
   // still name the user's own saved Sleeper account.
@@ -73,17 +85,35 @@ function OneiromancyApp() {
       leagueId={draftState.settings?.league_id || '9000000000000000001'}
       draftId={draftState.draft_id}
       userAvatarUrl={draftState.user_avatar_url || draftState.avatar_url}
+      oracleLambda={draftState.settings?.chaos_lambda ?? DEFAULT_CHAOS_LAMBDA}
+      onOpenOracle={() => setIsOracleOpen(true)}
     >
       {/* Screen Router with responsive transition container */}
       <div className="w-full relative transition-all duration-200">
-        {activeTab === 'oneiromancy' && <OneiromancyDashboard />}
-        {(activeTab === 'matchups' || activeTab === 'matchup') && <MatchupsScreen />}
-        {activeTab === 'board' && <CosmicBoard />}
-        {(activeTab === 'market' || activeTab === 'marketplace') && <PlayerMarketplace />}
-        {(activeTab === 'dial' || activeTab === 'chaos') && <ChaosDial />}
+        {(activeTab === 'oneiromancy' || activeTab === 'matchups' || activeTab === 'matchup') && (
+          <div className="flex flex-col gap-8">
+            <OneiromancyDashboard />
+            <section aria-labelledby="matchup-details-heading" className="flex flex-col gap-3">
+              <h2 id="matchup-details-heading" className="font-serif text-xl font-bold text-slate-100">
+                Matchup details
+              </h2>
+              <MatchupsScreen embedded />
+            </section>
+          </div>
+        )}
+        {(activeTab === 'market' || activeTab === 'marketplace' || activeTab === 'board') && (
+          <div className="flex flex-col gap-8">
+            <PlayerMarketplace section="waivers" />
+            <CosmicBoard />
+          </div>
+        )}
+        {activeTab === 'trades' && <TradesScreen />}
+        {activeTab === 'league' && <LeagueScreen />}
       </div>
 
       {/* Global Slide-up Settings Modal / Drawer */}
+      <OraclePanel isOpen={isOracleOpen} onClose={() => setIsOracleOpen(false)} />
+
       <SettingsDrawer
         isOpen={isSettingsOpen}
         onClose={() => toggleSettings(false)}

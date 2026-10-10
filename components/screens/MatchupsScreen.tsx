@@ -27,7 +27,8 @@ import {
   mockTeamComparison,
   mockWeeklyMatchup,
 } from '@/lib/mockData';
-import {calculateWinProbability} from '@/lib/scoring';
+import {calculateWinProbability, classifyWeeklyFavorability} from '@/lib/scoring';
+import {TONE_DOT, TONE_PILL, favorabilityTone} from '@/lib/oracle';
 import {
   deriveEligiblePositions,
   deriveWeeklyMatchup,
@@ -65,11 +66,14 @@ import React, {useCallback, useEffect, useMemo, useState} from 'react';
 export interface MatchupsScreenProps {
   weeklyMatchup?: WeeklyMatchup | null;
   className?: string;
+  /** Rendered under This Week: no page title, explainer collapsed. */
+  embedded?: boolean;
 }
 
 export const MatchupsScreen: React.FC<MatchupsScreenProps> = ({
   weeklyMatchup: propWeeklyMatchup,
   className = '',
+  embedded = false,
 }) => {
   const context = useOneiromancy();
   const resolveActiveMatchupWeek = useCallback(() => {
@@ -353,13 +357,9 @@ export const MatchupsScreen: React.FC<MatchupsScreenProps> = ({
     isMutedBench: boolean = false,
     cardIdx: number = 0,
   ) => {
-    const isFavored =
-      player.favorability_verdict === 'HEAVILY FAVORED' ||
-      player.favorability_verdict === 'ASTRALLY FAVORED' ||
-      (player.favorability_verdict as string) === 'FAVORED';
-    const isUnfavored =
-      player.favorability_verdict === 'CELESTIALLY CHALLENGED' ||
-      (player.favorability_verdict as string) === 'UNFAVORED';
+    const tone = favorabilityTone(player.favorability_score);
+    const isFavored = tone === 'apex' || tone === 'good';
+    const isUnfavored = tone === 'bad';
 
     const venueBonus = player.stadium?.roof_type?.includes('Dome') ? 5.0 : 10.0;
     const baseSpirit =
@@ -412,7 +412,6 @@ export const MatchupsScreen: React.FC<MatchupsScreenProps> = ({
                 )}
               </div>
               <div className="text-[10px] font-mono text-slate-400 truncate">
-                Opp: vs {player.opponent_team || player.opponent} •{' '}
                 {(
                   player.projected_points ??
                   (player.favorability_score
@@ -427,19 +426,15 @@ export const MatchupsScreen: React.FC<MatchupsScreenProps> = ({
           {/* Favorability Score & Verdict */}
           <div className="text-right flex flex-col items-end shrink-0">
             <span
-              className={`text-[9px] font-mono uppercase font-bold px-2 py-0.5 rounded-full flex items-center gap-1 ${
-                isFavored
-                  ? 'bg-emerald-950/80 border border-emerald-500/40 text-emerald-300'
-                  : isUnfavored
-                    ? 'bg-rose-950/80 border border-rose-500/40 text-rose-300'
-                    : 'bg-amber-950/80 border border-amber-500/40 text-amber-300'
+              className={`text-[9px] font-mono uppercase font-bold px-2 py-0.5 rounded-full border flex items-center gap-1 ${
+                TONE_PILL[favorabilityTone(player.favorability_score)]
               }`}>
               {isFavored ? (
-                <CheckCircle2 className="w-2.5 h-2.5 text-emerald-400" />
-              ) : (
-                <AlertTriangle className="w-2.5 h-2.5 text-rose-400" />
-              )}
-              <span>{player.favorability_verdict}</span>
+                <CheckCircle2 className="w-2.5 h-2.5" />
+              ) : isUnfavored ? (
+                <AlertTriangle className="w-2.5 h-2.5" />
+              ) : null}
+              <span>{classifyWeeklyFavorability(player.favorability_score)}</span>
             </span>
             <span className="text-xs font-mono font-bold text-cyan-300 mt-0.5">
               {player.favorability_score.toFixed(1)} / 100
@@ -601,112 +596,66 @@ export const MatchupsScreen: React.FC<MatchupsScreenProps> = ({
   return (
     <div
       className={`flex flex-col gap-6 w-full max-w-5xl mx-auto ${className}`}>
-      {/* Title & Introduction */}
-      <div className="text-center space-y-1">
-        <h2 className="font-serif text-2xl sm:text-3xl font-bold text-slate-100 tracking-wide flex items-center justify-center gap-2">
-          <Swords className="w-6 h-6 text-cyan-400" />
-          <span>Celestial Matchup Divination</span>
-        </h2>
-        <p className="text-xs text-slate-400 max-w-xl mx-auto font-sans">
-          Astrological favorability comparison by team, plus stadium
-          geographical coordinates, kickoff transits, and lunar alignment for
-          every starting warrior.
-        </p>
-      </div>
+      {/* Title (standalone only) */}
+      {!embedded && (
+        <div className="space-y-1">
+          <span className="text-[10px] font-mono uppercase tracking-widest text-purple-300/80">
+            Celestial Matchup Divination
+          </span>
+          <h2 className="font-serif text-2xl sm:text-3xl font-bold text-slate-100 tracking-wide flex items-center gap-2">
+            <Swords className="w-6 h-6 text-cyan-400" />
+            <span>Matchup</span>
+          </h2>
+        </div>
+      )}
 
-      {/* Weekly Favorability Score Definition & Guide */}
-      <GlassCard
-        variant="panel"
-        className="p-3.5 sm:p-4 rounded-xl border-cyan-500/20 bg-slate-950/70">
-        <div className="flex items-start gap-3">
-          <div className="p-2 rounded-lg bg-cyan-950/80 border border-cyan-500/40 text-cyan-400 shrink-0 mt-0.5">
-            <Sparkles className="w-4 h-4" />
-          </div>
-          <div className="space-y-1.5 flex-1 min-w-0">
-            <div className="flex items-center justify-between flex-wrap gap-1">
-              <h3 className="font-serif font-bold text-sm text-slate-100 flex items-center gap-1.5">
-                <span>
-                  Understanding Weekly Favorability & Stadium Telemetry
-                </span>
-              </h3>
-              <span className="text-[10px] font-mono text-cyan-300 bg-cyan-950/80 px-2 py-0.5 rounded border border-cyan-500/30">
-                Micro-Tactical Metric (0–100)
+      {/* How favorability works: one disclosure, matching the actual formula */}
+      <details className="group rounded-xl border border-white/10 bg-slate-950/70 text-xs">
+        <summary className="cursor-pointer list-none p-3 flex items-center justify-between gap-2 font-mono text-cyan-300">
+          <span className="flex items-center gap-1.5">
+            <Sparkles className="w-3.5 h-3.5" /> How Stars this week is scored
+          </span>
+          <span className="flex items-center gap-2 text-[10px] text-slate-400">
+            {(
+              [
+                ['≥84', 'Heavily favored', 'apex'],
+                ['75–83', 'Favored', 'good'],
+                ['65–74', 'Neutral', 'neutral'],
+                ['<65', 'Challenged', 'bad'],
+              ] as const
+            ).map(([range, label, tone]) => (
+              <span key={label} className="hidden sm:flex items-center gap-1">
+                <span className={`w-2 h-2 rounded-full ${TONE_DOT[tone]}`} />
+                {range} {label}
               </span>
-            </div>
-            <p className="text-xs font-sans text-slate-300 leading-relaxed">
-              Unlike the macro season-long <strong>DraftScore</strong> (which
-              measures overall draft asset value), the{' '}
-              <strong>Weekly Favorability Score</strong> calculates tactical
-              matchup viability for the current week based on four dynamic
-              factors:
-            </p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 pt-1 font-mono text-[11px]">
-              <div className="p-2 rounded-lg bg-slate-900/80 border border-white/5">
-                <span className="text-purple-300 font-bold block">
-                  1. Spirit Baseline (80%)
-                </span>
-                <span className="text-slate-400 text-[10px]">
-                  Natal birth chart, elemental traits & decan rulers
-                </span>
-              </div>
-              <div className="p-2 rounded-lg bg-slate-900/80 border border-white/5">
-                <span className="text-cyan-300 font-bold block">
-                  2. Stadium Feng Shui
-                </span>
-                <span className="text-slate-400 text-[10px]">
-                  Leyline geodesic distance, roof exposure & field axis
-                </span>
-              </div>
-              <div className="p-2 rounded-lg bg-slate-900/80 border border-white/5">
-                <span className="text-emerald-400 font-bold block">
-                  3. Astral Transit
-                </span>
-                <span className="text-slate-400 text-[10px]">
-                  Kickoff planetary trines (+boost) vs squares (-friction)
-                </span>
-              </div>
-              <div className="p-2 rounded-lg bg-slate-900/80 border border-white/5">
-                <span className="text-rose-400 font-bold block">
-                  4. Health / Inactivity Drag
-                </span>
-                <span className="text-slate-400 text-[10px]">
-                  -22.0 Penalty for Out / IR / inactive status
-                </span>
-              </div>
-            </div>
-            <div className="flex items-center gap-3 pt-1 font-mono text-[10px] text-slate-400 flex-wrap">
-              <span className="flex items-center gap-1">
-                <span className="w-2 h-2 rounded-full bg-emerald-400" />
-                <strong className="text-emerald-300">
-                  ≥84 HEAVILY FAVORED
-                </strong>{' '}
-                (Apex Matchup Alignment)
+            ))}
+            <ChevronDown className="w-3.5 h-3.5 group-open:rotate-180 transition-transform" />
+          </span>
+        </summary>
+        <div className="px-3 pb-3 space-y-2 text-slate-300 font-sans">
+          <p>
+            Stars this week = 0.45 × SpiritScore + 0.25 × Stadium Feng Shui + 0.8 × projected points + role
+            (+8 starter, −6 bench), minus 22 when the player is out or has no projection. SpiritScore is built
+            from the five Oracle pillars: Celestial Transits, Stadium Feng Shui, Jersey Gematria, Squad Alchemy,
+            and Tarot &amp; I-Ching.
+          </p>
+          <div className="flex flex-wrap gap-3 font-mono text-[10px] text-slate-400 sm:hidden">
+            {(
+              [
+                ['≥84', 'Heavily favored', 'apex'],
+                ['75–83', 'Favored', 'good'],
+                ['65–74', 'Neutral', 'neutral'],
+                ['<65', 'Challenged', 'bad'],
+              ] as const
+            ).map(([range, label, tone]) => (
+              <span key={label} className="flex items-center gap-1">
+                <span className={`w-2 h-2 rounded-full ${TONE_DOT[tone]}`} />
+                {range} {label}
               </span>
-              <span className="flex items-center gap-1">
-                <span className="w-2 h-2 rounded-full bg-amber-400" />
-                <strong className="text-amber-300">
-                  75–83 ASTRALLY FAVORED
-                </strong>{' '}
-                (Solid Harmonic Alignment)
-              </span>
-              <span className="flex items-center gap-1">
-                <span className="w-2 h-2 rounded-full bg-slate-400" />
-                <strong className="text-slate-300">
-                  65–74 NEUTRAL
-                </strong>{' '}
-                (Balanced Transit)
-              </span>
-              <span className="flex items-center gap-1">
-                <span className="w-2 h-2 rounded-full bg-rose-400" />
-                <strong className="text-rose-300">
-                  &lt;65 CELESTIALLY CHALLENGED
-                </strong>{' '}
-                (Planetary Friction / Injury Risk)
-              </span>
-            </div>
+            ))}
           </div>
         </div>
-      </GlassCard>
+      </details>
 
       {/* Week Selector Bar */}
       <div className="flex flex-wrap items-center justify-between gap-2 p-2 rounded-xl bg-slate-900/90 border border-white/10">
@@ -1288,8 +1237,13 @@ export const MatchupsScreen: React.FC<MatchupsScreenProps> = ({
                 <div className="p-3 rounded-lg bg-cyan-950/20 border border-cyan-500/20 space-y-1.5">
                   <div className="text-xs font-mono text-cyan-300 font-semibold flex items-center gap-1.5">
                     <Compass className="w-3.5 h-3.5 text-cyan-400" />
-                    <span>Active Transits & Conjunctions</span>
+                    <span>Stacks this week</span>
                   </div>
+                  {(teamComparison.celestial_conjunctions?.length ?? 0) === 0 && (
+                    <p className="text-[11px] font-mono text-slate-400">
+                      Neither lineup starts a quarterback with one of his own receivers.
+                    </p>
+                  )}
                   <div className="flex flex-wrap gap-2">
                     {(
                       teamComparison.celestial_conjunctions ||
@@ -1301,7 +1255,7 @@ export const MatchupsScreen: React.FC<MatchupsScreenProps> = ({
                       <span
                         key={idx}
                         className="px-2.5 py-1 rounded bg-slate-900/80 border border-white/10 text-[11px] font-mono text-slate-300">
-                        ✨ {conj}
+                        ☌ {conj}
                       </span>
                     ))}
                   </div>

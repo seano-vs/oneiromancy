@@ -26,8 +26,10 @@ import {
   mockTradeProposals,
   mockWaiverUpgrades,
 } from '@/lib/mockData';
-import {isPlayerSigned} from '@/lib/scoring';
-import {deriveEligiblePositions} from '@/lib/sleeper';
+import {DEFAULT_CHAOS_LAMBDA, isPlayerSigned} from '@/lib/scoring';
+import {deriveEligiblePositions, getSeasonContext} from '@/lib/sleeper';
+import {computeWaiverMoves, elementRelation, sleeperLeagueUrl, statsPoints} from '@/lib/oracle';
+import {PairBars} from '@/components/oneiromancy/WeeklyMoves';
 import {
   CosmicPlayer,
   NFLPosition,
@@ -43,6 +45,7 @@ import {
   ChevronRight,
   Droplet,
   Eye,
+  ExternalLink,
   Flame,
   Mountain,
   RefreshCw,
@@ -67,6 +70,8 @@ export interface PlayerMarketplaceProps {
   onCopyTrade?: (proposal: TradeProposal) => void;
   isLoading?: boolean;
   className?: string;
+  /** 'waivers' (Waivers tab), 'trades' (Divine Swaps under Trades), or both. */
+  section?: 'waivers' | 'trades' | 'both';
 }
 
 export const PlayerMarketplace: React.FC<PlayerMarketplaceProps> = ({
@@ -76,6 +81,7 @@ export const PlayerMarketplace: React.FC<PlayerMarketplaceProps> = ({
   rosterPositions: propRosterPositions,
   isLoading: propIsLoading,
   className = '',
+  section = 'both',
 }) => {
   const context = useOneiromancy();
 
@@ -104,8 +110,9 @@ export const PlayerMarketplace: React.FC<PlayerMarketplaceProps> = ({
           (isLiveMode && context.lastSyncTimestamp === 0)),
   );
 
-  const [activeSubTab, setActiveSubTab] =
-    useState<MarketplaceSubTab>('waivers');
+  const [activeSubTab, setActiveSubTab] = useState<MarketplaceSubTab>(
+    section === 'trades' ? 'trades' : 'waivers',
+  );
   const [positionFilter, setPositionFilter] = useState<string>('ALL');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [allowSignedDropForFreeAgent, setAllowSignedDropForFreeAgent] =
@@ -434,6 +441,33 @@ export const PlayerMarketplace: React.FC<PlayerMarketplaceProps> = ({
     }
   };
 
+  const oracleLambda = context.draftState?.settings?.chaos_lambda ?? DEFAULT_CHAOS_LAMBDA;
+  const waiverMoves = useMemo(
+    () =>
+      computeWaiverMoves(
+        allPlayers,
+        propMyRoster || context.draftState?.my_roster || [],
+        oracleLambda,
+        getSeasonContext()?.currentWeek ?? context.draftState?.weekly_matchup?.week,
+        8,
+      ),
+    [allPlayers, propMyRoster, context.draftState?.my_roster, oracleLambda, context.draftState?.weekly_matchup?.week],
+  );
+  const visibleMoves = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    return waiverMoves
+      .filter((m) => allowSignedDropForFreeAgent || (m.add.team && m.add.team !== 'NFL'))
+      .filter((m) => positionFilter === 'ALL' || m.add.position === positionFilter)
+      .filter(
+        (m) =>
+          !q ||
+          m.add.name.toLowerCase().includes(q) ||
+          m.drop.name.toLowerCase().includes(q) ||
+          (m.add.team || '').toLowerCase().includes(q),
+      )
+      .slice(0, 5);
+  }, [waiverMoves, allowSignedDropForFreeAgent, positionFilter, searchQuery]);
+
   const [inspectedPlayer, setInspectedPlayer] = useState<CosmicPlayer | null>(
     null,
   );
@@ -567,18 +601,24 @@ export const PlayerMarketplace: React.FC<PlayerMarketplaceProps> = ({
 
   return (
     <div className={`flex flex-col gap-5 w-full max-w-5xl mx-auto ${className}`}>
-      {/* Header & Subtitle */}
-      <div className="text-center space-y-1">
-        <h2 className="font-serif text-2xl sm:text-3xl font-bold text-slate-100 tracking-wide">
-          Alchemical Transmutations
-        </h2>
-        <p className="text-xs text-slate-400 max-w-xl mx-auto font-sans">
-          Post-draft waiver upgrades and automated &ldquo;Divine Swap&rdquo;
-          trade proposals addressing roster deficits.
-        </p>
-      </div>
+      {/* Header: plain name first, the Oneiromancy name as the eyebrow */}
+      {section !== 'trades' && (
+        <div className="space-y-1">
+          <span className="text-[10px] font-mono uppercase tracking-widest text-purple-300/80">
+            Alchemical Transmutations
+          </span>
+          <h2 className="font-serif text-2xl sm:text-3xl font-bold text-slate-100 tracking-wide">
+            {section === 'waivers' ? 'Waivers' : 'Waivers & trades'}
+          </h2>
+          <p className="text-xs text-slate-400 font-sans">
+            Adds that beat your weakest droppable bench player, ranked by whether they would start for you.
+            Never suggests dropping a starter, a player who is only on bye, or depth you need.
+          </p>
+        </div>
+      )}
 
-      {/* Sub-Tab Navigation */}
+      {/* Sub-Tab Navigation (standalone use only) */}
+      {section === 'both' && (
       <div className="grid grid-cols-2 gap-2 p-1 rounded-xl bg-slate-900/90 border border-white/10">
         <button
           type="button"
@@ -592,7 +632,7 @@ export const PlayerMarketplace: React.FC<PlayerMarketplaceProps> = ({
             className={`w-3.5 h-3.5 ${isDataLoading ? 'animate-spin text-cyan-400' : ''}`}
           />
           <span>
-            Waiver Upgrades ({isDataLoading ? '...' : filteredWaivers.length})
+            Waiver Upgrades ({isDataLoading ? '...' : visibleMoves.length})
           </span>
         </button>
 
@@ -610,7 +650,9 @@ export const PlayerMarketplace: React.FC<PlayerMarketplaceProps> = ({
           </span>
         </button>
       </div>
+      )}
 
+      {activeSubTab !== 'trades' && (<>
       {/* Positional Filters & Search Bar */}
       <div className="space-y-2">
         <div className="flex items-center gap-2">
@@ -659,11 +701,10 @@ export const PlayerMarketplace: React.FC<PlayerMarketplaceProps> = ({
           />
           <div>
             <span className="font-bold text-slate-200 block text-xs">
-              Allow signed players to swap for free agents
+              Include players without an NFL team
             </span>
             <span className="text-[10px] text-slate-400 block font-sans">
-              When unchecked, prevents recommending dropping an active NFL
-              roster player for an unsigned free agent.
+              Off: only suggests adding players currently signed to an NFL team.
             </span>
           </div>
         </label>
@@ -673,533 +714,83 @@ export const PlayerMarketplace: React.FC<PlayerMarketplaceProps> = ({
               ? 'bg-amber-950/60 text-amber-300 border-amber-500/40'
               : 'bg-emerald-950/60 text-emerald-300 border-emerald-500/40'
           }`}>
-          {allowSignedDropForFreeAgent
-            ? 'All Swaps Allowed'
-            : 'Strict Signed Protection'}
+          {allowSignedDropForFreeAgent ? 'Including unsigned' : 'Signed players only'}
         </span>
       </div>
+      </>)}
 
-      {/* Section 1: Waiver Transmutations */}
+      {/* Section 1: Waiver moves (compact, need-aware) */}
       {(activeSubTab === 'waivers' || activeSubTab === 'all') && (
         <div className="space-y-3">
           <div className="flex justify-between items-center px-1">
             <span className="text-xs font-mono uppercase text-cyan-400 font-semibold tracking-wider flex items-center gap-1.5">
               <TrendingUp className="w-3.5 h-3.5 text-cyan-400" />
-              Top Waiver Transmutations
+              Waiver moves
             </span>
             <span className="text-[10px] font-mono text-slate-400">
-              Sorted by Net Value Gain
+              Oracle λ {oracleLambda.toFixed(2)}
             </span>
           </div>
 
           {isDataLoading ? (
             renderMarketplaceLoadingState('waivers')
-          ) : filteredWaivers.length === 0 ? (
-            <GlassCard variant="panel" className="p-8 text-center space-y-2">
-              <p className="text-sm font-serif text-slate-300">
-                No viable waiver transmutations found
-              </p>
+          ) : visibleMoves.length === 0 ? (
+            <GlassCard variant="panel" className="p-6 text-center space-y-1">
+              <p className="text-sm font-serif text-slate-300">No waiver move beats your bench right now</p>
               <p className="text-xs text-slate-500 font-mono">
-                All bench assets currently exceed available waiver player draft
-                scores.
+                Every available player scores below your weakest droppable bench player.
               </p>
             </GlassCard>
           ) : (
-            filteredWaivers.map((upgrade) => {
-              const proposed = resolvePlayer(
-                upgrade.id,
-                upgrade.name,
-                upgrade.position,
-                upgrade.team,
-                upgrade.projected_points,
-                upgrade.draft_score,
-                upgrade.spirit_score,
-              );
-              const drop = resolvePlayer(
-                upgrade.recommended_drop_id,
-                upgrade.recommended_drop_name,
-                upgrade.recommended_drop_position,
-                'NYJ',
-                upgrade.projected_points - upgrade.net_projected_delta,
-                upgrade.draft_score - upgrade.net_score_delta,
-                75.0,
-              );
-
-              const vorDelta = proposed.market_vor - drop.market_vor;
-              const spiritDelta = proposed.spirit_score - drop.spirit_score;
-              const ppgProposed = proposed.projected_points;
-              const ppgDrop = drop.projected_points;
-              const ppgDelta = ppgProposed - ppgDrop;
-
-              return (
-                <GlassCard
-                  key={upgrade.id}
-                  variant="panel"
-                  glowColor="green"
-                  className="p-4 sm:p-5 space-y-4 transition-all">
-                  {/* Card Header: Priority & Net Score Deltas */}
-                  <div className="flex flex-wrap justify-between items-center gap-2 border-b border-white/10 pb-3">
-                    <div className="flex items-center gap-2">
-                      <span className="px-2.5 py-0.5 rounded-full bg-emerald-950/80 border border-emerald-500/40 text-emerald-400 font-mono text-[10px] font-bold tracking-wider">
-                        PRIORITY {upgrade.waiver_priority_rank}
-                      </span>
-                      <span className="px-2 py-0.5 rounded-full bg-cyan-950/80 border border-cyan-500/40 text-cyan-300 font-mono text-[9px] font-bold tracking-wider flex items-center gap-1">
-                        <Sparkles className="w-2.5 h-2.5 text-cyan-400" />
-                        FREE AGENT • WAIVER WIRE
-                      </span>
-                      <PositionalBadge
-                        position={proposed.position || upgrade.position}
-                        size="sm"
-                      />
-                      <span className="text-xs font-serif font-bold text-slate-200">
-                        {proposed.name}{' '}
-                        <span className="text-slate-500 font-mono text-[11px] font-normal">
-                          for
-                        </span>{' '}
-                        {drop.name}
-                      </span>
-                    </div>
-
-                    {/* Net Delta Badges */}
-                    <div className="flex flex-wrap items-center gap-1.5 font-mono text-[10px]">
-                      <span className="bg-emerald-950/80 text-emerald-300 border border-emerald-500/40 px-2 py-0.5 rounded font-bold">
-                        +{upgrade.net_score_delta.toFixed(1)} DS
-                      </span>
-                      <span className="bg-sky-950/80 text-sky-300 border border-sky-500/40 px-2 py-0.5 rounded font-bold">
-                        {vorDelta >= 0
-                          ? `+${vorDelta.toFixed(1)}`
-                          : vorDelta.toFixed(1)}{' '}
-                        VOR
-                      </span>
-                      <span className="bg-purple-950/80 text-purple-300 border border-purple-500/40 px-2 py-0.5 rounded font-bold">
-                        {spiritDelta >= 0
-                          ? `+${spiritDelta.toFixed(1)}`
-                          : spiritDelta.toFixed(1)}{' '}
-                        SpiritScore
-                      </span>
-                      <span className="bg-amber-950/80 text-amber-300 border border-amber-500/40 px-2 py-0.5 rounded font-bold">
-                        {ppgDelta >= 0
-                          ? `+${ppgDelta.toFixed(1)}`
-                          : ppgDelta.toFixed(1)}{' '}
-                        PPG
-                      </span>
-                    </div>
+            <ol className="flex flex-col gap-3">
+              {visibleMoves.map((move, idx) => (
+                <li
+                  key={`${move.add.id}-${move.drop.id}`}
+                  className="p-4 rounded-xl bg-slate-900/70 border border-white/10 flex flex-col gap-2">
+                  <span className="text-[10px] font-mono uppercase tracking-widest text-emerald-300">
+                    Priority {idx + 1} · {move.wouldStart ? 'would start' : 'bench depth'} ·{' '}
+                    {move.statsGain >= 0 ? '+' : ''}
+                    {move.statsGain.toFixed(1)} pts/wk
+                  </span>
+                  <span className="text-base font-semibold text-slate-100">
+                    Add {move.add.name} <span className="font-normal text-slate-400">for</span> {move.drop.name}
+                  </span>
+                  <PairBars
+                    label="Stats"
+                    a={statsPoints(move.add)}
+                    b={statsPoints(move.drop)}
+                    format={(n) => n.toFixed(1)}
+                    tone="stats"
+                  />
+                  <PairBars
+                    label="Stars"
+                    a={move.starsAdd}
+                    b={move.starsDrop}
+                    format={(n) => n.toFixed(0)}
+                    tone="stars"
+                  />
+                  <span className="text-xs text-slate-400">
+                    {move.reason} {move.add.position} · {move.add.team} · Bye {move.add.bye_week || '—'} ·{' '}
+                    {elementRelation(move.add.elemental_traits?.element, move.drop.elemental_traits?.element)}
+                  </span>
+                  <div className="flex flex-wrap gap-2">
+                    <a
+                      href={sleeperLeagueUrl(isLiveMode ? context.draftState?.settings?.league_id : null)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-cyan-400 text-slate-950 text-xs font-semibold hover:bg-cyan-300">
+                      Open in Sleeper <ExternalLink className="w-3 h-3" />
+                    </a>
+                    <button
+                      type="button"
+                      onClick={() => setInspectedPlayer(move.add)}
+                      className="px-3 py-1.5 rounded-lg border border-white/15 text-xs text-slate-200 hover:border-cyan-400/60">
+                      {move.add.name.split(' ').slice(-1)[0]} details
+                    </button>
                   </div>
-
-                  {/* Side-by-Side Head-to-Head Cards */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 font-mono text-xs">
-                    {/* ADD Target: Proposed Player */}
-                    <div className="p-3.5 rounded-xl bg-emerald-950/20 border border-emerald-500/30 space-y-2.5 relative">
-                      <div className="flex justify-between items-start">
-                        <div className="space-y-0.5">
-                          <div className="flex items-center gap-1.5">
-                            <span className="text-[9px] uppercase tracking-wider text-emerald-400 font-bold block">
-                              PROPOSED ADD
-                            </span>
-                            <span className="px-1.5 py-0.2 rounded bg-cyan-950/80 border border-cyan-500/40 text-cyan-300 font-mono text-[8px] font-bold tracking-wider">
-                              FREE AGENT
-                            </span>
-                          </div>
-                          <div className="font-serif font-bold text-slate-100 text-sm flex items-center gap-1.5">
-                            <span>{proposed.name}</span>
-                            <button
-                              type="button"
-                              onClick={() => setInspectedPlayer(proposed)}
-                              className="text-slate-400 hover:text-cyan-300 p-0.5"
-                              title="Inspect Full Player Dossier">
-                              <Eye className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <PositionalBadge
-                            position={proposed.position}
-                            size="sm"
-                          />
-                          <span className="text-[10px] text-emerald-400 bg-emerald-950/60 border border-emerald-500/30 px-1.5 py-0.5 rounded">
-                            {proposed.injury_status || 'Healthy'}
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Stat Grid */}
-                      <div className="grid grid-cols-4 gap-1.5 text-center font-mono text-[10px] pt-1">
-                        <div className="bg-slate-900/80 p-1.5 rounded border border-white/5">
-                          <span className="text-slate-500 block text-[9px]">
-                            Proj PPG
-                          </span>
-                          <span className="text-cyan-300 font-bold">
-                            {ppgProposed.toFixed(1)}
-                          </span>
-                        </div>
-                        <div className="bg-slate-900/80 p-1.5 rounded border border-white/5">
-                          <span className="text-slate-500 block text-[9px]">
-                            Season VOR
-                          </span>
-                          <span className="text-sky-300 font-bold">
-                            {proposed.market_vor >= 0
-                              ? `+${proposed.market_vor.toFixed(1)}`
-                              : proposed.market_vor.toFixed(1)}
-                          </span>
-                        </div>
-                        <div className="bg-slate-900/80 p-1.5 rounded border border-white/5">
-                          <span className="text-slate-500 block text-[9px]">
-                            Wk Fav
-                          </span>
-                          <span className={`font-bold ${(proposed.favorability_score ?? 70) >= 84 ? 'text-emerald-300' : (proposed.favorability_score ?? 70) >= 75 ? 'text-amber-300' : 'text-rose-300'}`}>
-                            {(proposed.favorability_score ?? 75).toFixed(0)}
-                          </span>
-                        </div>
-                        <div className="bg-slate-900/80 p-1.5 rounded border border-white/5">
-                          <span className="text-slate-500 block text-[9px]">
-                            DraftScore
-                          </span>
-                          <span className="text-emerald-400 font-bold">
-                            {proposed.draft_score.toFixed(1)}
-                          </span>
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-1.5 text-[10px] font-mono">
-                        <div className="bg-slate-900/80 p-1.5 rounded border border-white/5 flex justify-between items-center">
-                          <span className="text-slate-500">Team / Bye</span>
-                          <span className="text-slate-200 font-bold">
-                            {proposed.team} (Wk {proposed.bye_week || '—'})
-                          </span>
-                        </div>
-                        <div className="bg-slate-900/80 p-1.5 rounded border border-white/5 flex justify-between items-center">
-                          <span className="text-slate-500">SpiritScore</span>
-                          <span className="text-purple-300 font-bold">
-                            {proposed.spirit_score.toFixed(1)}
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Elemental Alignment */}
-                      <div className="p-2 rounded bg-slate-900/70 border border-white/5 text-[10px] space-y-0.5">
-                        <div className="flex justify-between items-center">
-                          <span className="text-slate-400 flex items-center gap-1">
-                            {renderElementIcon(
-                              proposed.elemental_traits?.element,
-                            )}
-                            <span>
-                              {proposed.elemental_traits?.element || 'Air'}{' '}
-                              Trait
-                            </span>
-                          </span>
-                          <span className="text-sky-300 font-bold">
-                            Score:{' '}
-                            {proposed.elemental_traits?.score ||
-                              proposed.spirit_score.toFixed(0)}
-                          </span>
-                        </div>
-                        <div className="text-slate-400 text-[9px] flex justify-between">
-                          <span>
-                            Sun:{' '}
-                            {proposed.elemental_traits?.sun_sign || 'Aries'}
-                          </span>
-                          <span>
-                            Tarot:{' '}
-                            {proposed.elemental_traits?.tarot_card ||
-                              'The Chariot'}
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Catalysts & Risks */}
-                      <div className="space-y-1 text-[10px] font-sans">
-                        <div className="text-emerald-300 text-[10px] flex items-start gap-1">
-                          <CheckCircle2 className="w-3 h-3 text-emerald-400 shrink-0 mt-0.5" />
-                          <span className="line-clamp-2">
-                            {proposed.catalysts?.[0] ||
-                              'High red-zone target share in high-tempo offense'}
-                          </span>
-                        </div>
-                        <div className="text-slate-400 text-[10px] flex items-start gap-1">
-                          <AlertTriangle className="w-3 h-3 text-amber-400 shrink-0 mt-0.5" />
-                          <span className="line-clamp-1">
-                            {proposed.risks?.[0] ||
-                              'Target competition in multi-receiver sets'}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* DROP Target: Replacement Player */}
-                    <div className="p-3.5 rounded-xl bg-slate-900/60 border border-white/5 space-y-2.5 relative">
-                      <div className="flex justify-between items-start">
-                        <div className="space-y-0.5">
-                          <span className="text-[9px] uppercase tracking-wider text-rose-400 font-bold block">
-                            RECOMMENDED DROP (Your Bench)
-                          </span>
-                          <div className="font-serif font-bold text-slate-300 text-sm flex items-center gap-1.5">
-                            <span>{drop.name}</span>
-                            <button
-                              type="button"
-                              onClick={() => setInspectedPlayer(drop)}
-                              className="text-slate-400 hover:text-cyan-300 p-0.5"
-                              title="Inspect Full Player Dossier">
-                              <Eye className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <PositionalBadge position={drop.position} size="sm" />
-                          <span className="text-[10px] text-slate-400 bg-slate-950/80 border border-white/5 px-1.5 py-0.5 rounded">
-                            {drop.injury_status || 'Healthy'}
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Stat Grid */}
-                      <div className="grid grid-cols-4 gap-1.5 text-center font-mono text-[10px] pt-1">
-                        <div className="bg-slate-950/80 p-1.5 rounded border border-white/5">
-                          <span className="text-slate-500 block text-[9px]">
-                            Proj PPG
-                          </span>
-                          <span className="text-slate-300 font-bold">
-                            {ppgDrop.toFixed(1)}
-                          </span>
-                        </div>
-                        <div className="bg-slate-950/80 p-1.5 rounded border border-white/5">
-                          <span className="text-slate-500 block text-[9px]">
-                            Season VOR
-                          </span>
-                          <span className="text-slate-300 font-bold">
-                            {drop.market_vor >= 0
-                              ? `+${drop.market_vor.toFixed(1)}`
-                              : drop.market_vor.toFixed(1)}
-                          </span>
-                        </div>
-                        <div className="bg-slate-950/80 p-1.5 rounded border border-white/5">
-                          <span className="text-slate-500 block text-[9px]">
-                            Wk Fav
-                          </span>
-                          <span className="text-slate-300 font-bold">
-                            {(drop.favorability_score ?? 65).toFixed(0)}
-                          </span>
-                        </div>
-                        <div className="bg-slate-950/80 p-1.5 rounded border border-white/5">
-                          <span className="text-slate-500 block text-[9px]">
-                            DraftScore
-                          </span>
-                          <span className="text-slate-300 font-bold">
-                            {drop.draft_score.toFixed(1)}
-                          </span>
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-1.5 text-[10px] font-mono">
-                        <div className="bg-slate-950/80 p-1.5 rounded border border-white/5 flex justify-between items-center">
-                          <span className="text-slate-500">Team / Bye</span>
-                          <span className="text-slate-300 font-bold">
-                            {drop.team} (Wk {drop.bye_week || '—'})
-                          </span>
-                        </div>
-                        <div className="bg-slate-950/80 p-1.5 rounded border border-white/5 flex justify-between items-center">
-                          <span className="text-slate-500">SpiritScore</span>
-                          <span className="text-slate-300 font-bold">
-                            {drop.spirit_score.toFixed(1)}
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Elemental Alignment */}
-                      <div className="p-2 rounded bg-slate-950/70 border border-white/5 text-[10px] space-y-0.5">
-                        <div className="flex justify-between items-center">
-                          <span className="text-slate-400 flex items-center gap-1">
-                            {renderElementIcon(drop.elemental_traits?.element)}
-                            <span>
-                              {drop.elemental_traits?.element || 'Fire'} Trait
-                            </span>
-                          </span>
-                          <span className="text-slate-300 font-bold">
-                            Score:{' '}
-                            {drop.elemental_traits?.score ||
-                              drop.spirit_score.toFixed(0)}
-                          </span>
-                        </div>
-                        <div className="text-slate-500 text-[9px] flex justify-between">
-                          <span>
-                            Sun:{' '}
-                            {drop.elemental_traits?.sun_sign || 'Sagittarius'}
-                          </span>
-                          <span>
-                            Tarot:{' '}
-                            {drop.elemental_traits?.tarot_card || 'The Tower'}
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Catalysts & Risks */}
-                      <div className="space-y-1 text-[10px] font-sans">
-                        <div className="text-slate-400 text-[10px] flex items-start gap-1">
-                          <CheckCircle2 className="w-3 h-3 text-slate-500 shrink-0 mt-0.5" />
-                          <span className="line-clamp-2">
-                            {drop.catalysts?.[0] ||
-                              'Possession boundary role on run-heavy scheme'}
-                          </span>
-                        </div>
-                        <div className="text-rose-400 text-[10px] flex items-start gap-1">
-                          <AlertTriangle className="w-3 h-3 text-rose-500 shrink-0 mt-0.5" />
-                          <span className="line-clamp-1">
-                            {drop.risks?.[0] ||
-                              'Declining target separation and snap share'}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Comparative Head-to-Head Delta Matrix */}
-                  <div className="overflow-x-auto rounded-lg border border-white/5 bg-slate-950/60 p-2.5 text-[10px] font-mono">
-                    <table className="w-full text-left">
-                      <thead>
-                        <tr className="text-slate-500 border-b border-white/5 pb-1">
-                          <th className="py-1">Metric</th>
-                          <th className="py-1 text-emerald-400">
-                            Proposed ({proposed.name})
-                          </th>
-                          <th className="py-1 text-slate-400">
-                            Replacement ({drop.name})
-                          </th>
-                          <th className="py-1 text-right text-cyan-300">
-                            Net Delta
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-white/5 text-slate-300">
-                        <tr>
-                          <td className="py-1 text-slate-500">Projected PPG</td>
-                          <td className="py-1 font-bold">
-                            {ppgProposed.toFixed(1)} PPG
-                          </td>
-                          <td className="py-1">{ppgDrop.toFixed(1)} PPG</td>
-                          <td className="py-1 text-right text-emerald-400 font-bold">
-                            {ppgDelta >= 0
-                              ? `+${ppgDelta.toFixed(1)}`
-                              : ppgDelta.toFixed(1)}{' '}
-                            PPG
-                          </td>
-                        </tr>
-                        <tr>
-                          <td className="py-1 text-slate-500">Season VOR</td>
-                          <td className="py-1 font-bold">
-                            {proposed.market_vor >= 0
-                              ? `+${proposed.market_vor.toFixed(1)}`
-                              : proposed.market_vor.toFixed(1)}
-                          </td>
-                          <td className="py-1">
-                            {drop.market_vor >= 0
-                              ? `+${drop.market_vor.toFixed(1)}`
-                              : drop.market_vor.toFixed(1)}
-                          </td>
-                          <td className="py-1 text-right text-sky-400 font-bold">
-                            {vorDelta >= 0
-                              ? `+${vorDelta.toFixed(1)}`
-                              : vorDelta.toFixed(1)}{' '}
-                            VOR
-                          </td>
-                        </tr>
-                        <tr>
-                          <td className="py-1 text-slate-500">DraftScore</td>
-                          <td className="py-1 font-bold">
-                            {proposed.draft_score.toFixed(1)} DS
-                          </td>
-                          <td className="py-1">
-                            {drop.draft_score.toFixed(1)} DS
-                          </td>
-                          <td className="py-1 text-right text-cyan-400 font-bold">
-                            +{upgrade.net_score_delta.toFixed(1)} DS
-                          </td>
-                        </tr>
-                        <tr>
-                          <td className="py-1 text-slate-500">SpiritScore</td>
-                          <td className="py-1 font-bold">
-                            {proposed.spirit_score.toFixed(1)}
-                          </td>
-                          <td className="py-1">
-                            {drop.spirit_score.toFixed(1)}
-                          </td>
-                          <td className="py-1 text-right text-purple-400 font-bold">
-                            {spiritDelta >= 0
-                              ? `+${spiritDelta.toFixed(1)}`
-                              : spiritDelta.toFixed(1)}{' '}
-                            SpiritScore
-                          </td>
-                        </tr>
-                        <tr>
-                          <td className="py-1 text-slate-500">
-                            Elemental Trait
-                          </td>
-                          <td className="py-1 font-bold">
-                            {proposed.elemental_traits?.element} (
-                            {proposed.elemental_traits?.score ||
-                              proposed.spirit_score.toFixed(0)}
-                            )
-                          </td>
-                          <td className="py-1">
-                            {drop.elemental_traits?.element} (
-                            {drop.elemental_traits?.score ||
-                              drop.spirit_score.toFixed(0)}
-                            )
-                          </td>
-                          <td className="py-1 text-right text-amber-300 font-bold">
-                            Aligned
-                          </td>
-                        </tr>
-                        <tr>
-                          <td className="py-1 text-slate-500">Bye Week</td>
-                          <td className="py-1">Wk {proposed.bye_week || '—'}</td>
-                          <td className="py-1">Wk {drop.bye_week || '—'}</td>
-                          <td className="py-1 text-right text-slate-400">
-                            Coverage Shift
-                          </td>
-                        </tr>
-                        <tr>
-                          <td className="py-1 text-slate-500">Injury Status</td>
-                          <td
-                            className={`py-1 ${
-                              proposed.injury_status ? 'text-amber-400' : 'text-emerald-400'
-                            }`}>
-                            {proposed.injury_status || 'Healthy'}
-                          </td>
-                          <td className="py-1 text-slate-400">
-                            {drop.injury_status || 'Healthy'}
-                          </td>
-                          <td
-                            className={`py-1 text-right ${
-                              proposed.injury_status ? 'text-amber-400' : 'text-emerald-400'
-                            }`}>
-                            {proposed.injury_status
-                              ? 'Injury Risk'
-                              : drop.injury_status
-                                ? 'Health Upgrade'
-                                : 'No Change'}
-                          </td>
-                        </tr>
-                      </tbody>
-                    </table>
-                  </div>
-
-                  {/* Alchemical Rationale */}
-                  <div className="p-2.5 rounded-lg bg-slate-950/80 border border-white/5 text-[11px] text-slate-300 font-sans italic">
-                    &ldquo;{upgrade.divination_rationale}&rdquo;
-                  </div>
-
-                  {/* Read-Only Analytical Telemetry */}
-                  <div className="w-full py-2.5 px-3 rounded-lg bg-cyan-950/40 border border-cyan-500/30 font-mono text-xs text-center flex items-center justify-between">
-                    <span className="text-cyan-400 font-bold flex items-center gap-1.5">
-                      <Sparkles className="w-3.5 h-3.5" />
-                      <span>RECOMMENDED UPGRADE</span>
-                    </span>
-                    <span className="text-emerald-400 font-bold bg-emerald-950/80 px-2 py-0.5 rounded border border-emerald-500/30">
-                      +{upgrade.net_score_delta.toFixed(1)} DS GAIN
-                    </span>
-                  </div>
-                </GlassCard>
-              );
-            })
+                </li>
+              ))}
+            </ol>
           )}
         </div>
       )}
