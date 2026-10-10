@@ -76,6 +76,17 @@ import {
 // Polling Constants
 // ============================================================================
 
+
+/** Keep a harmony breakdown only while it still adds up to the shown score. */
+function harmonyPartsIfMatching(
+  parts: { label: string; points: number }[] | undefined,
+  score: number,
+): { label: string; points: number }[] | undefined {
+  if (!parts) return undefined;
+  const total = Math.min(100, parts.reduce((a, x) => a + x.points, 0));
+  return Math.abs(total - score) < 0.05 ? parts : undefined;
+}
+
 export const ACTIVE_INTERVAL_MS = 5000;
 export const IDLE_INTERVAL_MS = 10000;
 export const BACKGROUND_INTERVAL_MS = 30000;
@@ -1075,9 +1086,13 @@ export const OneiromancyProvider: React.FC<OneiromancyProviderProps> = ({
                   team_comparison: freshData.weekly_matchup.team_comparison
                     ? {
                         ...freshData.weekly_matchup.team_comparison,
-                        user_favorability_index: userTeam?.avg_spirit_score ?? 78.0,
-                        user_astral_favorability: userTeam?.avg_spirit_score ?? 78.0,
+                        // Astral favorability stays this week's starter Stars for both
+                        // sides; only harmony is re-synced with the reconciled team.
                         user_harmony_score: userTeam?.harmony_score ?? 74.5,
+                        user_harmony_parts: harmonyPartsIfMatching(
+                          freshData.weekly_matchup.team_comparison.user_harmony_parts,
+                          userTeam?.harmony_score ?? 74.5,
+                        ),
                       }
                     : freshData.weekly_matchup.team_comparison,
                 }

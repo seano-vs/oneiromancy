@@ -92,6 +92,7 @@ import {
   calculateTeamCelestialMetrics,
   calculateWinProbability,
   computeDraftScore,
+  computeRosterHarmonyBreakdown,
   computeSpiritScore,
   computeTeamMatchupFavorability,
   computeWeeklyPlayerFavorability,
@@ -3949,23 +3950,39 @@ export function deriveWeeklyMatchup(
   const userElements = dominantElements(userStarterPlayers);
   const oppElements = dominantElements(oppStarterPlayers);
 
+  // Astral favorability is this week's: the mean Stars of each side's starters,
+  // falling back to roster Spirit only when no starter could be scored.
+  const meanStars = (isUser: boolean): number | null => {
+    const scores = playerFavorabilities
+      .filter((f) => f.is_user_team === isUser && !f.is_benched)
+      .map((f) => Number(f.favorability_score))
+      .filter((n) => Number.isFinite(n));
+    return scores.length ? Math.round((scores.reduce((a, n) => a + n, 0) / scores.length) * 10) / 10 : null;
+  };
+  const userAstral = meanStars(true) ?? Math.round((userTeam.avg_spirit_score ?? 85.0) * 10) / 10;
+  const oppAstral = meanStars(false) ?? Math.round((oppTeam.avg_spirit_score ?? 80.0) * 10) / 10;
+  // Show the bonuses behind harmony only when they reproduce the team's score.
+  const harmonyParts = (starters: CosmicPlayer[], score: number) => {
+    if (starters.length === 0) return undefined;
+    const b = computeRosterHarmonyBreakdown(starters);
+    return Math.abs(b.total - score) < 0.05 ? b.parts : undefined;
+  };
+
   const teamComparison: TeamCelestialComparison = {
-    user_favorability_index:
-      Math.round((userTeam.avg_spirit_score ?? 85.0) * 10) / 10,
-    opponent_favorability_index:
-      Math.round((oppTeam.avg_spirit_score ?? 80.0) * 10) / 10,
-    user_astral_favorability:
-      Math.round((userTeam.avg_spirit_score ?? 85.0) * 10) / 10,
-    opponent_astral_favorability:
-      Math.round((oppTeam.avg_spirit_score ?? 80.0) * 10) / 10,
+    user_favorability_index: userAstral,
+    opponent_favorability_index: oppAstral,
+    user_astral_favorability: userAstral,
+    opponent_astral_favorability: oppAstral,
     user_harmony_score: userHarmony,
     opponent_harmony_score: oppHarmony,
+    user_harmony_parts: harmonyParts(userStarterPlayers, userHarmony),
+    opponent_harmony_parts: harmonyParts(oppStarterPlayers, oppHarmony),
     user_elemental_dominance: userElements,
     opponent_elemental_dominance: oppElements,
     elemental_dominance: {user: userElements, opponent: oppElements},
     // Real QB + pass-catcher stacks among each side's starters.
     celestial_conjunctions: [...teamStacks(userStarterPlayers), ...teamStacks(oppStarterPlayers)],
-    verdict_summary: `${userTeam.name} holds ${winProbability >= 50 ? 'favorable' : 'contested'} astral alignment with ${userHarmony} Squad Harmony vs ${oppTeam.name}'s ${oppHarmony}.`,
+    verdict_summary: `${userTeam.name} ${winProbability >= 50 ? 'is favored' : 'is the underdog'} (${winProbability.toFixed(1)}% win probability, from projections and harmony). Starter Stars ${userAstral.toFixed(1)} vs ${oppAstral.toFixed(1)}; Squad Harmony ${userHarmony} vs ${oppHarmony}.`,
   };
 
   const weekStatus = seasonCtx

@@ -381,6 +381,9 @@ export interface TeamCelestialComparison {
   astral_edge_summary?: string;
   user_harmony_score?: number;
   opponent_harmony_score?: number;
+  /** Bonuses behind each side's harmony score. */
+  user_harmony_parts?: { label: string; points: number }[];
+  opponent_harmony_parts?: { label: string; points: number }[];
   elemental_dominance?: { user: string; opponent: string };
   celestial_conjunctions?: string[];
   verdict_summary?: string;

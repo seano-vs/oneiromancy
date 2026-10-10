@@ -608,6 +608,13 @@ export const calculateHarmonyScore = (
 export function computeRosterHarmony(
   players: (Partial<CosmicPlayer> | RosterSlot | null | undefined)[],
 ): number {
+  return computeRosterHarmonyBreakdown(players).total;
+}
+
+/** Squad harmony with the bonuses that make it up, for display. */
+export function computeRosterHarmonyBreakdown(
+  players: (Partial<CosmicPlayer> | RosterSlot | null | undefined)[],
+): { total: number; parts: HarmonyPart[] } {
   const validPlayers: Partial<CosmicPlayer>[] = [];
   for (const item of players) {
     if (!item) continue;
@@ -617,7 +624,7 @@ export function computeRosterHarmony(
       validPlayers.push(item as Partial<CosmicPlayer>);
     }
   }
-  if (validPlayers.length === 0) return 50.0;
+  if (validPlayers.length === 0) return { total: 50.0, parts: [{ label: 'Base', points: 50 }] };
 
   const elementCounts: Record<ElementType, number> = {
     Fire: 0,
@@ -653,17 +660,34 @@ export function computeRosterHarmony(
   const trineBonus = calculateWesternTrinesBonus(scaledCounts);
   // Count each QB/pass-catcher stack once, from the pass catcher's side.
   let stackBonus = 0;
+  let stackCount = 0;
   for (const p of validPlayers) {
     if (p.position === 'QB') continue;
-    stackBonus += calculateStackMultiplier(
+    const bonus = calculateStackMultiplier(
       p,
       rosterSlots.filter((s) => s.player?.id !== p.id),
     );
+    stackBonus += bonus;
+    if (bonus > 0) stackCount++;
   }
   stackBonus = Math.min(stackBonus, 30.0);
   const quadBonus = calculateQuadBalanceBonus(elementCounts);
   const rawHarmony = 50 + trineBonus + stackBonus + quadBonus;
-  return Number(clamp(rawHarmony, 0.0, 100.0).toFixed(2));
+  const maxSame = Math.max(...Object.values(scaledCounts));
+  const parts: HarmonyPart[] = [{ label: 'Base', points: 50 }];
+  if (trineBonus > 0) {
+    parts.push({ label: `Trine (${maxSame >= 4 ? '4+' : '3+'} same element)`, points: trineBonus });
+  }
+  if (stackBonus > 0) {
+    parts.push({ label: stackCount === 1 ? 'QB stack' : `QB stacks ×${stackCount}`, points: stackBonus });
+  }
+  if (quadBonus > 0) parts.push({ label: 'All 4 elements', points: quadBonus });
+  return { total: Number(clamp(rawHarmony, 0.0, 100.0).toFixed(2)), parts };
+}
+
+export interface HarmonyPart {
+  label: string;
+  points: number;
 }
 
 /**

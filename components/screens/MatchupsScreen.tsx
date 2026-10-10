@@ -912,17 +912,17 @@ export const MatchupsScreen: React.FC<MatchupsScreenProps> = ({
             // Astral Favorability comparison
             if (isUserAstralLead && astralDelta >= 1.0) {
               userAdvantages.push(
-                `+${astralDelta.toFixed(1)}% Astral Favorability alignment advantage`,
+                `+${astralDelta.toFixed(1)} Astral Favorability advantage (starter Stars)`,
               );
               oppDisadvantages.push(
-                `-${astralDelta.toFixed(1)}% Astral alignment deficit in celestial transits`,
+                `-${astralDelta.toFixed(1)} Astral Favorability deficit (starter Stars)`,
               );
             } else if (isOppAstralLead && astralDelta >= 1.0) {
               oppAdvantages.push(
-                `+${astralDelta.toFixed(1)}% Astral Favorability alignment advantage`,
+                `+${astralDelta.toFixed(1)} Astral Favorability advantage (starter Stars)`,
               );
               userDisadvantages.push(
-                `-${astralDelta.toFixed(1)}% Astral alignment deficit in celestial transits`,
+                `-${astralDelta.toFixed(1)} Astral Favorability deficit (starter Stars)`,
               );
             }
 
@@ -984,14 +984,14 @@ export const MatchupsScreen: React.FC<MatchupsScreenProps> = ({
                         Astral Favorability Index
                       </span>
                       <span className="text-[10px] font-mono text-slate-400">
-                        Transit Alignment
+                        Avg starter Stars · this week
                       </span>
                     </div>
                     <div className="grid grid-cols-5 items-center text-center">
                       <div className="col-span-2 text-left">
                         <div
                           className={`text-lg font-mono font-bold ${astralUserClass}`}>
-                          {userAstral.toFixed(1)}%
+                          {userAstral.toFixed(1)}
                         </div>
                         <div className="text-[10px] text-slate-400 truncate">
                           {userTeamName}
@@ -999,13 +999,13 @@ export const MatchupsScreen: React.FC<MatchupsScreenProps> = ({
                       </div>
                       <div className="col-span-1 flex justify-center">
                         <span className="text-xs font-mono text-slate-500 uppercase px-1.5 py-0.5 rounded bg-white/5 border border-white/5">
-                          vs
+                          {userAstral === oppAstral ? 'even' : 'vs'}
                         </span>
                       </div>
                       <div className="col-span-2 text-right">
                         <div
                           className={`text-lg font-mono font-bold ${astralOppClass}`}>
-                          {oppAstral.toFixed(1)}%
+                          {oppAstral.toFixed(1)}
                         </div>
                         <div className="text-[10px] text-slate-400 truncate">
                           {oppTeamName}
@@ -1054,7 +1054,7 @@ export const MatchupsScreen: React.FC<MatchupsScreenProps> = ({
                       </div>
                       <div className="col-span-1 flex justify-center">
                         <span className="text-xs font-mono text-slate-500 uppercase px-1.5 py-0.5 rounded bg-white/5 border border-white/5">
-                          vs
+                          {userHarmony === oppHarmony ? 'even' : 'vs'}
                         </span>
                       </div>
                       <div className="col-span-2 text-right">
@@ -1085,6 +1085,20 @@ export const MatchupsScreen: React.FC<MatchupsScreenProps> = ({
                         }}
                       />
                     </div>
+                    {(teamComparison.user_harmony_parts || teamComparison.opponent_harmony_parts) && (
+                      <div className="grid grid-cols-2 gap-2 text-[10px] font-mono text-slate-500">
+                        {[teamComparison.user_harmony_parts, teamComparison.opponent_harmony_parts].map((parts, k) => (
+                          <ul key={k} className={k === 1 ? 'text-right' : ''}>
+                            {(parts ?? []).filter((x) => x.label !== 'Base').map((x) => (
+                              <li key={x.label}>
+                                +{x.points} {x.label}
+                              </li>
+                            ))}
+                            {parts && parts.length === 1 && <li>No bonuses</li>}
+                          </ul>
+                        ))}
+                      </div>
+                    )}
                   </div>
 
                   {/* Elemental Dominance Card */}
