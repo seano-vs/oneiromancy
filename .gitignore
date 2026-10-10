@@ -23,3 +23,4 @@ custom_mocks/
 public/custom_mocks/
 tests/dist/
 
+*.tsbuildinfo

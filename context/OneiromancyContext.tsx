@@ -53,12 +53,14 @@ import {
   resetRateLimit,
   deriveWeeklyMatchup,
   isRateLimitError,
+  DEFAULT_LIVE_SETTINGS,
 } from '@/lib/sleeper';
 import {
   calculateHarmony,
   calculateSnakePick,
   clamp,
   computeDraftScore,
+  computeRosterHarmony,
   computeSpiritScore,
   DEFAULT_CHAOS_LAMBDA,
   DEFAULT_ORACLE_WEIGHTS,
@@ -990,7 +992,11 @@ export const OneiromancyProvider: React.FC<OneiromancyProviderProps> = ({
               .sort((a, b) => getWeeklyPts(b) - getWeeklyPts(a))
               .slice(0, 8);
 
-            const pList = pickPlayers.length > 0 ? pickPlayers : (t.players || []);
+            const rosterPlayers = (t.players || [])
+              .map((pid) => recomputedBoard.find((cb) => String(cb.id) === String(pid)))
+              .filter((p): p is CosmicPlayer => Boolean(p));
+
+            const pList = pickPlayers.length > 0 ? pickPlayers : rosterPlayers;
             const meanSp =
               pList.length > 0
                 ? pList.reduce((sum, p) => sum + (p.spirit_score || 78.0), 0) / pList.length
@@ -1001,7 +1007,7 @@ export const OneiromancyProvider: React.FC<OneiromancyProviderProps> = ({
                 : (t.avg_draft_score ?? 76.0);
             const harmScore =
               pList.length > 0
-                ? calculateHarmony(pList)
+                ? computeRosterHarmony(pList)
                 : (t.harmony_score ?? 77.0);
 
             const avgSpirit = Math.round(meanSp * 10) / 10;
@@ -1149,7 +1155,7 @@ export const OneiromancyProvider: React.FC<OneiromancyProviderProps> = ({
                   prev.my_roster || [],
                   activeMatchupWeek
                 )
-              : null;
+              : undefined;
 
             if (!prev.isLive) {
               return {
@@ -1159,7 +1165,7 @@ export const OneiromancyProvider: React.FC<OneiromancyProviderProps> = ({
                 my_roster: [],
                 competitor_teams: [],
                 ideal_draft_path: [],
-                weekly_matchup: null,
+                weekly_matchup: undefined,
                 waiver_upgrades: [],
                 trade_proposals: [],
                 available_leagues: retainedLeagues,
@@ -1689,6 +1695,14 @@ export function useOneiromancy(): OneiromancyContextValue {
     throw new Error('useOneiromancy must be used within a <OneiromancyProvider>');
   }
   return context as OneiromancyContextValue;
+}
+
+/**
+ * Like useOneiromancy(), but returns null instead of throwing when rendered
+ * outside a <OneiromancyProvider>.
+ */
+export function useOptionalOneiromancy(): OneiromancyContextValue | null {
+  return useContext(OneiromancyContext);
 }
 
 export default OneiromancyContext;

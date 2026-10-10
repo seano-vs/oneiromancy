@@ -19,7 +19,7 @@
 import React, { useContext } from 'react';
 import PositionalBadge from '@/components/common/PositionalBadge';
 import { CosmicPlayer, RosterSlot } from '@/types/oneiromancy';
-import { useOneiromancy } from '@/context/OneiromancyContext';
+import { useOptionalOneiromancy } from '@/context/OneiromancyContext';
 import { haversineDistance } from '@/lib/scoring';
 import { X, Sparkles, Compass, Shield, ArrowRightLeft } from 'lucide-react';
 
@@ -37,12 +37,7 @@ export const PlayerDetailModal: React.FC<PlayerDetailModalProps> = ({
   onClose,
   roster: propRoster,
 }) => {
-  let ctx: any = null;
-  try {
-    ctx = useOneiromancy();
-  } catch {
-    ctx = null;
-  }
+  const ctx = useOptionalOneiromancy();
   if (!isOpen || !player) return null;
 
   const activeRoster: RosterSlot[] = propRoster || ctx?.draftState?.my_roster || [];

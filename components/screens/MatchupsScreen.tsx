@@ -146,7 +146,7 @@ export const MatchupsScreen: React.FC<MatchupsScreenProps> = ({
         const derivedForWeek = hasLiveTeams
           ? deriveWeeklyMatchup(
               activeRosterId,
-              context.draftState!.competitor_teams,
+              context.draftState!.competitor_teams!,
               null,
               context.draftState?.cosmic_board,
               context.draftState?.my_roster,
