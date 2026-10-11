@@ -189,6 +189,13 @@ phone-only.
 - **Mystical names stay**, with a plain label beside them ("Alchemical
   Transmutations" over "Waivers").
 
+### Matchup card details
+
+Kickoff, venue and opponent are real (`nflGames.ts`: ESPN scoreboard, with
+Sleeper's schedule as fallback); the moon and planetary hour are computed for
+that kickoff. Sample data keeps illustrative values. Harmony is always shown
+as a percentage.
+
 ## 9. Persistence (browser localStorage)
 
 | Key | Holds |
@@ -252,12 +259,6 @@ The definition of done is in the guidelines. In practice:
 3. Move λ and a star weight and confirm that every screen you touched changes.
 
 ## 13. Known gaps and open questions
-
-- **Invented matchup details.** Matchup cards show each player's *home*
-  stadium even on road games, a kickoff time picked from a fixed list (the
-  schedule has dates but no times), and a moon phase and planetary hour picked
-  per player, so two players in the same game can differ. Flagged in the
-  2026-10-11 KaySwizz audit; the owner decides how to handle them.
 
 - **Leaderboard tier chip.** It follows average Spirit, not rank, so the #1
   Overall team can show "Discordant (At Risk)". Kept as the owner's original

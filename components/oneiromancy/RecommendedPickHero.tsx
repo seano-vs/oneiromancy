@@ -165,7 +165,7 @@ export const RecommendedPickHero: React.FC<RecommendedPickHeroProps> = ({
             Squad Harmony
           </span>
           <span className="font-mono text-2xl font-bold text-amber-300">
-            {player.harmony_score.toFixed(1)}
+            {Math.round(player.harmony_score)}%
           </span>
           <span className="text-[9px] font-mono text-slate-500">Synergy Resonance</span>
         </div>

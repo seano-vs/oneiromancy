@@ -468,24 +468,22 @@ export const MatchupsScreen: React.FC<MatchupsScreenProps> = ({
                     {player.stadium.stadium_name}
                   </span>
                 </div>
-                <div className="text-slate-500 text-[10px]">
-                  {player.stadium.city}, {player.stadium.state}
-                </div>
-                <div className="text-slate-400 text-[10px]">
-                  Coords:{' '}
-                  {(
-                    player.stadium.latitude ??
-                    player.stadium.coordinates?.lat ??
-                    0
-                  ).toFixed(4)}
-                  ° N,{' '}
-                  {Math.abs(
-                    player.stadium.longitude ??
-                      player.stadium.coordinates?.lon ??
-                      0,
-                  ).toFixed(4)}
-                  ° W
-                </div>
+                {player.stadium.city && (
+                  <div className="text-slate-500 text-[10px]">
+                    {[player.stadium.city, player.stadium.state].filter(Boolean).join(', ')}
+                  </div>
+                )}
+                {(() => {
+                  const lat = player.stadium.latitude ?? player.stadium.coordinates?.lat;
+                  const lon = player.stadium.longitude ?? player.stadium.coordinates?.lon;
+                  if (typeof lat !== 'number' || typeof lon !== 'number') return null;
+                  return (
+                    <div className="text-slate-400 text-[10px]">
+                      Coords: {Math.abs(lat).toFixed(4)}° {lat >= 0 ? 'N' : 'S'},{' '}
+                      {Math.abs(lon).toFixed(4)}° {lon >= 0 ? 'E' : 'W'}
+                    </div>
+                  );
+                })()}
               </div>
 
               <div className="space-y-1 border-l border-white/5 pl-2">
@@ -499,10 +497,12 @@ export const MatchupsScreen: React.FC<MatchupsScreenProps> = ({
                 <div className="text-slate-500 text-[10px]">
                   Roof: {player.stadium.roof_type}
                 </div>
-                <div className="text-purple-300 text-[10px] flex items-center gap-1">
-                  <Moon className="w-2.5 h-2.5 text-purple-400 shrink-0" />
-                  <span className="truncate">{player.lunar_phase}</span>
-                </div>
+                {player.lunar_phase && (
+                  <div className="text-purple-300 text-[10px] flex items-center gap-1">
+                    <Moon className="w-2.5 h-2.5 text-purple-400 shrink-0" />
+                    <span className="truncate">{player.lunar_phase}</span>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -510,7 +510,7 @@ export const MatchupsScreen: React.FC<MatchupsScreenProps> = ({
             <div className="flex items-center justify-between text-[10px] font-mono px-2 py-1 rounded bg-slate-900/50 border border-white/5">
               <span className="text-amber-300 flex items-center gap-1">
                 <Sun className="w-3 h-3 text-amber-400 shrink-0" />
-                <span>Planetary Hour: {player.planetary_hour}</span>
+                <span>Planetary Hour: {player.planetary_hour || '—'}</span>
               </span>
               <span className="text-cyan-300 truncate ml-2">
                 Transit:{' '}
@@ -914,17 +914,17 @@ export const MatchupsScreen: React.FC<MatchupsScreenProps> = ({
             // Squad Harmony comparison
             if (isUserHarmonyLead && harmonyDelta >= 1.0) {
               userAdvantages.push(
-                `+${harmonyDelta.toFixed(1)} Squad Harmony rating (${getTierLabel(userHarmony)})`,
+                `+${Math.round(harmonyDelta)}% Squad Harmony (${getTierLabel(userHarmony)})`,
               );
               oppDisadvantages.push(
-                `-${harmonyDelta.toFixed(1)} Squad Harmony differential vs ${userTeamName}`,
+                `-${Math.round(harmonyDelta)}% Squad Harmony vs ${userTeamName}`,
               );
             } else if (isOppHarmonyLead && harmonyDelta >= 1.0) {
               oppAdvantages.push(
-                `+${harmonyDelta.toFixed(1)} Squad Harmony rating (${getTierLabel(oppHarmony)})`,
+                `+${Math.round(harmonyDelta)}% Squad Harmony (${getTierLabel(oppHarmony)})`,
               );
               userDisadvantages.push(
-                `-${harmonyDelta.toFixed(1)} Squad Harmony differential vs ${oppTeamName}`,
+                `-${Math.round(harmonyDelta)}% Squad Harmony vs ${oppTeamName}`,
               );
             }
 
@@ -938,12 +938,12 @@ export const MatchupsScreen: React.FC<MatchupsScreenProps> = ({
 
             if (userHarmony < 75) {
               userDisadvantages.push(
-                `Roster cohesion risk (${userHarmony.toFixed(1)}/100 · Discordant)`,
+                `Roster cohesion risk (${Math.round(userHarmony)}% · Discordant)`,
               );
             }
             if (oppHarmony < 75) {
               oppDisadvantages.push(
-                `Roster cohesion risk (${oppHarmony.toFixed(1)}/100 · Discordant)`,
+                `Roster cohesion risk (${Math.round(oppHarmony)}% · Discordant)`,
               );
             }
 
@@ -1027,11 +1027,7 @@ export const MatchupsScreen: React.FC<MatchupsScreenProps> = ({
                       <div className="col-span-2 text-left">
                         <div
                           className={`text-lg font-mono font-bold ${harmonyUserClass}`}>
-                          {userHarmony.toFixed(1)}
-                          <span className="text-xs font-normal text-slate-500">
-                            {' '}
-                            /100
-                          </span>
+                          {Math.round(userHarmony)}%
                         </div>
                         <div className="text-[10px] text-slate-400 truncate">
                           {getTierLabel(userHarmony)}
@@ -1045,11 +1041,7 @@ export const MatchupsScreen: React.FC<MatchupsScreenProps> = ({
                       <div className="col-span-2 text-right">
                         <div
                           className={`text-lg font-mono font-bold ${harmonyOppClass}`}>
-                          {oppHarmony.toFixed(1)}
-                          <span className="text-xs font-normal text-slate-500">
-                            {' '}
-                            /100
-                          </span>
+                          {Math.round(oppHarmony)}%
                         </div>
                         <div className="text-[10px] text-slate-400 truncate">
                           {getTierLabel(oppHarmony)}
@@ -1076,7 +1068,7 @@ export const MatchupsScreen: React.FC<MatchupsScreenProps> = ({
                           <ul key={k} className={k === 1 ? 'text-right' : ''}>
                             {(parts ?? []).filter((x) => x.label !== 'Base').map((x) => (
                               <li key={x.label}>
-                                +{x.points} {x.label}
+                                +{x.points}% {x.label}
                               </li>
                             ))}
                             {parts && parts.length === 1 && <li>No bonuses</li>}

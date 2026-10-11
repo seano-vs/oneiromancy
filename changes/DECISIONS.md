@@ -8,6 +8,7 @@ an owner decision, ask.
 
 | # | Date | Decision | By | Status | Details |
 | --- | --- | --- | --- | --- | --- |
+| 33 | 2026-10-11 | Matchup cards show real games (kickoff, venue, opponent; computed moon and planetary hour), Harmony is a % everywhere, and element callouts are read from each roster's starters | **owner** | current | [second-user audit § follow-up](2026-10-11-second-user-audit.md) |
 | 32 | 2026-10-11 | Lineup, waiver and trade advice share one best lineup; players whose game has kicked off are never moved; the slot Sleeper resolves from the username always identifies "you" | agent (owner: "use a friend's username… exhaustive analysis") | current | [second-user audit](2026-10-11-second-user-audit.md) |
 | 31 | 2026-10-11 | **One vocabulary**: Stats, Spirit, Stars, Oracle, and the legend's four verdicts, the same on every screen. Every explainer matches the real formula (Stars rows sum to the score, Harmony = 50 + trine + stacks + balance), and numbers that aren't in any score are removed | **owner** ("make sure our wording is consistent") | current | [ux-rework § wording pass](2026-10-10-ux-rework.md) |
 | 30 | 2026-10-11 | The Oracle panel always shows the star weights and the astrology reference expanded (no disclosure) | **owner** | current | [ux-rework § small cleanups](2026-10-10-ux-rework.md) |

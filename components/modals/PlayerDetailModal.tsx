@@ -336,7 +336,7 @@ export const PlayerDetailModal: React.FC<PlayerDetailModalProps> = ({
           </div>
           <div className="p-2.5 rounded-xl bg-amber-950/40 border border-amber-500/30">
             <span className="text-[9px] text-amber-300 uppercase font-bold block">Harmony</span>
-            <span className="text-xl font-bold text-amber-200">{player.harmony_score.toFixed(1)}</span>
+            <span className="text-xl font-bold text-amber-200">{Math.round(player.harmony_score)}%</span>
           </div>
         </div>
 
@@ -518,14 +518,14 @@ export const PlayerDetailModal: React.FC<PlayerDetailModalProps> = ({
                       <div className="p-1.5 rounded bg-slate-950/70">
                         <span className="text-[8px] text-slate-500 uppercase block">Harmony</span>
                         <span className="text-slate-200 font-bold">
-                          {player.harmony_score.toFixed(1)} vs {rosterPlayer.harmony_score.toFixed(1)}
+                          {Math.round(player.harmony_score)}% vs {Math.round(rosterPlayer.harmony_score)}%
                         </span>
                         <span
                           className={`block font-bold ${
                             harmDiff > 0 ? 'text-emerald-400' : harmDiff < 0 ? 'text-rose-400' : 'text-slate-400'
                           }`}
                         >
-                          {fmtDiff(harmDiff)}
+                          {fmtDiff(harmDiff, 0)}%
                         </span>
                       </div>
 

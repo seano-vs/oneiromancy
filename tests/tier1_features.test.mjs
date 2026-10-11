@@ -1010,7 +1010,8 @@ describe('Tier 1: Feature Coverage (19 Features x >=5 Tests)', () => {
       assert.ok(oneiromancySource.includes('2. QB Stacks'), 'OneiromancyDashboard must explain the stack bonus');
       assert.ok(oneiromancySource.includes('3. Four-Element Balance'), 'OneiromancyDashboard must explain the balance bonus');
       assert.ok(!oneiromancySource.includes('Schedule Symmetry'), 'Harmony explainer must not claim byes affect Harmony');
-      assert.ok(oneiromancySource.includes('Squad Harmony') && oneiromancySource.includes('{harmonyScore} / 100'), 'OneiromancyDashboard must display Harmony score');
+      // Owner decision 2026-10-11: Harmony reads as a percentage everywhere ("62%"), as on the leaderboard.
+      assert.ok(oneiromancySource.includes('Squad Harmony') && oneiromancySource.includes('{harmonyScore}%'), 'OneiromancyDashboard must display Harmony score');
     });
 
     it('20.5 should verify OneiromancyDashboard renders interactive SVG Team Synergy Radar Graph with 5 spokes', () => {
@@ -1111,7 +1112,8 @@ describe('Tier 1: Feature Coverage (19 Features x >=5 Tests)', () => {
       // Updated in the 2026-10-10 UX rework (see changes/2026-10-10-ux-rework.md). The header reads "Team harmony {harmonyScore} / 100".
       const oneiromancySource = fs.readFileSync(path.resolve('components/screens/OneiromancyDashboard.tsx'), 'utf8');
       assert.ok(oneiromancySource.includes('userTeam?.harmony_score'), 'OneiromancyDashboard must connect harmonyScore to userTeam.harmony_score');
-      assert.ok(oneiromancySource.includes('{harmonyScore} / 100'), 'Header must format dynamic harmonyScore');
+      // Owner decision 2026-10-11: Harmony reads as a percentage everywhere.
+      assert.ok(oneiromancySource.includes('{harmonyScore}%'), 'Header must format dynamic harmonyScore');
       assert.ok(!oneiromancySource.includes('60 / 100 HARMONY'), 'Stale hardcoded 60 / 100 HARMONY must not exist');
     });
   });

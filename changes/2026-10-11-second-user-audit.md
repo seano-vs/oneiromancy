@@ -34,17 +34,40 @@ week-5 projections, the NFL schedule and the draft.
 Tests: Tier 10 10.9.1–10.9.3 (Superflex move, waiver vs best lineup, locked
 players); 28.7 updated for the slot rule. npm test: 465 passed.
 
+## Owner follow-up: real games, Harmony as %, roster-specific text
+
+The owner chose: "real kickoff times", "let's do %", and fix the same-for-
+everyone text.
+
+- **Real games on matchup cards** (`core/lib/nflGames.ts`). Kickoff, venue and
+  opponent come from ESPN's public scoreboard (CORS-open), fetched for every
+  regular-season week once per session (the current week refreshes every 5
+  minutes). Without ESPN, cards fall back to Sleeper's date and the home team's
+  stadium with "time TBA". Road games show the home stadium; neutral sites show
+  the real venue (PHI–JAX: Tottenham Hotspur Stadium, London, 9:30 AM ET). Bye
+  players show "No game this week". Kickoffs read "Sun, Oct 11 · 1:00 PM ET · @ GB".
+- **Moon** is computed for the kickoff (phase plus sign, low-precision
+  ephemeris; checked against the 2024-04-08 eclipse, New Moon in Aries). The
+  **planetary hour** is computed from the kickoff and the venue's longitude
+  (Chaldean order, 12 equal hours from 6:00 solar time, an approximation).
+  Everyone in the same game now shares both. Coordinates show N/S/E/W
+  correctly and hide when unknown. Sample (mock) data keeps the illustrative
+  values. Stars are unchanged: venue never fed the score.
+- ESPN returns 403 to headless browsers ("HeadlessChrome"), so automated QA
+  must use a normal user agent; real visitors are unaffected.
+- **Harmony is a percentage everywhere** ("62%"): header, telemetry, deltas,
+  bonus chips, explainer, stack badges, player popup and draft pick hero.
+- **Roster-specific text.** "Fire & Air Kinetic Combustion" appears only when
+  the starting QB is Fire with Air pass catchers, and names them; otherwise
+  the card lists the QB's complementary / same / opposed targets. "Earth
+  Bedrock" names the starting Earth RBs (or says there are none). The aspect
+  reader shows the aspect between the starters' two leading elements
+  (Sextile 60° complementary, Square 90° in tension, Conjunction 0° single).
+
+Tests: Tier 10 10.10.1–10.10.5; 20.4 and 21.6 updated for %. npm test: 471
+passed. Verified in the browser for KaySwizz and McTwerkface.
+
 ## Open (owner's call)
 
-- **Invented matchup details.** Venue is always the player's home stadium
-  (Huntley "M&T Bank Stadium" though BAL plays at ATL); kickoff times come from
-  a fixed list (two CHI players show different kickoffs; Pickens shows Sunday
-  1:00 PM though DAL played Thursday); moon phase and planetary hour differ
-  between players on the same day. The schedule gives date, home and away but
-  no kickoff time.
 - **Leaderboard tier chip** follows average Spirit, so 9 of 12 teams (including
   #1) read "Discordant (At Risk)".
-- **Harmony** reads "90%" on the leaderboard but "90 / 100" elsewhere.
-- **Static callouts** ("Fire & Air Kinetic Combustion", "Earth Bedrock Floor
-  Anchoring", the "Linear Aspect Resonance Reader 60°") show the same text for
-  every roster.

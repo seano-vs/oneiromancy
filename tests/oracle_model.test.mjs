@@ -33,6 +33,7 @@ const oracle = await import('../core/lib/oracle.ts');
 const scoring = await import('../core/lib/scoring.ts');
 const headshots = await import('../components/common/PlayerHeadshot.tsx');
 const gameStatus = await import('../core/lib/gameStatus.ts');
+const nflGames = await import('../core/lib/nflGames.ts');
 
 // --- fixtures -------------------------------------------------------------
 
@@ -399,6 +400,44 @@ describe('Tier 10: Oracle model and recommendations', () => {
       } finally {
         gameStatus.clearGameStatus();
       }
+    });
+  });
+
+  describe('10.10 Real games on the matchup cards (owner: "real kickoff times", 2026-10-11)', () => {
+    it('10.10.1 the moon is computed, not picked: known new and full moons', () => {
+      assert.equal(nflGames.moonAt(new Date('2024-04-08T18:00:00Z')), 'New Moon in Aries', 'the 2024 total eclipse');
+      assert.match(nflGames.moonAt(new Date('2026-10-10T12:00:00Z')), /^New Moon in Libra$/);
+      assert.match(nflGames.moonAt(new Date('2026-09-26T12:00:00Z')), /^Full Moon in /);
+    });
+
+    it('10.10.2 kickoff labels use Eastern time, and say TBA rather than invent a time', () => {
+      assert.equal(nflGames.kickoffLabel({ kickoff: '2026-10-11T17:00Z', date: '2026-10-11' }), 'Sun, Oct 11 · 1:00 PM ET');
+      assert.equal(nflGames.kickoffLabel({ kickoff: null, date: '2026-10-18' }), 'Sun, Oct 18 · time TBA');
+    });
+
+    it('10.10.3 both teams in a game share one game record; a bye has none', () => {
+      nflGames.setWeekGames(5, [{ week: 5, home: 'ATL', away: 'BAL', kickoff: '2026-10-11T17:00Z', date: '2026-10-11', venue: { name: 'Mercedes-Benz Stadium', city: 'Atlanta' }, neutral: false }]);
+      try {
+        assert.equal(nflGames.teamGame(5, 'BAL'), nflGames.teamGame(5, 'ATL'));
+        assert.equal(nflGames.teamGame(5, 'BAL').venue.name, 'Mercedes-Benz Stadium', 'road team plays at the home stadium');
+        assert.equal(nflGames.teamGame(5, 'KC'), undefined);
+      } finally {
+        nflGames.clearNflGames();
+      }
+    });
+
+    it('10.10.4 the planetary hour depends only on kickoff and venue, so teammates in one game match', () => {
+      const t = new Date('2026-10-11T17:00:00Z');
+      assert.equal(nflGames.planetaryHourAt(t, -88.06), nflGames.planetaryHourAt(t, -88.06));
+      assert.match(nflGames.planetaryHourAt(t, -88.06), /^Hour of (Saturn|Jupiter|Mars|Sun|Venus|Mercury|Moon) \(/);
+    });
+
+    it('10.10.5 neutral sites get their own coordinates; live cards never use the illustrative slots', () => {
+      assert.deepEqual(nflGames.neutralVenueCoords('Tottenham Hotspur Stadium'), { lat: 51.6043, lon: -0.0664 });
+      assert.equal(nflGames.neutralVenueCoords('Unknown Field'), null);
+      const src = fs.readFileSync(path.resolve('core/lib/sleeper.ts'), 'utf8');
+      assert.ok(src.includes('const gameKickoff = liveSeason'), 'kickoff must come from the real game when a season is loaded');
+      assert.ok(src.includes('const lunarPhase = liveSeason'), 'moon must come from the real kickoff when a season is loaded');
     });
   });
 });

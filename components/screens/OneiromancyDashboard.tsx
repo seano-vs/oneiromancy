@@ -30,7 +30,7 @@ import {
 import {deriveWeeklyMatchup, getSeasonContext} from '@/lib/sleeper';
 import WeeklyMoves from '@/components/oneiromancy/WeeklyMoves';
 import MatchupsScreen from '@/components/screens/MatchupsScreen';
-import {TONE_PILL, favorabilityTone, starsScore, statsPoints} from '@/lib/oracle';
+import {TONE_PILL, elementRelation, favorabilityTone, starsScore, statsPoints} from '@/lib/oracle';
 import {
   calculateTeamCelestialMetrics,
   classifySpiritScoreTier,
@@ -182,6 +182,36 @@ export const OneiromancyDashboard: React.FC<OneiromancyDashboardProps> = ({
   }, [draftState?.elemental_traits, rosteredPlayers]);
 
   // Active celestial aspects and harmonic conjunctions
+  // Element readings from this roster's starters (not fixed text).
+  const elementReadings = useMemo(() => {
+    const el = (p: CosmicPlayer) => p.elemental_traits?.element;
+    const qb = startingPlayers.find((p) => p.position === 'QB');
+    const catchers = startingPlayers.filter((p) => p.position === 'WR' || p.position === 'TE');
+    const groups: Record<string, string[]> = { Complementary: [], 'Same element': [], Opposed: [] };
+    if (qb) {
+      for (const c of catchers) {
+        const r = elementRelation(el(qb), el(c));
+        if (r in groups) groups[r].push(`${c.name} (${el(c)})`);
+      }
+    }
+    const airTargets = qb && el(qb) === 'Fire' ? catchers.filter((c) => el(c) === 'Air') : [];
+    const earthBacks = startingPlayers.filter((p) => p.position === 'RB' && el(p) === 'Earth');
+    const counts: Record<string, number> = {};
+    for (const p of startingPlayers) {
+      const e = el(p);
+      if (e) counts[e] = (counts[e] ?? 0) + 1;
+    }
+    const top = Object.entries(counts).sort((a, b) => b[1] - a[1]).map(([e]) => e);
+    const rel = top.length >= 2 ? elementRelation(top[0] as any, top[1] as any) : null;
+    const aspect =
+      top.length < 2
+        ? { angle: 0, name: 'Conjunction' }
+        : rel === 'Complementary'
+          ? { angle: 60, name: 'Sextile' }
+          : { angle: 90, name: 'Square' };
+    return { qb, qbElement: qb ? el(qb) : undefined, groups, airTargets, earthBacks, top: top.slice(0, 2), rel, aspect };
+  }, [startingPlayers]);
+
   // Starters only, like the Squad Harmony score these stacks add to.
   const activeAspects = useMemo(() => {
     const aspects = [];
@@ -361,7 +391,7 @@ export const OneiromancyDashboard: React.FC<OneiromancyDashboardProps> = ({
           <span className="flex items-center gap-2">
             <Trophy className="w-4 h-4 text-amber-400" />
             <span className="font-serif text-base font-bold text-slate-100">Squad Harmony</span>
-            <span className="text-xs font-mono text-amber-300">{harmonyScore} / 100</span>
+            <span className="text-xs font-mono text-amber-300">{harmonyScore}%</span>
           </span>
           <span className="text-xs font-mono text-slate-400 flex items-center gap-1">
             {isHarmonyOpen ? 'Hide' : 'Elements and stacks'}
@@ -371,7 +401,7 @@ export const OneiromancyDashboard: React.FC<OneiromancyDashboardProps> = ({
         {isHarmonyOpen && (
           <div id="team-harmony-body" className="px-4 sm:px-6 pb-5 pt-4 space-y-5 border-t border-white/10">
             <p className="text-[11px] font-sans text-slate-400">
-              How well your lineup works as a unit. Starts at 50, plus the three bonuses below (max 100).
+              How well your lineup works as a unit. Starts at 50%, plus the three bonuses below (max 100%).
             </p>
         {/* How Harmony is scored (computeRosterHarmonyBreakdown) */}
         <details className="group rounded-xl bg-slate-950/60 border border-cyan-500/20 text-xs overflow-hidden transition-all">
@@ -392,7 +422,7 @@ export const OneiromancyDashboard: React.FC<OneiromancyDashboardProps> = ({
                   <span>1. Elemental Trine</span>
                 </div>
                 <p className="text-[10px] font-sans text-slate-400 leading-normal">
-                  Three starters of one element: +12. Four or more: +18.
+                  Three starters of one element: +12%. Four or more: +18%.
                 </p>
               </div>
               <div className="p-2 rounded bg-slate-900/60 border border-white/5 space-y-1">
@@ -401,7 +431,7 @@ export const OneiromancyDashboard: React.FC<OneiromancyDashboardProps> = ({
                   <span>2. QB Stacks</span>
                 </div>
                 <p className="text-[10px] font-sans text-slate-400 leading-normal">
-                  A pass catcher with his own QB: +18 (+9 each when several share one QB). Up to +30.
+                  A pass catcher with his own QB: +18% (+9% each when several share one QB). Up to +30%.
                 </p>
               </div>
               <div className="p-2 rounded bg-slate-900/60 border border-white/5 space-y-1">
@@ -410,7 +440,7 @@ export const OneiromancyDashboard: React.FC<OneiromancyDashboardProps> = ({
                   <span>3. Four-Element Balance</span>
                 </div>
                 <p className="text-[10px] font-sans text-slate-400 leading-normal">
-                  Fire, Earth, Air and Water all present: +10.
+                  Fire, Earth, Air and Water all present: +10%.
                 </p>
               </div>
             </div>
@@ -577,7 +607,7 @@ export const OneiromancyDashboard: React.FC<OneiromancyDashboardProps> = ({
             <div className="space-y-2">
               {activeAspects.length === 0 && (
                 <p className="text-[11px] font-sans text-slate-400">
-                  No QB stacks among your starters (+0 Harmony).
+                  No QB stacks among your starters (+0% Harmony).
                 </p>
               )}
               {activeAspects.map((aspect, idx) => (
@@ -591,7 +621,7 @@ export const OneiromancyDashboard: React.FC<OneiromancyDashboardProps> = ({
                     </span>
                     <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-950/80 border border-amber-500/40 text-amber-200">
                       {/* computeRosterHarmonyBreakdown: +18 for a lone pass catcher, +9 each when several share the QB */}
-                      +{aspect.pass_catcher_names.length === 1 ? 18 : 9 * aspect.pass_catcher_names.length} Harmony
+                      +{aspect.pass_catcher_names.length === 1 ? 18 : 9 * aspect.pass_catcher_names.length}% Harmony
                     </span>
                   </div>
                   <div className="text-xs font-sans text-slate-200">
@@ -611,18 +641,27 @@ export const OneiromancyDashboard: React.FC<OneiromancyDashboardProps> = ({
                 </div>
               ))}
 
-              {/* Elemental Synergy Callouts */}
+              {/* Elemental callouts, read from your starters */}
               <div className="p-3 rounded-lg bg-slate-900/60 border border-white/5 space-y-1 text-xs font-mono">
                 <div className="flex items-center justify-between text-cyan-300 font-semibold">
                   <span className="flex items-center gap-1">
                     <TrendingUp className="w-3 h-3 text-cyan-400" />
-                    Fire & Air Kinetic Combustion
+                    {elementReadings.airTargets.length > 0
+                      ? 'Fire & Air Kinetic Combustion'
+                      : elementReadings.qb
+                        ? `${elementReadings.qbElement ?? ''} QB alignment`
+                        : 'QB alignment'}
                   </span>
                 </div>
                 <p className="text-[10px] font-sans text-slate-400 leading-relaxed">
-                  Fire QB provides energetic offensive leadership while Air WR
-                  creates separation on deep post routes, maximizing big-play
-                  touchdown volume.
+                  {!elementReadings.qb
+                    ? 'No QB among your starters.'
+                    : elementReadings.airTargets.length > 0
+                      ? `Fire QB ${elementReadings.qb.name} with Air ${elementReadings.airTargets.map((c) => c.name).join(' & ')}: energetic leadership plus separation on deep routes.`
+                      : (['Complementary', 'Same element', 'Opposed'] as const)
+                          .filter((k) => elementReadings.groups[k].length > 0)
+                          .map((k) => `${k}: ${elementReadings.groups[k].join(', ')}`)
+                          .join(' · ') || `${elementReadings.qb.name} has no starting pass catchers to align with.`}
                 </p>
               </div>
 
@@ -634,12 +673,13 @@ export const OneiromancyDashboard: React.FC<OneiromancyDashboardProps> = ({
                   </span>
                 </div>
                 <p className="text-[10px] font-sans text-slate-400 leading-relaxed">
-                  Workhorse RB touches protect your weekly floor from defensive
-                  coverage shifts and poor weather environments.
+                  {elementReadings.earthBacks.length > 0
+                    ? `${elementReadings.earthBacks.map((p) => p.name).join(' & ')} (Earth RB${elementReadings.earthBacks.length > 1 ? 's) anchor' : ') anchors'} your weekly floor.`
+                    : 'No Earth RBs among your starters, so no floor anchor this week.'}
                 </p>
               </div>
 
-              {/* Mathematically Linear Aspect Resonance Scale Gauge */}
+              {/* Aspect between your starters' two leading elements */}
               <div className="p-3 rounded-xl bg-slate-950/60 border border-white/10 space-y-2">
                 <div className="flex items-center justify-between text-xs font-mono">
                   <span className="text-slate-300 font-semibold flex items-center gap-1.5">
@@ -647,19 +687,21 @@ export const OneiromancyDashboard: React.FC<OneiromancyDashboardProps> = ({
                     <span>Linear Aspect Resonance Reader (0° to 180°)</span>
                   </span>
                   <span className="text-cyan-300 font-bold">
-                    {Math.min(180, Math.round(activeAspects.length * 60))}° (
-                    {Math.min(
-                      100,
-                      Math.round((activeAspects.length / 3) * 100),
-                    )}
-                    %)
+                    {elementReadings.aspect.angle}° ({elementReadings.aspect.name})
                   </span>
                 </div>
+                <p className="text-[10px] font-sans text-slate-400">
+                  {elementReadings.top.length >= 2
+                    ? `Your starters lean ${elementReadings.top.join(' & ')}: ${elementReadings.rel === 'Complementary' ? 'complementary elements' : 'elements in tension'}.`
+                    : elementReadings.top.length === 1
+                      ? `Your starters are all ${elementReadings.top[0]}.`
+                      : 'No element data for your starters.'}
+                </p>
                 <div className="relative w-full h-2.5 bg-slate-900 rounded-full overflow-hidden border border-white/10">
                   <div
                     className="h-full bg-gradient-to-r from-cyan-500 via-purple-500 to-amber-400 rounded-full transition-all duration-500"
                     style={{
-                      width: `${Math.min(100, Math.max(8, (activeAspects.length / 3) * 100))}%`,
+                      width: `${Math.max(4, (elementReadings.aspect.angle / 180) * 100)}%`,
                     }}
                   />
                 </div>

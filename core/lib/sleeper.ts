@@ -34,6 +34,7 @@
  *   to immediately clear active cooldowns and unblock lookups.
  */
 
+import { clearNflGames, fetchEspnWeek, kickoffLabel, moonAt, neutralVenueCoords, planetaryHourAt, setWeekGames, teamGame, type NflGame } from './nflGames';
 import { clearGameStatus, setGameStatus, teamGameStatus, type GameStatus } from './gameStatus';
 import {
   AscensionStep,
@@ -589,7 +590,10 @@ const matchupWeekCache = new Map<string, Promise<SleeperMatchup[]>>();
 
 export function setSeasonContext(ctx: SeasonContext | null): void {
   seasonContext = ctx;
-  if (!ctx) clearGameStatus();
+  if (!ctx) {
+    clearGameStatus();
+    clearNflGames();
+  }
 }
 
 export function getSeasonContext(): SeasonContext | null {
@@ -746,7 +750,34 @@ export async function loadSeasonContext(
       }),
     );
   }
-  await Promise.all(weekRequests);
+  // Real games for the matchup cards: Sleeper's dates and home/away teams,
+  // overlaid with ESPN's kickoffs and venues where available.
+  for (let w = 1; w <= lastRegularWeek; w++) {
+    setWeekGames(
+      w,
+      games
+        .filter((g) => g.week === w)
+        .map((g): NflGame => ({
+          week: w,
+          home: g.home,
+          away: g.away,
+          kickoff: null,
+          date: g.date || null,
+          venue: null,
+          neutral: false,
+        })),
+    );
+  }
+  const espnRequests: Promise<void>[] = [];
+  for (let w = 1; w <= lastRegularWeek; w++) {
+    const week = w;
+    espnRequests.push(
+      fetchEspnWeek(season, week, week < currentWeek).then((espn) => {
+        if (espn) setWeekGames(week, espn);
+      }),
+    );
+  }
+  await Promise.all([...weekRequests, ...espnRequests]);
 
   const byeWeeks = deriveByeWeeks(games);
   const statusByTeam: Record<string, GameStatus> = {};
@@ -3797,6 +3828,57 @@ export function deriveWeeklyMatchup(
       (p as any).divination_breakdown?.geomantic ??
       (stadiumObj.roof_type.includes('Dome') ? 78.0 : 84.0);
 
+    // With a live season, the card shows this week's real game: the venue it
+    // is played at (the home team's stadium, or a neutral site), the kickoff,
+    // and the moon and planetary hour at that kickoff. These are display
+    // only; Stars don't depend on them.
+    const liveSeason = Boolean(seasonContext);
+    const game = liveSeason ? teamGame(week, rawTeamCode) : undefined;
+    let liveKickoff: string | null = null;
+    let liveMoon: string | null = null;
+    let liveHour: string | null = null;
+    if (game) {
+      const homeMeta = NFL_TEAM_STADIUMS[game.home] || nflStadiumMeta;
+      const neutralCoords = game.neutral ? neutralVenueCoords(game.venue?.name) : null;
+      const lat = game.neutral ? neutralCoords?.lat ?? null : homeMeta.latitude;
+      const lon = game.neutral ? neutralCoords?.lon ?? null : homeMeta.longitude;
+      Object.assign(stadiumObj, {
+        stadium_name: game.venue?.name || homeMeta.stadium_name,
+        city: game.venue?.city || homeMeta.city,
+        state: game.neutral ? '' : game.venue?.state || homeMeta.state,
+        roof_type: game.neutral
+          ? game.venue?.indoor ? 'Dome' : 'Open Air'
+          : homeMeta.roof_type,
+        latitude: lat,
+        longitude: lon,
+        coordinates: lat !== null && lon !== null ? {lat, lon} : null,
+        celestial_house: homeMeta.celestial_house,
+        zodiac_ascendant: homeMeta.zodiac_ascendant,
+        geo_magnetic_resonance: homeMeta.geo_magnetic_resonance,
+      });
+      const isHome = game.home === rawTeamCode;
+      const oppCode = isHome ? game.away : game.home;
+      liveKickoff = `${kickoffLabel(game)} · ${isHome ? 'vs' : '@'} ${oppCode}`;
+      const when = game.kickoff
+        ? new Date(game.kickoff)
+        : game.date
+          ? new Date(`${game.date}T18:00:00Z`)
+          : null;
+      liveMoon = when ? moonAt(when) : null;
+      liveHour = game.kickoff && lon !== null ? planetaryHourAt(new Date(game.kickoff), lon) : null;
+    } else if (liveSeason) {
+      Object.assign(stadiumObj, {
+        stadium_name: 'No game this week',
+        city: '',
+        state: '',
+        roof_type: '—',
+        latitude: null,
+        longitude: null,
+        coordinates: null,
+      });
+      liveKickoff = 'Bye week';
+    }
+
     // A player's Stars never depend on where he sits in a lineup (owner decision):
     // every player is scored as a starter, so bench players aren't pre-judged.
     const calc = computeWeeklyPlayerFavorability(
@@ -3867,12 +3949,17 @@ export function deriveWeeklyMatchup(
       idHash = (idHash * 31 + pid.charCodeAt(i)) | 0;
     }
 
-    const gameKickoff =
-      kickoffSlots[(Math.abs(idHash) + week) % kickoffSlots.length];
-    const lunarPhase =
-      lunarPhases[(Math.abs(idHash) + week) % lunarPhases.length];
-    const planetaryHour =
-      planetaryHours[(Math.abs(idHash) + idx) % planetaryHours.length];
+    // Sample (mock) data keeps the illustrative slots; a live season shows the
+    // real game, or nothing when it isn't known.
+    const gameKickoff = liveSeason
+      ? liveKickoff ?? 'Time TBA'
+      : kickoffSlots[(Math.abs(idHash) + week) % kickoffSlots.length];
+    const lunarPhase = liveSeason
+      ? liveMoon ?? ''
+      : lunarPhases[(Math.abs(idHash) + week) % lunarPhases.length];
+    const planetaryHour = liveSeason
+      ? liveHour ?? ''
+      : planetaryHours[(Math.abs(idHash) + idx) % planetaryHours.length];
 
     return {
       player_id: pid,
