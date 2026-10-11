@@ -644,8 +644,9 @@ export const MatchupsScreen: React.FC<MatchupsScreenProps> = ({
         </summary>
         <div className="px-3 pb-3 space-y-2 text-slate-300 font-sans">
           <p>
-            Stars this week = 0.45 × SpiritScore + 0.25 × Stadium Feng Shui + 0.8 × projected points + role
-            (+8 starter, −6 bench), minus 22 when the player is out or has no projection. SpiritScore is built
+            Stars this week = 0.45 × SpiritScore + 0.25 × Stadium Feng Shui + 0.8 × projected points + 8,
+            minus 22 when the player is out or has no projection. Every player is scored as if he starts, so
+            bench players aren&apos;t marked down for where they sit. SpiritScore is built
             from the five Oracle pillars: Celestial Transits, Stadium Feng Shui, Jersey Gematria, Squad Alchemy,
             and Tarot &amp; I-Ching.
           </p>

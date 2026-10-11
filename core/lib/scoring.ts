@@ -263,13 +263,14 @@ export function recomputeDraftScores(
       p.sleeper_projected_points ??
       p.projected_points ??
       0;
-    const isStarter = p.draft_status === 'my_team' || weeklyProj >= 8.0;
     const geomantic = p.divination_breakdown?.geomantic ?? 78.0;
+    // A player's Stars never depend on where he sits in a lineup (owner decision):
+    // every player is scored as a starter, so bench players aren't pre-judged.
     const fav = computeWeeklyPlayerFavorability(
       p.spirit_score,
       weeklyProj,
       p.injury_status,
-      isStarter,
+      true,
       geomantic,
     );
 
@@ -1290,11 +1291,12 @@ export function recomputeDraftState(
           fav.projected_points ?? p?.weekly_projected_points ?? 12.0;
         const geomantic =
           p?.divination_breakdown?.geomantic ?? fav.stadium_score ?? 78.0;
+        // Bench players are scored as starters too (no role penalty).
         const calc = computeWeeklyPlayerFavorability(
           spirit,
           weeklyProj,
           p?.injury_status,
-          !fav.is_benched,
+          true,
           geomantic,
         );
         return {

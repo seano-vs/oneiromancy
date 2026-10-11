@@ -125,6 +125,17 @@ describe('Tier 10: Oracle model and recommendations', () => {
       assert.equal(oracle.favorabilityTone(64.4), 'bad');
     });
 
+    it('10.2.6 a player\'s Stars never depend on his lineup slot (no bench penalty)', () => {
+      // Owner decision 2026-10-11: bench players are scored as starters everywhere.
+      const benchGuy = player('Bench Guy', 'WR', 3, 70, { draft_status: 'available', divination_breakdown: { geomantic: 78 } });
+      const [recomputed] = scoring.recomputeDraftScores([benchGuy], { chaos_lambda: 0.75 });
+      assert.equal(recomputed.favorability_score, oracle.starsScore(benchGuy), 'board favorability equals Stars');
+      const sleeperSrc = fs.readFileSync(path.resolve('core/lib/sleeper.ts'), 'utf8');
+      const scoringSrc = fs.readFileSync(path.resolve('core/lib/scoring.ts'), 'utf8');
+      assert.ok(!scoringSrc.includes('!fav.is_benched,\n          geomantic'), 'matchup recompute must not penalize the bench');
+      assert.ok(!/p\.injury_status,\n\s+isStarter,\n\s+geomantic/.test(sleeperSrc), 'matchup build must not penalize the bench');
+    });
+
     it('10.2.5 injury codes are written out in plain English', () => {
       assert.equal(oracle.injuryStatusText('NA'), 'not active');
       assert.equal(oracle.injuryStatusText('IR'), 'on injured reserve');

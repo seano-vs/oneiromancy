@@ -100,7 +100,7 @@ Player numbers:
 | Number | Definition | Where |
 | --- | --- | --- |
 | **Spirit** | Divination breakdown (5 pillars) weighted by the star weights, 0–100 | `computeSpiritScore` |
-| **Stars** | This week's favorability from Spirit, projection, injury and stadium, **scored as a starter** so bench players aren't pre-judged, 0–100 | `starsScore` (oracle.ts) → `computeWeeklyPlayerFavorability` |
+| **Stars** | This week's favorability from Spirit, projection, injury and stadium, 0–100. **Always scored as a starter**: there is no bench penalty anywhere (owner decision), so a player's Stars never depend on his lineup slot | `starsScore` (oracle.ts) → `computeWeeklyPlayerFavorability` |
 | **Stats** | Projected points; Stats score = pts / 25 × 100, capped | `statsPoints`, `statsScore` |
 | **Oracle** | `(1 − λ) × Stats score + λ × Stars` | `oracleScore` |
 | Draft score | `(1 − λ) × VOR_normalized + λ × Spirit` (draft-time; feeds team metrics) | `computeDraftScore` |
@@ -226,10 +226,6 @@ The definition of done is in the guidelines. In practice:
 
 ## 13. Known gaps and open questions
 
-- **Bench Stars mismatch.** Matchup-detail player cards score bench players
-  with the upstream role penalty, so the same player shows different "Stars"
-  there (e.g. Isaiah Likely 65.6) and everywhere else (★80, scored as a
-  starter). This needs an owner decision.
 - **Leaderboard tier chip.** It follows average Spirit, not rank, so the #1
   Overall team can show "Discordant (At Risk)". Kept as the owner's original
   design.

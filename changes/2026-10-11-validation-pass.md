@@ -118,7 +118,7 @@ categories, and has no K or DEF slots.
 | Finding | Status |
 | --- | --- |
 | Past weeks showed a constant "Astral Alignment: Aligned", even for losses | **Fixed** (`b304688`): shown only when the data has a value |
-| Same player, two "Stars": matchup-detail cards score bench players with the upstream role penalty (Isaiah Likely 65.6, below Ferguson's 74.7), while every other screen scores them as a starter (★80, above Ferguson's ★75). Your moves says stars favor Likely | **Open: owner decision** |
+| Same player, two "Stars": matchup-detail cards score bench players with the upstream role penalty (Isaiah Likely 65.6, below Ferguson's 74.7), while every other screen scores them as a starter (★80, above Ferguson's ★75). Your moves says stars favor Likely | **Fixed** (owner: "why have a bench penalty in the first place"): every player is scored as a starter. Likely now shows 79.6 in the details and ★80 elsewhere |
 | The leaderboard's #1 Overall team can wear "⚠️ Discordant (At Risk)", because the chip follows average Spirit, not rank | Kept (owner's original design); owner told |
 | The Bye outlook disclosure is titled "Why 18-Week Coverage Matters" but shows the remaining weeks (5–13) | Minor; left as-is |
 | Travis Hunter shows as "DB" with 0.9 pts | Correct per Sleeper's data |

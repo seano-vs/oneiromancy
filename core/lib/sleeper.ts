@@ -3728,7 +3728,7 @@ export function deriveWeeklyMatchup(
     teamHarmony: number,
   ): PlayerMatchupFavorability => {
     const pid = String(p.id) || `${isUserTeam ? 'u' : 'o'}-${idx}`;
-    const spirit = p.spirit_score || (isStarter ? 85 : 80);
+    const spirit = p.spirit_score || 85;
     const actualPts = Number(matchObj?.players_points?.[pid] ?? 0);
     const hasPlayed = actualPts > 0;
 
@@ -3779,11 +3779,13 @@ export function deriveWeeklyMatchup(
       (p as any).divination_breakdown?.geomantic ??
       (stadiumObj.roof_type.includes('Dome') ? 78.0 : 84.0);
 
+    // A player's Stars never depend on where he sits in a lineup (owner decision):
+    // every player is scored as a starter, so bench players aren't pre-judged.
     const calc = computeWeeklyPlayerFavorability(
       spirit,
       playerWeeklyProj,
       p.injury_status,
-      isStarter,
+      true,
       geomantic,
     );
 
