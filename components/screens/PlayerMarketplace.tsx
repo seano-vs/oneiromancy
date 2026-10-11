@@ -31,6 +31,7 @@ import {deriveEligiblePositions, getSeasonContext} from '@/lib/sleeper';
 import {computeWaiverMoves, elementRelation, statsPoints} from '@/lib/oracle';
 import {PairBars} from '@/components/oneiromancy/WeeklyMoves';
 import PlayerLink, {type InspectTarget} from '@/components/common/PlayerLink';
+import {DeltaBadge, HealthTag, StatTiles, Tag} from '@/components/common/PlayerTiles';
 import {
   CosmicPlayer,
   NFLPosition,
@@ -751,45 +752,88 @@ export const PlayerMarketplace: React.FC<PlayerMarketplaceProps> = ({
           ) : (
             <ol className="flex flex-col gap-3">
               {visibleMoves.map((move, idx) => (
-                <li
-                  key={`${move.add.id}-${move.drop.id}`}
-                  className="p-4 rounded-xl bg-slate-900/70 border border-white/10 flex flex-col gap-2">
-                  <span className="text-[10px] font-mono uppercase tracking-widest text-emerald-300">
-                    Priority {idx + 1} · {move.wouldStart ? 'would start' : 'bench depth'} ·{' '}
-                    +{move.oracleGain.toFixed(1)} Oracle ({move.statsGain >= 0 ? '+' : ''}
-                    {move.statsGain.toFixed(1)} pts, Stars {move.starsAdd.toFixed(0)} vs {move.starsDrop.toFixed(0)})
-                  </span>
-                  <span className="text-base font-semibold text-slate-100">
-                    Add <PlayerLink player={move.add} vs={move.drop} onOpen={openTarget} />{' '}
-                    <span className="font-normal text-slate-400">for</span>{' '}
-                    <PlayerLink player={move.drop} vs={move.add} onOpen={openTarget} />
-                  </span>
-                  <PairBars
-                    label="Stats"
-                    a={statsPoints(move.add)}
-                    b={statsPoints(move.drop)}
-                    format={(n) => n.toFixed(1)}
-                    tone="stats"
-                  />
-                  <PairBars
-                    label="Stars"
-                    a={move.starsAdd}
-                    b={move.starsDrop}
-                    format={(n) => n.toFixed(0)}
-                    tone="stars"
-                  />
-                  <span className="text-xs text-slate-400">
-                    {move.reason} {move.add.position} · {move.add.team} · Bye {move.add.bye_week || '—'} ·{' '}
-                    {elementRelation(move.add.elemental_traits?.element, move.drop.elemental_traits?.element)}
-                  </span>
-                  <div className="flex flex-wrap gap-2">
-                    <button
-                      type="button"
-                      onClick={() => openTarget({ player: move.add, vs: move.drop })}
-                      className="px-3 py-1.5 rounded-lg border border-white/15 text-xs text-slate-200 hover:border-cyan-400/60">
-                      {move.add.name.split(' ').slice(-1)[0]} details
-                    </button>
-                  </div>
+                <li key={`${move.add.id}-${move.drop.id}`}>
+                  <GlassCard variant="panel" glowColor="green" className="p-4 sm:p-5 space-y-3.5">
+                    {/* Header: priority, verdict and net deltas */}
+                    <div className="flex flex-wrap justify-between items-center gap-2 border-b border-white/10 pb-3">
+                      <div className="flex flex-wrap items-center gap-2 min-w-0">
+                        <span className="px-2.5 py-0.5 rounded-full bg-emerald-950/80 border border-emerald-500/40 text-emerald-400 font-mono text-[10px] font-bold tracking-wider">
+                          PRIORITY {idx + 1}
+                        </span>
+                        <Tag tone={move.wouldStart ? 'cyan' : 'slate'}>
+                          {move.wouldStart ? 'Would start' : 'Bench depth'}
+                        </Tag>
+                        <PositionalBadge position={move.add.position} size="sm" />
+                        <span className="text-sm font-serif font-bold text-slate-100">
+                          <PlayerLink player={move.add} vs={move.drop} onOpen={openTarget} />{' '}
+                          <span className="text-slate-500 font-mono text-[11px] font-normal">for</span>{' '}
+                          <PlayerLink player={move.drop} vs={move.add} onOpen={openTarget} />
+                        </span>
+                      </div>
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <DeltaBadge value={move.oracleGain} unit="ORACLE" tone="emerald" />
+                        <DeltaBadge value={move.statsGain} unit="PTS" tone="amber" />
+                        <DeltaBadge value={move.starsAdd - move.starsDrop} unit="STARS" tone="purple" digits={0} />
+                      </div>
+                    </div>
+
+                    {/* Side-by-side: proposed add vs recommended drop */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 font-mono text-xs">
+                      <div className="p-3.5 rounded-xl bg-emerald-950/20 border border-emerald-500/30 space-y-2.5">
+                        <div className="flex justify-between items-start gap-2">
+                          <div className="space-y-0.5 min-w-0">
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-[9px] uppercase tracking-wider text-emerald-400 font-bold">
+                                Proposed add
+                              </span>
+                              <Tag tone="cyan">Free agent</Tag>
+                            </div>
+                            <div className="font-serif font-bold text-slate-100 text-sm">
+                              <PlayerLink player={move.add} vs={move.drop} onOpen={openTarget} />
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-1 shrink-0">
+                            <PositionalBadge position={move.add.position} size="sm" />
+                            <HealthTag player={move.add} />
+                          </div>
+                        </div>
+                        <StatTiles player={move.add} lambda={oracleLambda} />
+                      </div>
+
+                      <div className="p-3.5 rounded-xl bg-slate-900/60 border border-white/5 space-y-2.5">
+                        <div className="flex justify-between items-start gap-2">
+                          <div className="space-y-0.5 min-w-0">
+                            <span className="text-[9px] uppercase tracking-wider text-rose-400 font-bold block">
+                              Recommended drop (your bench)
+                            </span>
+                            <div className="font-serif font-bold text-slate-300 text-sm">
+                              <PlayerLink player={move.drop} vs={move.add} onOpen={openTarget} />
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-1 shrink-0">
+                            <PositionalBadge position={move.drop.position} size="sm" />
+                            <HealthTag player={move.drop} />
+                          </div>
+                        </div>
+                        <StatTiles player={move.drop} lambda={oracleLambda} muted />
+                      </div>
+                    </div>
+
+                    {/* Alchemical rationale */}
+                    <div className="p-2.5 rounded-lg bg-purple-950/30 border border-purple-500/20 text-[11px] font-sans italic text-purple-200 flex items-start gap-2">
+                      <Sparkles className="w-4 h-4 text-purple-400 shrink-0 mt-0.5" />
+                      <span>
+                        {move.reason}{' '}
+                        {(() => {
+                          const rel = elementRelation(move.add.elemental_traits?.element, move.drop.elemental_traits?.element);
+                          if (rel === '—') return null;
+                          return rel === 'Same element'
+                            ? `Same element as ${move.drop.name}.`
+                            : `${rel} element to ${move.drop.name}.`;
+                        })()}
+                      </span>
+                    </div>
+                  </GlassCard>
                 </li>
               ))}
             </ol>

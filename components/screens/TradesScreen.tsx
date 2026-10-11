@@ -22,6 +22,8 @@ import PositionalBadge from '@/components/common/PositionalBadge';
 import PlayerMarketplace from '@/components/screens/PlayerMarketplace';
 import PlayerDetailModal from '@/components/modals/PlayerDetailModal';
 import PlayerLink, { type InspectTarget } from '@/components/common/PlayerLink';
+import GlassCard from '@/components/common/GlassCard';
+import { DeltaBadge, HealthTag, StatTiles, Tag } from '@/components/common/PlayerTiles';
 import { useOneiromancy } from '@/context/OneiromancyContext';
 import {
   TONE_PILL,
@@ -89,7 +91,7 @@ export const TradesScreen: React.FC = () => {
           No trade improves both lineups this week. Check back after waivers clear.
         </p>
       ) : (
-        <ol className="flex flex-col gap-3" data-testid="trade-partners">
+        <ol className="flex flex-col gap-4" data-testid="trade-partners">
           {partners.map((p) => {
             const name = p.team.name.replace(/\s*\(You\)$/, '');
             const starters = (p.team.starters ?? [])
@@ -105,85 +107,122 @@ export const TradesScreen: React.FC = () => {
               .map((id) => byId.get(String(id)))
               .filter((x): x is CosmicPlayer => Boolean(x))
               .sort((a, b) => a.position.localeCompare(b.position) || oracleScore(b, lambda) - oracleScore(a, lambda));
+            const netGain = (p.give?.gain ?? 0) + (p.get?.gain ?? 0);
+            const side = (
+              kind: 'send' | 'receive',
+              piece: NonNullable<typeof p.give>,
+            ) => (
+              <div
+                className={`p-3 rounded-xl space-y-2.5 ${
+                  kind === 'send' ? 'bg-rose-950/20 border border-rose-500/25' : 'bg-cyan-950/20 border border-cyan-500/25'
+                }`}
+              >
+                <span
+                  className={`text-[9px] uppercase tracking-wider font-bold block ${
+                    kind === 'send' ? 'text-rose-400' : 'text-cyan-400'
+                  }`}
+                >
+                  {kind === 'send' ? 'You send' : 'You receive'}
+                </span>
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <PositionalBadge position={piece.player.position} size="sm" />
+                  <span className="font-serif font-bold text-slate-100 text-sm">
+                    <PlayerLink player={piece.player} vs={piece.replaces} onOpen={setInspected} />
+                  </span>
+                  <span className="text-[10px] font-mono text-slate-400">{piece.player.team}</span>
+                  <HealthTag player={piece.player} />
+                  <Tag tone="purple">{kind === 'send' ? 'Your bench' : 'Their bench'}</Tag>
+                </div>
+                <StatTiles player={piece.player} lambda={lambda} />
+                <div className="text-[11px] font-mono text-slate-400">
+                  Starts over {kind === 'receive' ? 'your ' : ''}
+                  <PlayerLink player={piece.replaces} vs={piece.player} onOpen={setInspected} className="text-slate-200" />{' '}
+                  <span className="text-emerald-400 font-bold">(+{piece.gain.toFixed(1)} Oracle)</span>
+                </div>
+              </div>
+            );
             return (
-              <li key={p.team.roster_id} className="p-4 rounded-xl bg-slate-900/70 border border-white/10 flex flex-col gap-2">
-                <div className="flex items-center gap-2.5">
-                  <UserAvatar
-                    src={p.team.avatar_url || p.team.avatar}
-                    alt={`${name} avatar`}
-                    fallbackText={name}
-                    size="sm"
-                  />
-                  <span className="text-base font-semibold text-slate-100">{name}</span>
-                  {typeof p.team.wins === 'number' && (
-                    <span className="text-xs font-mono text-slate-400">
-                      {p.team.wins}-{p.team.losses}
-                      {p.team.ties ? `-${p.team.ties}` : ''}
-                    </span>
-                  )}
-                </div>
-                <span className="text-[10px] font-mono uppercase tracking-widest text-purple-300">
-                  {p.give && p.get ? 'Mutual lineup fit' : `Short at ${p.youCanOffer.join(' and ')}`}
-                </span>
-                {(p.give || p.get) && (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-                    {p.give && (
-                      <div className="p-2 rounded-lg bg-slate-950/60 border border-white/10">
-                        <span className="text-[10px] font-mono text-slate-500 uppercase">You give</span>
-                        <div className="text-slate-100 font-semibold">
-                          <PlayerLink player={p.give.player} vs={p.give.replaces} onOpen={setInspected} />{' '}
-                          <span className="font-mono font-normal text-slate-400">{p.give.player.position}</span>
-                        </div>
-                        <ValueLine p={p.give.player} lambda={lambda} />
-                        <div className="text-[11px] text-slate-400">
-                          Would start over <PlayerLink player={p.give.replaces} vs={p.give.player} onOpen={setInspected} /> (+
-                          {p.give.gain.toFixed(1)} Oracle)
-                        </div>
-                      </div>
-                    )}
-                    {p.get && (
-                      <div className="p-2 rounded-lg bg-slate-950/60 border border-white/10">
-                        <span className="text-[10px] font-mono text-slate-500 uppercase">You get</span>
-                        <div className="text-slate-100 font-semibold">
-                          <PlayerLink player={p.get.player} vs={p.get.replaces} onOpen={setInspected} />{' '}
-                          <span className="font-mono font-normal text-slate-400">{p.get.player.position}</span>
-                        </div>
-                        <ValueLine p={p.get.player} lambda={lambda} />
-                        <div className="text-[11px] text-slate-400">
-                          Would start over your <PlayerLink player={p.get.replaces} vs={p.get.player} onOpen={setInspected} /> (+
-                          {p.get.gain.toFixed(1)} Oracle)
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )}
-                <span className="text-sm text-slate-300">{p.summary}</span>
-                <span className="text-xs font-mono text-slate-400">
-                  Their lineup leans {theirMix} · {relation.toLowerCase()} with yours
-                </span>
-                <div className="flex flex-wrap gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setOpenTeam(isOpen ? null : p.team.roster_id)}
-                    aria-expanded={isOpen}
-                    className="px-3 py-1.5 rounded-lg border border-white/15 text-xs text-slate-200 hover:border-cyan-400/60"
-                  >
-                    {isOpen ? 'Hide their roster' : 'See their roster'}
-                  </button>
-                </div>
-                {isOpen && (
-                  <ul className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 pt-2 border-t border-white/10">
-                    {rosterPlayers.map((pl) => (
-                      <li key={pl.id} className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs">
-                        <PositionalBadge position={pl.position} size="sm" />
-                        <PlayerLink player={pl} onOpen={setInspected} className="text-slate-200 truncate min-w-0" />
-                        <span className="ml-auto">
-                          <ValueLine p={pl} lambda={lambda} />
+              <li key={p.team.roster_id}>
+                <GlassCard variant="panel" glowColor="purple" className="p-4 space-y-3.5">
+                  {/* Partner and combined gain */}
+                  <div className="flex flex-wrap justify-between items-center gap-2 border-b border-white/5 pb-2.5">
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <UserAvatar
+                        src={p.team.avatar_url || p.team.avatar}
+                        alt={`${name} avatar`}
+                        fallbackText={name}
+                        size="sm"
+                      />
+                      <div className="min-w-0">
+                        <span className="text-[9px] uppercase tracking-wider text-slate-500 font-mono block">
+                          Trade partner
                         </span>
-                      </li>
-                    ))}
-                  </ul>
-                )}
+                        <span className="font-serif font-bold text-slate-100 text-base">{name}</span>
+                        {typeof p.team.wins === 'number' && (
+                          <span className="ml-2 text-xs font-mono text-slate-400">
+                            {p.team.wins}-{p.team.losses}
+                            {p.team.ties ? `-${p.team.ties}` : ''}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <Tag tone="purple">{p.give && p.get ? 'Mutual lineup fit' : `Short at ${p.youCanOffer.join(' & ')}`}</Tag>
+                      {netGain > 0 && <DeltaBadge value={netGain} unit="ORACLE" tone="emerald" />}
+                    </div>
+                  </div>
+
+                  {(p.give || p.get) && (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 font-mono text-xs">
+                      {p.give && side('send', p.give)}
+                      {p.get && side('receive', p.get)}
+                    </div>
+                  )}
+
+                  {!(p.give && p.get) && <p className="text-sm text-slate-300">{p.summary}</p>}
+
+                  {/* Alchemy telemetry */}
+                  <div className="flex flex-wrap justify-between items-center gap-2 font-mono text-[11px] px-1">
+                    <span className="text-slate-400">
+                      Their lineup leans <span className="text-purple-300">{theirMix}</span>
+                    </span>
+                    <span
+                      className={
+                        relation === 'Complementary'
+                          ? 'text-emerald-400'
+                          : relation === 'Opposed'
+                            ? 'text-rose-300'
+                            : 'text-amber-300'
+                      }
+                    >
+                      {relation} with yours
+                    </span>
+                  </div>
+
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setOpenTeam(isOpen ? null : p.team.roster_id)}
+                      aria-expanded={isOpen}
+                      className="px-3 py-1.5 rounded-lg border border-white/15 text-xs text-slate-200 hover:border-cyan-400/60"
+                    >
+                      {isOpen ? 'Hide their roster' : 'See their roster'}
+                    </button>
+                  </div>
+                  {isOpen && (
+                    <ul className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 pt-2 border-t border-white/10">
+                      {rosterPlayers.map((pl) => (
+                        <li key={pl.id} className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs">
+                          <PositionalBadge position={pl.position} size="sm" />
+                          <PlayerLink player={pl} onOpen={setInspected} className="text-slate-200 truncate min-w-0" />
+                          <span className="ml-auto">
+                            <ValueLine p={pl} lambda={lambda} />
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </GlassCard>
               </li>
             );
           })}

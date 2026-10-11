@@ -8,6 +8,7 @@ an owner decision, ask.
 
 | # | Date | Decision | By | Status | Details |
 | --- | --- | --- | --- | --- | --- |
+| 28 | 2026-10-11 | Waivers and Trades cards use the original Marketplace look (colored columns, tags, stat tiles incl. Wk Fav ★) on the Stats/Stars/Oracle numbers; no repeated summary text under You give / You get | **owner** | current | [ux-rework § Marketplace look](2026-10-10-ux-rework.md) |
 | 27 | 2026-10-11 | Never show a constant placeholder for a celestial value; hide the line when the data has none (past-week "Astral Alignment") | agent | current | [validation pass](2026-10-11-validation-pass.md) |
 | 26 | 2026-10-11 | Run tiers 1–4 again (register the loader before dynamic imports). Update tests pinned to the old UI to current behavior, marking removed features `REMOVED:`. Never skip or delete a test | agent (on the owner's "revisit our tests") | current | [validation pass](2026-10-11-validation-pass.md) |
 | 25 | 2026-10-11 | Restore original visual details the rework dropped: glowing active-tab bar and status dot, "Divination Spotlight Pick", "Active Transits & Conjunctions" | agent, following #20 | current | [validation pass](2026-10-11-validation-pass.md) |

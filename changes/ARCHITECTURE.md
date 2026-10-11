@@ -38,7 +38,7 @@ writes to Sleeper and never links out to act there.
 | Oracle model | `core/lib/oracle.ts` | Stats / Stars / Oracle, tone scale, lineup check, waiver moves, bye outlook, trade partners, team ratings, element text |
 | Types | `core/types/oneiromancy.ts` | `CosmicPlayer`, `RosterSlot`, `CompetitorTeam`, `WeeklyMatchup`, settings |
 | Shell | `components/common/NavigationShell.tsx` | Header (tabs, Oracle chip, status, avatar), mock banner, phone tab bar |
-| Shared UI | `components/common/PlayerLink.tsx`, `PlayerHeadshot.tsx`, `PositionalBadge.tsx`, `UserAvatar.tsx`, `GlassCard.tsx` | Clickable names, Sleeper CDN images, badges |
+| Shared UI | `components/common/PlayerLink.tsx`, `PlayerHeadshot.tsx`, `PlayerTiles.tsx`, `PositionalBadge.tsx`, `UserAvatar.tsx`, `GlassCard.tsx` | Clickable names, Sleeper CDN images, the Marketplace look (tags, delta badges, stat tiles with Wk Fav ★), badges |
 | Player popup | `components/modals/PlayerDetailModal.tsx` | Extended view; role comparison or head-to-head (`compareWith`) |
 | Oracle panel | `components/oracle/OraclePanel.tsx` (+ `screens/ChaosDial.tsx` embedded) | λ slider and presets, preview, star weights, astrology reference |
 | Screens | `components/screens/*.tsx`, `components/oneiromancy/*.tsx` | See §6 |
