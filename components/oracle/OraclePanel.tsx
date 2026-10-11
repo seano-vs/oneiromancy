@@ -94,8 +94,7 @@ export const OraclePanel: React.FC<OraclePanelProps> = ({ isOpen, onClose }) => 
               <Compass className="w-5 h-5 text-purple-300" /> Oracle
             </h2>
             <p className="text-xs text-slate-400 mt-1">
-              How much should the stars move your decisions? Every ranking and recommendation in the app uses
-              this setting.
+              How much should the stars move your decisions? Every ranking and pick in the app uses this.
             </p>
           </div>
           <button
@@ -107,6 +106,23 @@ export const OraclePanel: React.FC<OraclePanelProps> = ({ isOpen, onClose }) => 
             <X className="w-5 h-5" />
           </button>
         </div>
+
+        {/* The four numbers, named the same everywhere in the app */}
+        <dl className="grid grid-cols-2 gap-x-3 gap-y-1.5 text-[11px] font-sans">
+          {(
+            [
+              ['Stats', 'text-cyan-300', "This week's projected points."],
+              ['Spirit', 'text-purple-300', 'Season-long score from the five pillars below.'],
+              ['Stars', 'text-emerald-300', "This week's favorability, built on Spirit (0–100)."],
+              ['Oracle', 'text-amber-300', 'Stats and Stars blended by λ.'],
+            ] as const
+          ).map(([term, color, def]) => (
+            <div key={term}>
+              <dt className={`inline font-mono font-bold ${color}`}>{term}</dt>
+              <dd className="inline text-slate-400"> {def}</dd>
+            </div>
+          ))}
+        </dl>
 
         <section className="space-y-3 p-4 rounded-xl bg-slate-900/70 border border-white/10">
           <div className="flex items-baseline justify-between">
@@ -175,8 +191,8 @@ export const OraclePanel: React.FC<OraclePanelProps> = ({ isOpen, onClose }) => 
                 </span>
                 <span className="text-[11px] font-mono text-slate-400">
                   {s.flipLambda !== null
-                    ? `Stats and stars disagree. This flips at λ ${s.flipLambda.toFixed(2)}.`
-                    : 'Stats and stars agree.'}
+                    ? `Stats and Stars disagree. This flips at λ ${s.flipLambda.toFixed(2)}.`
+                    : 'Stats and Stars agree.'}
                 </span>
               </div>
             ))

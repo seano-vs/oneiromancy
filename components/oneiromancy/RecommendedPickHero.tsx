@@ -20,7 +20,7 @@ import React, { useState } from 'react';
 import GlassCard from '@/components/common/GlassCard';
 import PositionalBadge from '@/components/common/PositionalBadge';
 import { CosmicPlayer } from '@/types/oneiromancy';
-import { classifyWeeklyFavorability } from '@/lib/scoring';
+import { starsVerdictLabel } from '@/lib/scoring';
 import { Sparkles, ChevronDown, ChevronUp } from 'lucide-react';
 
 export interface RecommendedPickHeroProps {
@@ -172,20 +172,13 @@ export const RecommendedPickHero: React.FC<RecommendedPickHeroProps> = ({
         {/* Weekly Favorability */}
         <div className="flex flex-col">
           <span className="text-[10px] font-mono text-teal-300 uppercase font-bold tracking-wider">
-            Wk Favorability
+            Stars
           </span>
           <span className="font-mono text-2xl font-bold text-teal-300">
             {(player.favorability_score ?? 75).toFixed(0)}
           </span>
           <span className="text-[9px] font-mono text-slate-500">
-            {
-              {
-                'HEAVILY FAVORED': 'Heavily Favored',
-                'ASTRALLY FAVORED': 'Astrally Favored',
-                NEUTRAL: 'Neutral Transit',
-                'CELESTIALLY CHALLENGED': 'Challenged Transit',
-              }[classifyWeeklyFavorability(player.favorability_score ?? 75)]
-            }
+            {starsVerdictLabel(player.favorability_score ?? 75)}
           </span>
         </div>
       </div>

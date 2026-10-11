@@ -69,7 +69,7 @@ function lineupVerdict(s: LineupSwap, lambda: number): string {
   const inName = s.playerIn.name;
   const outName = s.playerOut?.name ?? 'the current starter';
   if (s.statsFavor !== 'out' && s.starsFavor !== 'out') {
-    return `Stats and stars both favor ${inName}.`;
+    return `Stats and Stars both favor ${inName}.`;
   }
   const statsSide = s.statsFavor === 'in' ? inName : outName;
   const starsSide = s.starsFavor === 'in' ? inName : outName;
@@ -196,7 +196,11 @@ export const WeeklyMoves: React.FC = () => {
                 `${trade.team.name.replace(/\s*\(You\)$/, '')} is short at ${trade.youCanOffer.join(' and ')}`
               )}
             </span>
-            <span className="text-xs text-slate-400">{trade.summary}</span>
+            <span className="text-xs text-slate-400">
+              {trade.give && trade.get
+                ? `${trade.give.player.name} would start over their ${trade.give.replaces.name}; ${trade.get.player.name} would start over your ${trade.get.replaces.name}.`
+                : trade.summary}
+            </span>
             <div className="flex flex-wrap gap-2">{tabButton('See trade partners', 'trades')}</div>
           </MoveCard>
         )}

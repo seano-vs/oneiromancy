@@ -3798,41 +3798,22 @@ export function deriveWeeklyMatchup(
     let aspectHighlights: string[];
 
     if (calc.health_penalty < 0) {
-      rationaleText = `⚠️ 6th House Health Affliction: ${p.name} (${sunSign} / ${elem}) carries ${
-        p.injury_status || 'Injury / Inactive'
-      } status (-22 pts health drag), suppressing field availability at ${stadiumName}.`;
-      aspectHighlights = [
-        '⚠️ 6th House Health Affliction (-22 pts)',
-        'Inactive Reserve Drag',
-        'Suppressed Field Availability',
-      ];
+      rationaleText = p.injury_status
+        ? `⚠️ 6th House affliction: ${p.name} (${sunSign} / ${elem}) is ${p.injury_status} (−22 Stars).`
+        : `⚠️ 6th House affliction: ${p.name} (${sunSign} / ${elem}) has no projection this week (−22 Stars).`;
+      aspectHighlights = ['⚠️ 6th House affliction (−22)', p.injury_status || 'No projection'];
     } else if (calc.verdict === 'HEAVILY FAVORED') {
-      rationaleText = `✨ Apex Celestial Alignment: ${p.name} (${sunSign} / ${elem}) commands a ${
-        calc.role_modifier >= 0 ? `+${calc.role_modifier.toFixed(1)}` : calc.role_modifier.toFixed(1)
-      } astral transit trine and high geomagnetic resonance at ${stadiumName}.`;
-      aspectHighlights = [
-        `✨ ${stadiumObj.zodiac_ascendant} Trine`,
-        `Astral Transit (${calc.role_modifier >= 0 ? '+' : ''}${calc.role_modifier.toFixed(1)} pts)`,
-        stadiumObj.geo_magnetic_resonance,
-      ];
+      rationaleText = `✨ Apex alignment: ${p.name} (${sunSign} / ${elem}) rides a ${stadiumObj.zodiac_ascendant} trine at ${stadiumName}.`;
+      aspectHighlights = [`✨ ${stadiumObj.zodiac_ascendant} Trine`, stadiumObj.geo_magnetic_resonance];
     } else if (calc.verdict === 'ASTRALLY FAVORED') {
-      rationaleText = `🌟 Harmonic Transit Alignment: ${p.name} (${sunSign} / ${elem}) channels steady planetary sextile support (${
-        calc.role_modifier >= 0 ? `+${calc.role_modifier.toFixed(1)}` : calc.role_modifier.toFixed(1)
-      } transit) and clean stadium grounding at ${stadiumName}.`;
-      aspectHighlights = [
-        `🌟 Harmonic Sextile Alignment`,
-        `Astral Transit (${calc.role_modifier >= 0 ? '+' : ''}${calc.role_modifier.toFixed(1)} pts)`,
-        stadiumObj.celestial_house,
-      ];
+      rationaleText = `🌟 Harmonic alignment: ${p.name} (${sunSign} / ${elem}) has steady sextile support at ${stadiumName}.`;
+      aspectHighlights = ['🌟 Harmonic Sextile', stadiumObj.celestial_house];
+    } else if (calc.verdict === 'NEUTRAL') {
+      rationaleText = `⚖️ Mixed signals: ${p.name} (${sunSign} / ${elem}) has neither trine nor square at ${stadiumName}.`;
+      aspectHighlights = ['⚖️ Neutral transit', stadiumObj.celestial_house];
     } else {
-      rationaleText = `⚠️ Planetary Square & Coverage Friction: ${p.name} (${sunSign} / ${elem}) encounters a challenging Saturn-Mars square (${
-        calc.role_modifier >= 0 ? `+${calc.role_modifier.toFixed(1)}` : calc.role_modifier.toFixed(1)
-      } transit) and defensive scheme resistance at ${stadiumName}.`;
-      aspectHighlights = [
-        '⚠️ Saturn-Mars Coverage Square',
-        `Transit Friction (${calc.role_modifier >= 0 ? '+' : ''}${calc.role_modifier.toFixed(1)} pts)`,
-        'Contested Matchup Windows',
-      ];
+      rationaleText = `⚠️ Planetary friction: ${p.name} (${sunSign} / ${elem}) faces a Saturn-Mars square at ${stadiumName}.`;
+      aspectHighlights = ['⚠️ Saturn-Mars Square', 'Contested matchup'];
     }
 
     const kickoffSlots = [

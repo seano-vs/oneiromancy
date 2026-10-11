@@ -440,7 +440,8 @@ describe('Tier 8: React Component RTL Iteration & UI Suite', () => {
       );
 
       assert.ok(screen.getByRole('dialog'), 'Must render dialog container');
-      assert.ok(screen.getByText('Draft Telemetry Settings'), 'Must render settings title');
+      // Updated in the 2026-10-11 wording pass: the drawer title is now plain "Settings".
+      assert.ok(screen.getByText('Settings'), 'Must render settings title');
       assert.ok(screen.getByText('Sleeper Username'), 'Must render username label');
 
       const closeBtn = screen.getByRole('button', { name: 'Close Settings' });

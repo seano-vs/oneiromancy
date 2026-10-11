@@ -231,7 +231,7 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
               id="settings-drawer-title"
               className="font-serif text-lg font-bold text-slate-100 tracking-wide"
             >
-              Draft Telemetry Settings
+              Settings
             </h2>
           </div>
           <button
@@ -320,9 +320,9 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
               target="_blank"
               rel="noopener noreferrer"
               className="text-[11px] text-cyan-400 hover:text-cyan-300 underline flex items-center gap-1 transition-colors"
-              title="Sleeper public API is read-only, requires no auth token, and operates with rate limit guidance of <1,000 req/min"
+              title="Sleeper's public API: read-only, no login needed"
             >
-              <span>API Specs: docs.sleeper.com</span>
+              <span>Sleeper API docs</span>
               <ExternalLink className="w-3 h-3" />
             </a>
           </div>
@@ -349,7 +349,7 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
             />
           </div>
           <span className="text-[10px] text-slate-400 block">
-            Your Sleeper username. Leagues, drafts, and rosters are dynamically queried via Sleeper&apos;s unauthenticated read-only API (<a href="https://docs.sleeper.com/" target="_blank" rel="noopener noreferrer" className="text-cyan-400 underline hover:text-cyan-300">docs.sleeper.com</a>, rate limit &lt;1,000 req/min).
+            Your leagues and rosters load from Sleeper&apos;s public, read-only API (<a href="https://docs.sleeper.com/" target="_blank" rel="noopener noreferrer" className="text-cyan-400 underline hover:text-cyan-300">docs.sleeper.com</a>).
           </span>
           {/* Prominent Sync Error Banner */}
           {(syncError || draftState?.sync_error) && (
@@ -446,7 +446,7 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
             )}
           </select>
           <span className="text-[10px] text-slate-500 block">
-            Dynamically queried from Sleeper API. Defaults to your first league.
+            Defaults to your first league.
           </span>
           {/* Fallback Manual League ID Input when availableLeagues is empty */}
           {!isMock && hasConfiguredUsername && availableLeagues.length === 0 && (
@@ -537,7 +537,7 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
             <p className="text-[10px] text-slate-400 font-sans">
               {isMock
                 ? 'Off while viewing sample data: there is no Sleeper league to update from.'
-                : 'Automatically poll Sleeper API for opponent picks and board updates.'}
+                : 'Keeps rosters and scores in sync with Sleeper.'}
             </p>
           </div>
 

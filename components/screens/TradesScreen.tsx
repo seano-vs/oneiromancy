@@ -80,9 +80,8 @@ export const TradesScreen: React.FC = () => {
         <span className="text-[10px] font-mono uppercase tracking-widest text-purple-300/80">Divine Swaps</span>
         <h2 className="font-serif text-2xl sm:text-3xl font-bold text-slate-100 tracking-wide">Trades</h2>
         <p className="text-xs text-slate-400 font-sans">
-          Teams where a trade helps both lineups: one of your bench players would start for them, and one of
-          theirs would start for you. Players are weighed by Oracle score, which blends projected stats and
-          this week&apos;s Stars at λ {lambda.toFixed(2)}. Your starting lineup leans {myMix}.
+          Trades that help both lineups: your bench player would start for them, and theirs for you. Ranked by
+          Oracle (λ {lambda.toFixed(2)}). Your lineup leans {myMix}.
         </p>
       </div>
 
@@ -195,7 +194,7 @@ export const TradesScreen: React.FC = () => {
                             : 'text-amber-300'
                       }
                     >
-                      {relation} with yours
+                      {relation === 'Same element' ? 'Same element as yours' : `${relation} to yours`}
                     </span>
                   </div>
 

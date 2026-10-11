@@ -27,7 +27,7 @@ import {
   mockTeamComparison,
   mockWeeklyMatchup,
 } from '@/lib/mockData';
-import {calculateWinProbability, classifyWeeklyFavorability} from '@/lib/scoring';
+import {calculateWinProbability, starsVerdictLabel} from '@/lib/scoring';
 import {TONE_DOT, TONE_PILL, favorabilityTone} from '@/lib/oracle';
 import {
   deriveEligiblePositions,
@@ -369,18 +369,16 @@ export const MatchupsScreen: React.FC<MatchupsScreenProps> = ({
     const isFavored = tone === 'apex' || tone === 'good';
     const isUnfavored = tone === 'bad';
 
-    const venueBonus = player.stadium?.roof_type?.includes('Dome') ? 5.0 : 10.0;
-    const baseSpirit =
-      player.base_spirit ??
-      Math.round((player.spirit_score ?? 85.0) * 0.8 * 10) / 10;
-    const healthPen = player.health_penalty ?? 0.0;
-    const transitMod =
-      player.role_modifier !== undefined
-        ? player.role_modifier
-        : Math.round(
-            (player.favorability_score - baseSpirit - healthPen - venueBonus) *
-              10,
-          ) / 10;
+    // The Stars formula's own terms, so the rows add up to the score
+    // (computeWeeklyPlayerFavorability; capped at 0–100).
+    const r1 = (n: number) => Math.round(n * 10) / 10;
+    const starsRows: [string, number, string][] = [
+      ['Spirit ×0.45', player.base_spirit ?? r1((player.spirit_score ?? 0) * 0.45), 'text-purple-300'],
+      ['Stadium ×0.25', r1((player.stadium_score ?? 78) * 0.25), 'text-cyan-300'],
+      ['Proj ×0.8', r1((player.projected_points ?? 0) * 0.8), 'text-cyan-300'],
+      ['Starter', player.role_modifier ?? 8, 'text-emerald-400'],
+      ['Health', player.health_penalty ?? 0, (player.health_penalty ?? 0) < 0 ? 'text-rose-400' : 'text-slate-400'],
+    ];
 
     return (
       <GlassCard
@@ -442,7 +440,7 @@ export const MatchupsScreen: React.FC<MatchupsScreenProps> = ({
               ) : isUnfavored ? (
                 <AlertTriangle className="w-2.5 h-2.5" />
               ) : null}
-              <span>{classifyWeeklyFavorability(player.favorability_score)}</span>
+              <span>{starsVerdictLabel(player.favorability_score)}</span>
             </span>
             <span className="text-xs font-mono font-bold text-cyan-300 mt-0.5">
               {player.favorability_score.toFixed(1)} / 100
@@ -522,53 +520,27 @@ export const MatchupsScreen: React.FC<MatchupsScreenProps> = ({
               </span>
             </div>
 
-            {/* Favorability Score Contribution Breakdown Ledger */}
+            {/* How this player's Stars add up */}
             <div className="p-2.5 rounded-lg bg-slate-950/80 border border-white/10 font-mono text-[11px] space-y-1.5">
               <div className="flex items-center justify-between text-slate-400 border-b border-white/5 pb-1">
                 <span className="font-bold text-cyan-300 flex items-center gap-1">
                   <Activity className="w-3 h-3 text-cyan-400" />
-                  <span>Favorability Impact Breakdown</span>
+                  <span>How Stars add up</span>
                 </span>
                 <span className="text-[10px] text-slate-500">
-                  Target: {player.favorability_score.toFixed(1)} / 100
+                  = {player.favorability_score.toFixed(1)} Stars
                 </span>
               </div>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 text-[10px]">
-                <div className="p-1.5 rounded bg-slate-900/60 border border-white/5">
-                  <span className="text-slate-500 block">Base Spirit</span>
-                  <span className="text-purple-300 font-bold">
-                    +{baseSpirit.toFixed(1)}
-                  </span>
-                </div>
-                <div className="p-1.5 rounded bg-slate-900/60 border border-white/5">
-                  <span className="text-slate-500 block">Astral Transit</span>
-                  <span
-                    className={`font-bold ${
-                      transitMod >= 0 ? 'text-emerald-400' : 'text-rose-400'
-                    }`}>
-                    {transitMod >= 0 ? '+' : ''}
-                    {transitMod.toFixed(1)} Transit
-                  </span>
-                </div>
-                <div className="p-1.5 rounded bg-slate-900/60 border border-white/5">
-                  <span className="text-slate-500 block">Health & Proj</span>
-                  <span
-                    className={`font-bold ${
-                      healthPen < 0 ? 'text-rose-400' : 'text-emerald-400'
-                    }`}>
-                    {healthPen < 0
-                      ? `${healthPen.toFixed(1)} Injury / Out`
-                      : '+0.0 Active Health'}
-                  </span>
-                </div>
-                <div className="p-1.5 rounded bg-slate-900/60 border border-white/5">
-                  <span className="text-slate-500 block">Venue Feng Shui</span>
-                  <span className="text-cyan-300 font-bold truncate block">
-                    {player.stadium.roof_type?.includes('Dome')
-                      ? '+5.0 Dome'
-                      : '+10.0 Open'}
-                  </span>
-                </div>
+              <div className="grid grid-cols-3 sm:grid-cols-5 gap-1.5 text-[10px]">
+                {starsRows.map(([label, value, color]) => (
+                  <div key={label} className="p-1.5 rounded bg-slate-900/60 border border-white/5">
+                    <span className="text-slate-500 block">{label}</span>
+                    <span className={`font-bold ${color}`}>
+                      {value >= 0 ? '+' : ''}
+                      {value.toFixed(1)}
+                    </span>
+                  </div>
+                ))}
               </div>
             </div>
 
@@ -623,7 +595,7 @@ export const MatchupsScreen: React.FC<MatchupsScreenProps> = ({
       <details className="group rounded-xl border border-white/10 bg-slate-950/70 text-xs">
         <summary className="cursor-pointer list-none p-3 flex items-center justify-between gap-2 font-mono text-cyan-300">
           <span className="flex items-center gap-1.5">
-            <Sparkles className="w-3.5 h-3.5" /> How Stars this week is scored
+            <Sparkles className="w-3.5 h-3.5" /> How Stars are scored
           </span>
           <span className="flex items-center gap-2 text-[10px] text-slate-400">
             {(
@@ -644,11 +616,9 @@ export const MatchupsScreen: React.FC<MatchupsScreenProps> = ({
         </summary>
         <div className="px-3 pb-3 space-y-2 text-slate-300 font-sans">
           <p>
-            Stars this week = 0.45 × SpiritScore + 0.25 × Stadium Feng Shui + 0.8 × projected points + 8,
-            minus 22 when the player is out or has no projection. Every player is scored as if he starts, so
-            bench players aren&apos;t marked down for where they sit. SpiritScore is built
-            from the five Oracle pillars: Celestial Transits, Stadium Feng Shui, Jersey Gematria, Squad Alchemy,
-            and Tarot &amp; I-Ching.
+            Stars = 0.45 × Spirit + 0.25 × Stadium Feng Shui + 0.8 × projected points + 8, minus 22 if the
+            player is out or has no projection. Everyone is scored as a starter. Spirit comes from the five
+            pillars set in the Oracle panel.
           </p>
           <div className="flex flex-wrap gap-3 font-mono text-[10px] text-slate-400 sm:hidden">
             {(
@@ -1289,10 +1259,6 @@ export const MatchupsScreen: React.FC<MatchupsScreenProps> = ({
                       </span>
                     ))}
                   </div>
-                  <p className="text-xs text-slate-300 font-sans mt-2 pt-1 border-t border-white/5 leading-relaxed">
-                    {teamComparison.verdict_summary ||
-                      teamComparison.astral_edge_summary}
-                  </p>
                 </div>
               </div>
             );
@@ -1312,8 +1278,7 @@ export const MatchupsScreen: React.FC<MatchupsScreenProps> = ({
               <span>Player Astrological & Stadium Favorability Breakdown</span>
             </h3>
             <p className="text-xs text-slate-400 font-sans">
-              Stadium geographical coordinates, roof containment, kickoff
-              transits, and lunar alignment for each starter.
+              Each player&apos;s Stars, how they add up, and his stadium and transits.
             </p>
           </div>
 

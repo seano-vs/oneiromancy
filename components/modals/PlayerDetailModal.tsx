@@ -24,7 +24,7 @@ import { useOptionalOneiromancy } from '@/context/OneiromancyContext';
 import {
   DEFAULT_CHAOS_LAMBDA,
   DEFAULT_ORACLE_WEIGHTS,
-  classifyWeeklyFavorability,
+  starsVerdictLabel,
   haversineDistance,
   normalizeOracleWeights,
 } from '@/lib/scoring';
@@ -313,14 +313,14 @@ export const PlayerDetailModal: React.FC<PlayerDetailModalProps> = ({
         {/* 5 Score Summary Cards */}
         <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 text-center font-mono">
           <div className="p-2.5 rounded-xl bg-cyan-950/40 border border-cyan-500/30">
-            <span className="text-[9px] text-cyan-400 uppercase font-bold block">Oracle (λ {modalLambda.toFixed(2)})</span>
+            <span className="text-[9px] text-cyan-400 uppercase font-bold block">Oracle <span className="normal-case">(λ {modalLambda.toFixed(2)})</span></span>
             <span className="text-xl font-bold text-cyan-300">{oracleScore(player, modalLambda).toFixed(1)}</span>
           </div>
           <div className={`p-2.5 rounded-xl border ${TONE_PILL[favorabilityTone(starsScore(player))]}`}>
-            <span className="text-[9px] uppercase font-bold block">Stars this week</span>
+            <span className="text-[9px] uppercase font-bold block">Stars</span>
             <span className="text-xl font-bold">{starsScore(player).toFixed(0)}</span>
             <span className="text-[8px] block font-mono truncate">
-              {classifyWeeklyFavorability(starsScore(player))}
+              {starsVerdictLabel(starsScore(player))}
             </span>
           </div>
           <div className="p-2.5 rounded-xl bg-purple-950/40 border border-purple-500/30">
@@ -529,7 +529,7 @@ export const PlayerDetailModal: React.FC<PlayerDetailModalProps> = ({
                       </div>
 
                       <div className="p-1.5 rounded bg-slate-950/70">
-                        <span className="text-[8px] text-slate-500 uppercase block">Wk Fav</span>
+                        <span className="text-[8px] text-slate-500 uppercase block">Stars</span>
                         <span className="text-slate-200 font-bold">
                           {candidateFav.toFixed(0)} vs {rosFav.toFixed(0)}
                         </span>
@@ -592,7 +592,7 @@ export const PlayerDetailModal: React.FC<PlayerDetailModalProps> = ({
               <div key={tier.name} className="space-y-1">
                 <div className="flex justify-between text-[11px]">
                   <span className="text-slate-300">{tier.name}</span>
-                  <span className="text-white font-bold">{tier.val.toFixed(1)}%</span>
+                  <span className="text-white font-bold">{tier.val.toFixed(1)}</span>
                 </div>
                 <div className="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
                   <div

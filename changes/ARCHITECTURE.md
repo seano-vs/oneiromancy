@@ -38,7 +38,7 @@ writes to Sleeper and never links out to act there.
 | Oracle model | `core/lib/oracle.ts` | Stats / Stars / Oracle, tone scale, lineup check, waiver moves, bye outlook, trade partners, team ratings, element text |
 | Types | `core/types/oneiromancy.ts` | `CosmicPlayer`, `RosterSlot`, `CompetitorTeam`, `WeeklyMatchup`, settings |
 | Shell | `components/common/NavigationShell.tsx` | Header (tabs, Oracle chip, status, avatar), mock banner, phone tab bar |
-| Shared UI | `components/common/PlayerLink.tsx`, `PlayerHeadshot.tsx`, `PlayerTiles.tsx`, `PositionalBadge.tsx`, `UserAvatar.tsx`, `GlassCard.tsx` | Clickable names, Sleeper CDN images, the Marketplace look (tags, delta badges, stat tiles with Wk Fav ★), badges |
+| Shared UI | `components/common/PlayerLink.tsx`, `PlayerHeadshot.tsx`, `PlayerTiles.tsx`, `PositionalBadge.tsx`, `UserAvatar.tsx`, `GlassCard.tsx` | Clickable names, Sleeper CDN images, the Marketplace look (tags, delta badges, stat tiles: Proj pts, Stars, Oracle, Spirit), badges |
 | Player popup | `components/modals/PlayerDetailModal.tsx` | Extended view; role comparison or head-to-head (`compareWith`) |
 | Oracle panel | `components/oracle/OraclePanel.tsx` (+ `screens/ChaosDial.tsx` embedded) | λ slider and presets, preview, then star weights and the astrology reference, always expanded |
 | Screens | `components/screens/*.tsx`, `components/oneiromancy/*.tsx` | See §6 |
@@ -95,7 +95,14 @@ owner asks**:
   | Squad Alchemy (harmony) | 0.15 |
   | Tarot & I-Ching (oracular) | 0.10 |
 
-Player numbers:
+Player numbers. **These four names are the app's whole vocabulary**: the UI
+uses exactly Stats, Spirit, Stars and Oracle (no "Wk Fav", "SpiritScore",
+"weekly favorability" or "Astral Favorability" on screen), and the Oracle
+panel opens with a one-line glossary of them. Verdict labels on screen match
+the tone legend: Heavily favored (≥84), Favored (75–83), Neutral (65–74),
+Challenged (<65), via `starsVerdictLabel` / `VERDICT_LABEL` in scoring.ts; the
+internal enum values (`'ASTRALLY FAVORED'` etc.) are unchanged.
+
 
 | Number | Definition | Where |
 | --- | --- | --- |
@@ -125,7 +132,7 @@ Oracle panel.
 
 | Tab (id) | Contents, top to bottom |
 | --- | --- |
-| **This Week** (`oneiromancy`) | Team comparison card for the current week: head-to-head banner, Team Celestial Telemetry (`MatchupsScreen part="comparison"`) · Your moves (`WeeklyMoves`: lineup swaps, top waiver, bye plan, trade idea) · Team harmony (one collapsible card) · roster slots · bye outlook · Matchup details (`MatchupsScreen part="details"`: explainer, week selector, player cards, past matchups) |
+| **This Week** (`oneiromancy`) | Team comparison card for the current week: head-to-head banner, Team Celestial Telemetry (`MatchupsScreen part="comparison"`) · Your moves (`WeeklyMoves`: lineup swaps, top waiver, bye plan, trade idea) · Squad Harmony (one collapsible card) · roster slots · bye outlook · Matchup details (`MatchupsScreen part="details"`: explainer, week selector, player cards, past matchups) |
 | **Waivers** (`market`) | Need-aware waiver moves (`PlayerMarketplace section="waivers"`) · player directory (`CosmicBoard`: headshots, logos, Stats / Stars / Oracle, sort, search, Free agents only, 25 per page) |
 | **Trades** (`trades`) | Partners by mutual Oracle fit: give, get, who each replaces, roster list. Sample swaps in mock only |
 | **League** (`league`) | The **original** Celestial Leaderboard (Overall / Spirit / Draft / Harmony, default Overall) · lineup breakdown for any team (Oracle, pts, Stars) |

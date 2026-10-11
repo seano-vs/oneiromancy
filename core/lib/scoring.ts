@@ -138,6 +138,19 @@ export function classifyWeeklyFavorability(score: number): WeeklyFavorabilityVer
   return 'CELESTIALLY CHALLENGED';
 }
 
+/** On-screen label for a verdict; matches the tone legend everywhere. */
+export const VERDICT_LABEL: Record<WeeklyFavorabilityVerdict, string> = {
+  'HEAVILY FAVORED': 'Heavily favored',
+  'ASTRALLY FAVORED': 'Favored',
+  NEUTRAL: 'Neutral',
+  'CELESTIALLY CHALLENGED': 'Challenged',
+};
+
+/** The legend label for a Stars score. */
+export function starsVerdictLabel(score: number): string {
+  return VERDICT_LABEL[classifyWeeklyFavorability(score)];
+}
+
 export function computeWeeklyPlayerFavorability(
   spiritOrOptions: number | WeeklyPlayerFavorabilityOptions,
   weeklyProjArg?: number,

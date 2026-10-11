@@ -349,7 +349,7 @@ export const OneiromancyDashboard: React.FC<OneiromancyDashboardProps> = ({
 
       <WeeklyMoves />
 
-      {/* 4. Team harmony: one card; the header toggles the body open in place */}
+      {/* 4. Squad Harmony: one card; the header toggles the body open in place */}
       <section className="rounded-xl bg-slate-900/70 border border-white/10 overflow-hidden">
         <button
           type="button"
@@ -359,69 +359,57 @@ export const OneiromancyDashboard: React.FC<OneiromancyDashboardProps> = ({
           className="w-full flex items-center justify-between gap-3 p-4 text-left hover:bg-white/5">
           <span className="flex items-center gap-2">
             <Trophy className="w-4 h-4 text-amber-400" />
-            <span className="font-serif text-base font-bold text-slate-100">Team harmony</span>
+            <span className="font-serif text-base font-bold text-slate-100">Squad Harmony</span>
             <span className="text-xs font-mono text-amber-300">{harmonyScore} / 100</span>
           </span>
           <span className="text-xs font-mono text-slate-400 flex items-center gap-1">
-            {isHarmonyOpen ? 'Hide' : 'Elements, aspects and stacks'}
+            {isHarmonyOpen ? 'Hide' : 'Elements and stacks'}
             {isHarmonyOpen ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
           </span>
         </button>
         {isHarmonyOpen && (
           <div id="team-harmony-body" className="px-4 sm:px-6 pb-5 pt-4 space-y-5 border-t border-white/10">
             <p className="text-[11px] font-sans text-slate-400">
-              How well your lineup works as a unit: elemental balance, celestial aspects, and schedule symmetry.
+              How well your lineup works as a unit. Starts at 50, plus the three bonuses below (max 100).
             </p>
-        {/* Harmony Explanation Guide (Collapsible Details for Less-is-More Decluttering) */}
+        {/* How Harmony is scored (computeRosterHarmonyBreakdown) */}
         <details className="group rounded-xl bg-slate-950/60 border border-cyan-500/20 text-xs overflow-hidden transition-all">
           <summary className="p-3 font-mono text-cyan-300 font-semibold cursor-pointer hover:bg-white/5 flex items-center justify-between select-none">
             <span className="flex items-center gap-1.5">
               <Info className="w-3.5 h-3.5 text-cyan-400" />
-              <span>What is Harmony Score?</span>
+              <span>How Squad Harmony is scored</span>
             </span>
             <span className="text-[10px] text-slate-400 group-open:rotate-180 transition-transform">
               ▼
             </span>
           </summary>
-          <div className="p-3.5 pt-0 space-y-2 border-t border-white/5">
-            <p className="font-sans text-slate-300 leading-relaxed">
-              Harmony evaluates how well your roster functions as a synchronized
-              metaphysical unit rather than a disconnected collection of
-              isolated players. It synthesizes three core pillars:
-            </p>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1">
+          <div className="p-3.5 pt-0 border-t border-white/5">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-3">
               <div className="p-2 rounded bg-slate-900/60 border border-white/5 space-y-1">
                 <div className="flex items-center gap-1 text-[11px] font-mono text-red-300 font-bold">
                   <Flame className="w-3 h-3 text-red-400" />
-                  <span>1. Elemental Triplicity</span>
+                  <span>1. Elemental Trine</span>
                 </div>
                 <p className="text-[10px] font-sans text-slate-400 leading-normal">
-                  Diversification across Fire, Earth, Air, and Water prevents
-                  systemic scoring slumps when unfavorable meteorological or
-                  astrological transits occur.
+                  Three starters of one element: +12. Four or more: +18.
                 </p>
               </div>
               <div className="p-2 rounded bg-slate-900/60 border border-white/5 space-y-1">
                 <div className="flex items-center gap-1 text-[11px] font-mono text-amber-300 font-bold">
                   <Zap className="w-3 h-3 text-amber-400" />
-                  <span>2. Celestial Conjunction & Major Aspects</span>
+                  <span>2. QB Stacks</span>
                 </div>
                 <p className="text-[10px] font-sans text-slate-400 leading-normal">
-                  Harmonic angular geometries (trines, sextiles, and planetary
-                  ruler conjunctions) align player etheric frequencies,
-                  compounding collective momentum into exponential +27.0 astral
-                  resonance ceilings.
+                  A pass catcher with his own QB: +18 (+9 each when several share one QB). Up to +30.
                 </p>
               </div>
               <div className="p-2 rounded bg-slate-900/60 border border-white/5 space-y-1">
                 <div className="flex items-center gap-1 text-[11px] font-mono text-teal-300 font-bold">
                   <CheckCircle2 className="w-3 h-3 text-teal-400" />
-                  <span>3. Schedule Symmetry</span>
+                  <span>3. Four-Element Balance</span>
                 </div>
                 <p className="text-[10px] font-sans text-slate-400 leading-normal">
-                  Staggering bye weeks ensures no starting position drops to
-                  zero starters, preserving championship floor throughout weeks
-                  5–14 and playoffs.
+                  Fire, Earth, Air and Water all present: +10.
                 </p>
               </div>
             </div>
@@ -596,8 +584,8 @@ export const OneiromancyDashboard: React.FC<OneiromancyDashboardProps> = ({
                       {aspect.team} Astral Synergy Conjunction
                     </span>
                     <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-950/80 border border-amber-500/40 text-amber-200">
-                      {aspect.multiplier}x Astral Harmonics (+
-                      {aspect.bonus_points.toFixed(0)} Pts Resonance Ceiling)
+                      {/* computeRosterHarmonyBreakdown: +18 for a lone pass catcher, +9 each when several share the QB */}
+                      +{aspect.pass_catcher_names.length === 1 ? 18 : 9 * aspect.pass_catcher_names.length} Harmony
                     </span>
                   </div>
                   <div className="text-xs font-sans text-slate-200">
@@ -612,10 +600,7 @@ export const OneiromancyDashboard: React.FC<OneiromancyDashboardProps> = ({
                     </span>
                   </div>
                   <p className="text-[10px] font-sans text-slate-400 leading-normal">
-                    Synchronized celestial wave alignment: Harmonic conjunction
-                    between planetary rulers amplifies astral resonance and
-                    compounding etheric output during high-leverage planetary
-                    transits.
+                    A QB and his own pass catchers rise and fall together.
                   </p>
                 </div>
               ))}
@@ -626,9 +611,6 @@ export const OneiromancyDashboard: React.FC<OneiromancyDashboardProps> = ({
                   <span className="flex items-center gap-1">
                     <TrendingUp className="w-3 h-3 text-cyan-400" />
                     Fire & Air Kinetic Combustion
-                  </span>
-                  <span className="text-[10px] text-emerald-400">
-                    +15% Red Zone Bonus
                   </span>
                 </div>
                 <p className="text-[10px] font-sans text-slate-400 leading-relaxed">
@@ -643,9 +625,6 @@ export const OneiromancyDashboard: React.FC<OneiromancyDashboardProps> = ({
                   <span className="flex items-center gap-1">
                     <Shield className="w-3 h-3 text-teal-400" />
                     Earth Bedrock Floor Anchoring
-                  </span>
-                  <span className="text-[10px] text-teal-300">
-                    High Touch Floor
                   </span>
                 </div>
                 <p className="text-[10px] font-sans text-slate-400 leading-relaxed">
@@ -897,51 +876,34 @@ export const OneiromancyDashboard: React.FC<OneiromancyDashboardProps> = ({
             </span>
           </div>
 
-          {/* 18-Week Coverage Detailed Explanation Box (Collapsible for Less-is-More Decluttering) */}
+          {/* How bye coverage works */}
           <details className="group rounded-xl bg-slate-950/70 border border-purple-500/20 text-xs overflow-hidden transition-all">
             <summary className="p-3 font-mono text-purple-300 font-semibold cursor-pointer hover:bg-white/5 flex items-center justify-between select-none">
               <span className="flex items-center gap-1.5">
                 <Info className="w-3.5 h-3.5 text-purple-400" />
-                <span>Why 18-Week Coverage Matters</span>
+                <span>How bye coverage works</span>
               </span>
               <span className="text-[10px] text-slate-400 group-open:rotate-180 transition-transform">
                 ▼
               </span>
             </summary>
             <div className="p-3.5 pt-0 space-y-2 border-t border-white/5">
-              <p className="font-sans text-slate-300 leading-relaxed">
-                The NFL regular season spans 18 weeks: fantasy regular season
-                runs Weeks 1–14, followed by the Fantasy Playoffs (Weeks 15–17)
-                and Week 18. NFL bye weeks occur between Weeks 5 and 14,
-                temporarily removing players from active competition.
+              <p className="font-sans text-slate-300 leading-relaxed pt-3">
+                Each week lists your players on bye and your best lineup without them. Byes fall in
+                Weeks 5–14; the fantasy playoffs (Weeks 15–17) have none.
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-[11px] font-mono pt-1">
                 <div className="p-2 rounded bg-slate-900/60 border border-white/5 space-y-0.5">
-                  <span className="text-emerald-400 font-bold">
-                    Full Roster (OK)
-                  </span>
-                  <p className="text-[10px] font-sans text-slate-400">
-                    All starting positions active; full projected scoring output
-                    unlocked.
-                  </p>
+                  <span className="text-slate-300 font-bold">OK</span>
+                  <p className="text-[10px] font-sans text-slate-400">No one on bye.</p>
                 </div>
                 <div className="p-2 rounded bg-slate-900/60 border border-white/5 space-y-0.5">
-                  <span className="text-amber-300 font-bold">
-                    Conflict (Warning)
-                  </span>
-                  <p className="text-[10px] font-sans text-slate-400">
-                    Multiple key starters share a bye week; monitor waiver wire
-                    for spot starters.
-                  </p>
+                  <span className="text-amber-300 font-bold">Amber</span>
+                  <p className="text-[10px] font-sans text-slate-400">One or two players on bye.</p>
                 </div>
                 <div className="p-2 rounded bg-slate-900/60 border border-white/5 space-y-0.5">
-                  <span className="text-cyan-300 font-bold">
-                    Playoffs (W15–17)
-                  </span>
-                  <p className="text-[10px] font-sans text-slate-400">
-                    Zero NFL byes; guarantees maximum starting power for
-                    championship contention.
-                  </p>
+                  <span className="text-rose-300 font-bold">Conflict</span>
+                  <p className="text-[10px] font-sans text-slate-400">Three or more on bye; check waivers early.</p>
                 </div>
               </div>
             </div>

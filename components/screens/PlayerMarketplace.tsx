@@ -619,8 +619,8 @@ export const PlayerMarketplace: React.FC<PlayerMarketplaceProps> = ({
             {section === 'waivers' ? 'Waivers' : 'Waivers & trades'}
           </h2>
           <p className="text-xs text-slate-400 font-sans">
-            Adds that beat your weakest droppable bench player, ranked by whether they would start for you.
-            Never suggests dropping a starter, a player who is only on bye, or depth you need.
+            Adds that beat your weakest droppable bench player, best first. Starters, players on bye and needed
+            depth are never dropped.
           </p>
         </div>
       )}
@@ -712,7 +712,7 @@ export const PlayerMarketplace: React.FC<PlayerMarketplaceProps> = ({
               Include players without an NFL team
             </span>
             <span className="text-[10px] text-slate-400 block font-sans">
-              Off: only suggests adding players currently signed to an NFL team.
+              Off: NFL-signed players only.
             </span>
           </div>
         </label>

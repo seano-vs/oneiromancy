@@ -971,7 +971,8 @@ describe('Tier 1: Feature Coverage (19 Features x >=5 Tests)', () => {
       const modal = fs.readFileSync(path.resolve('components/modals/PlayerDetailModal.tsx'), 'utf8');
       assert.ok(modal.includes('compareWith'), 'PlayerDetailModal must accept compareWith');
       assert.ok(modal.includes('Head-to-head:'), 'PlayerDetailModal must label head-to-head mode');
-      for (const col of ['Proj Pts', 'Oracle', 'VOR', 'Spirit', 'Harmony', 'Wk Fav']) {
+      // Updated in the 2026-10-11 wording pass: "Wk Fav" is now called Stars everywhere.
+      for (const col of ['Proj Pts', 'Oracle', 'VOR', 'Spirit', 'Harmony', 'Stars']) {
         assert.ok(modal.includes(col), `Head-to-head must compare ${col}`);
       }
       for (const f of ['components/oneiromancy/WeeklyMoves.tsx', 'components/screens/PlayerMarketplace.tsx', 'components/screens/TradesScreen.tsx', 'components/oracle/OraclePanel.tsx']) {
@@ -986,21 +987,25 @@ describe('Tier 1: Feature Coverage (19 Features x >=5 Tests)', () => {
       assert.ok(chaosSource.includes('Natal Chart Planetary Aspects'), 'ChaosDial must explain Natal Chart Planetary Aspects');
       assert.ok(chaosSource.includes('Mars Aspects (Aggression') && chaosSource.includes('Saturn Transits (Durability'), 'ChaosDial must detail Mars and Saturn aspects');
       assert.ok(chaosSource.includes('Mercury Retrogrades') && chaosSource.includes('Jupiter Alignments'), 'ChaosDial must detail Mercury and Jupiter aspects');
-      assert.ok(chaosSource.includes('DraftScore = (1 -') && chaosSource.includes('VOR_norm') && chaosSource.includes('SpiritScore'), 'ChaosDial must document Chaos Dial mathematical formula');
+      // Updated in the 2026-10-11 wording pass: "SpiritScore" is shown as "Spirit", the app's one name for it.
+      assert.ok(chaosSource.includes('DraftScore = (1 -') && chaosSource.includes('VOR_norm') && chaosSource.includes('&lambda; &times; Spirit'), 'ChaosDial must document Chaos Dial mathematical formula');
       assert.ok(chaosSource.includes('Elemental Triplicities in Gridiron Divination'), 'ChaosDial must explain Elemental Triplicities');
       assert.ok(chaosSource.includes('href="https://en.wikipedia.org/wiki/Astrological_aspect"'), 'ChaosDial must link to external Wikipedia reference');
       assert.ok(chaosSource.includes('href="https://www.astro.com/astrology/in_sports_e.htm"'), 'ChaosDial must link to Astrodienst reference');
       assert.ok(chaosSource.includes('href="https://ssd.jpl.nasa.gov/horizons/"'), 'ChaosDial must link to NASA JPL Horizons ephemeris');
     });
 
-    it('20.4 should verify OneiromancyDashboard explains Harmony Score and documents all 3 core pillars', () => {
-      // Updated in the 2026-10-10 UX rework (see changes/2026-10-10-ux-rework.md). Team harmony is one collapsible card; its header shows the score.
+    it('20.4 should verify OneiromancyDashboard explains Squad Harmony with the 3 bonuses it actually adds', () => {
+      // Updated in the 2026-10-11 wording pass (see changes/2026-10-10-ux-rework.md). The explainer now matches
+      // computeRosterHarmonyBreakdown: base 50 + elemental trine + QB stacks + four-element balance.
+      // REMOVED: "Schedule Symmetry" (byes never fed the Harmony score).
       const oneiromancySource = fs.readFileSync(path.resolve('components/screens/OneiromancyDashboard.tsx'), 'utf8');
-      assert.ok(oneiromancySource.includes('What is Harmony Score?'), 'OneiromancyDashboard must explain Harmony Score');
-      assert.ok(oneiromancySource.includes('1. Elemental Triplicity'), 'OneiromancyDashboard must explain Elemental Triplicity pillar');
-      assert.ok(oneiromancySource.includes('2. Celestial Conjunction') || oneiromancySource.includes('2. Stack Amplification'), 'OneiromancyDashboard must explain Celestial Conjunction / Major Aspects pillar');
-      assert.ok(oneiromancySource.includes('3. Schedule Symmetry'), 'OneiromancyDashboard must explain Schedule Symmetry pillar');
-      assert.ok(oneiromancySource.includes('Team harmony') && oneiromancySource.includes('{harmonyScore} / 100'), 'OneiromancyDashboard must display Harmony score');
+      assert.ok(oneiromancySource.includes('How Squad Harmony is scored'), 'OneiromancyDashboard must explain Squad Harmony');
+      assert.ok(oneiromancySource.includes('1. Elemental Trine'), 'OneiromancyDashboard must explain the trine bonus');
+      assert.ok(oneiromancySource.includes('2. QB Stacks'), 'OneiromancyDashboard must explain the stack bonus');
+      assert.ok(oneiromancySource.includes('3. Four-Element Balance'), 'OneiromancyDashboard must explain the balance bonus');
+      assert.ok(!oneiromancySource.includes('Schedule Symmetry'), 'Harmony explainer must not claim byes affect Harmony');
+      assert.ok(oneiromancySource.includes('Squad Harmony') && oneiromancySource.includes('{harmonyScore} / 100'), 'OneiromancyDashboard must display Harmony score');
     });
 
     it('20.5 should verify OneiromancyDashboard renders interactive SVG Team Synergy Radar Graph with 5 spokes', () => {
@@ -1023,14 +1028,16 @@ describe('Tier 1: Feature Coverage (19 Features x >=5 Tests)', () => {
       assert.ok(oneiromancySource.includes('Earth Bedrock Floor Anchoring'), 'OneiromancyDashboard must explain Earth Bedrock Floor Anchoring');
     });
 
-    it('20.7 should verify OneiromancyDashboard documents 18-Week Bye Week Coverage schedule matrix', () => {
+    it('20.7 should verify OneiromancyDashboard documents bye coverage and its three states', () => {
+      // Updated in the 2026-10-11 wording pass (see changes/2026-10-10-ux-rework.md): shorter, and the
+      // states match the code (none / 1–2 / 3+ players on bye).
       const oneiromancySource = fs.readFileSync(path.resolve('components/screens/OneiromancyDashboard.tsx'), 'utf8');
-      assert.ok(oneiromancySource.includes('Why 18-Week Coverage Matters'), 'OneiromancyDashboard must include 18-Week Coverage explanation');
-      assert.ok(oneiromancySource.includes('Weeks 1–14'), 'Must explain fantasy regular season Weeks 1-14');
+      assert.ok(oneiromancySource.includes('How bye coverage works'), 'OneiromancyDashboard must explain bye coverage');
+      assert.ok(oneiromancySource.includes('Weeks 5–14'), 'Must say when byes fall');
       assert.ok(oneiromancySource.includes('Weeks 15–17'), 'Must explain fantasy playoffs Weeks 15-17');
-      assert.ok(oneiromancySource.includes('Full Roster (OK)'), 'Must explain Full Roster state');
-      assert.ok(oneiromancySource.includes('Conflict (Warning)'), 'Must explain Conflict state');
-      assert.ok(oneiromancySource.includes('Playoffs (W15–17)'), 'Must explain Playoff state');
+      assert.ok(oneiromancySource.includes('No one on bye.'), 'Must explain the OK state');
+      assert.ok(oneiromancySource.includes('One or two players on bye.'), 'Must explain the amber state');
+      assert.ok(oneiromancySource.includes('Three or more on bye'), 'Must explain the conflict state');
     });
 
     it('20.8 should verify This Week leads with the team telemetry and ranked moves; League lists competitor teams', () => {
@@ -1332,7 +1339,8 @@ describe('Tier 1: Feature Coverage (19 Features x >=5 Tests)', () => {
       );
       assert.ok(marketSource.includes('data-testid="allow-signed-drop-toggle"'), 'PlayerMarketplace must render allow-signed-drop-toggle checkbox');
       assert.ok(marketSource.includes('Include players without an NFL team'), 'Toggle label must say what it changes');
-      assert.ok(marketSource.includes('Off: only suggests adding players currently signed to an NFL team.'), 'Toggle helper must explain the off state');
+      // Updated in the 2026-10-11 wording pass: shorter helper text.
+      assert.ok(marketSource.includes('Off: NFL-signed players only.'), 'Toggle helper must explain the off state');
     });
 
     it('25.2 should verify isPlayerSigned correctly identifies signed NFL players vs unsigned free agents', async () => {
@@ -1736,8 +1744,9 @@ describe('Tier 1: Feature Coverage (19 Features x >=5 Tests)', () => {
 
     it('27.9 should verify "less is more" UI decluttering with collapsible details disclosures', () => {
       const oneiromancySource = fs.readFileSync(oneiromancyPath, 'utf8');
-      assert.ok(oneiromancySource.includes('What is Harmony Score?'), 'OneiromancyDashboard must explain Harmony Score');
-      assert.ok(oneiromancySource.includes('Why 18-Week Coverage Matters'), 'OneiromancyDashboard must explain 18-week coverage');
+      // Updated in the 2026-10-11 wording pass: the two disclosures were renamed.
+      assert.ok(oneiromancySource.includes('How Squad Harmony is scored'), 'OneiromancyDashboard must explain Squad Harmony');
+      assert.ok(oneiromancySource.includes('How bye coverage works'), 'OneiromancyDashboard must explain bye coverage');
       // Must be wrapped in <details>
       const detailsCount = (oneiromancySource.match(/<details/g) || []).length;
       assert.ok(detailsCount >= 2, 'OneiromancyDashboard must wrap fine-print metaphysical explanations in collapsible details');

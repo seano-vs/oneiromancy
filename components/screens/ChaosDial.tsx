@@ -328,7 +328,7 @@ export const ChaosDial: React.FC<ChaosDialProps> = ({
               Divination Tier Weights
             </span>
             <p className="text-[11px] text-slate-400">
-              The five pillars behind Stars. Weights are normalized, so they always act as 100%.
+              The five pillars behind Spirit (and so Stars). Weights are normalized to 100%.
             </p>
           </div>
           {!embedded && (
@@ -414,7 +414,7 @@ export const ChaosDial: React.FC<ChaosDialProps> = ({
             <div className="flex items-center justify-between pt-3 border-t border-white/10 font-mono text-xs">
               <span className="text-slate-400 flex items-center gap-1.5">
                 <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
-                <span>Total Oracle Weight:</span>
+                <span>Total weight:</span>
               </span>
               <span
                 className={`font-bold px-2.5 py-1 rounded-lg border ${
@@ -882,7 +882,7 @@ export const ChaosDial: React.FC<ChaosDialProps> = ({
                   The Chaos Dial implements an algorithmic interpolation between cold empirical Value Over Replacement (VOR) and mystical spirit divination:
                 </p>
                 <div className="p-2 rounded-lg bg-slate-900/90 border border-white/10 font-mono text-[11px] text-cyan-300 my-1.5 text-center">
-                  DraftScore = (1 - &lambda;) &times; VOR_norm + &lambda; &times; SpiritScore
+                  DraftScore = (1 - &lambda;) &times; VOR_norm + &lambda; &times; Spirit
                 </div>
                 <p>
                   Inspired by simulated annealing in combinatorial optimization, &lambda; controls algorithmic temperature: &lambda;=0.0 enforces pure statistical consensus, while &lambda;=1.0 unleashes full cosmic intuition and tarot archetype alignment.

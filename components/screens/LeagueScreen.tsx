@@ -104,7 +104,7 @@ export const LeagueScreen: React.FC = () => {
         </span>
         <h2 className="font-serif text-2xl sm:text-3xl font-bold text-slate-100 tracking-wide">League</h2>
         <p className="text-xs text-slate-400 font-sans">
-          Every team ranked by your celestial metrics. They follow your star weights and λ:{' '}
+          Every team ranked by your metrics, using your star weights and λ:{' '}
           <button
             type="button"
             onClick={() => window.dispatchEvent(new Event('oneiromancy:open-oracle'))}
@@ -128,9 +128,8 @@ export const LeagueScreen: React.FC = () => {
           </span>
         </div>
         <p className="text-[11px] text-slate-400 font-sans -mt-1">
-          <span className="text-purple-200 font-mono">Oracle</span> blends a player&apos;s projected points with
-          this week&apos;s Stars, weighted by your λ ({lambda.toFixed(2)}): Oracle = (1 − λ) × Stats + λ × Stars.
-          It&apos;s the score behind the lineup, waiver and trade picks.
+          <span className="text-purple-200 font-mono">Oracle</span> = (1 − λ) × Stats + λ × Stars, with λ{' '}
+          {lambda.toFixed(2)}. It drives every lineup, waiver and trade pick.
         </p>
         <label className="flex items-center gap-2 text-xs font-mono text-slate-400">
           Team
