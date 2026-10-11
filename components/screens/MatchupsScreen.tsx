@@ -1265,7 +1265,8 @@ export const MatchupsScreen: React.FC<MatchupsScreenProps> = ({
                 <div className="p-3 rounded-lg bg-cyan-950/20 border border-cyan-500/20 space-y-1.5">
                   <div className="text-xs font-mono text-cyan-300 font-semibold flex items-center gap-1.5">
                     <Compass className="w-3.5 h-3.5 text-cyan-400" />
-                    <span>Stacks this week</span>
+                    <span>Active Transits & Conjunctions</span>
+                    <span className="text-[10px] text-slate-400 font-normal">· QB stacks this week</span>
                   </div>
                   {(teamComparison.celestial_conjunctions?.length ?? 0) === 0 && (
                     <p className="text-[11px] font-mono text-slate-400">

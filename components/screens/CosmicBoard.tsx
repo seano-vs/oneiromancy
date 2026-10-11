@@ -302,7 +302,7 @@ export const CosmicBoard: React.FC<CosmicBoardProps> = ({
           <div className="flex justify-between items-center px-1">
             <span className="text-xs font-mono uppercase text-cyan-400 font-semibold tracking-wider flex items-center gap-1.5">
               <Sparkles className="w-3.5 h-3.5" />
-              <span>Spotlight pick</span>
+              <span>Divination Spotlight Pick (Read-Only)</span>
             </span>
             <span className="text-[10px] font-mono text-slate-400">
               Round {context.draftState?.current_pick?.round || 5} target

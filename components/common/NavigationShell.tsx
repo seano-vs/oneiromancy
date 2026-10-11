@@ -124,6 +124,13 @@ export const NavigationShell: React.FC<NavigationShellProps> = ({
       : statusType === 'syncing'
       ? 'bg-amber-500'
       : 'bg-slate-500';
+  // The original's glow on the status dot (live = emerald).
+  const statusGlow =
+    statusType === 'live'
+      ? 'shadow-[0_0_8px_rgba(16,185,129,0.8)]'
+      : statusType === 'syncing'
+      ? 'shadow-[0_0_8px_rgba(245,158,11,0.8)]'
+      : '';
 
   return (
     <div className="min-h-screen flex flex-col bg-[#131318] text-slate-100 selection:bg-cyan-500/30 selection:text-cyan-200">
@@ -187,7 +194,7 @@ export const NavigationShell: React.FC<NavigationShellProps> = ({
               {statusType === 'syncing' && (
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75" />
               )}
-              <span className={`relative inline-flex rounded-full h-2 w-2 ${statusColor}`} />
+              <span className={`relative inline-flex rounded-full h-2 w-2 ${statusColor} ${statusGlow}`} />
             </span>
             <span className="text-slate-300 tracking-tight hidden sm:inline">{statusText}</span>
             <span className="text-slate-300 tracking-tight sm:hidden">
@@ -293,7 +300,7 @@ export const NavigationShell: React.FC<NavigationShellProps> = ({
                 }`}
               >
                 {isActive && (
-                  <span aria-hidden="true" className="absolute top-0 h-0.5 w-8 bg-cyan-400 rounded-full" />
+                  <span aria-hidden="true" className="absolute top-0 h-0.5 w-8 bg-cyan-400 rounded-full shadow-[0_0_8px_#06b6d4] transition-all" />
                 )}
                 <Icon className="w-5 h-5" />
                 <span className="text-[10px] font-mono tracking-tight font-medium">{tab.short}</span>
