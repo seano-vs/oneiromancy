@@ -1,5 +1,5 @@
 {
-  // Must match the Worker's name in the Cloudflare dashboard.
+  // Must match the deployed project's name.
   "name": "oneiromancy",
   "compatibility_date": "2026-10-01",
   // Static assets only; there is no Worker script. `npm run build` writes

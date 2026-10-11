@@ -116,25 +116,6 @@ docker run -p 8080:8080 oneiromancy
 ```
 The container is lightweight (based on `node:22-alpine`), runs as a non-root user (`UID 1001`), and is directly deployable to **Google Cloud Run**.
 
-#### Option C: Cloudflare Workers
-`wrangler.jsonc` deploys the `out/` folder as a static-assets-only Cloudflare Worker (no Worker script). Unmatched routes fall back to `index.html`, matching `app.yaml`, and `public/_headers` sets `X-Content-Type-Options: nosniff` on every response.
-
-To deploy on every push with **Workers Builds**, import this repository in the Cloudflare dashboard (**Workers & Pages → Create → Import a repository**) and use these settings:
-
-| Setting | Value |
-| --- | --- |
-| Worker name | `oneiromancy` (must match `name` in `wrangler.jsonc`) |
-| Build command | `npm run build` |
-| Deploy command | `npx wrangler deploy` |
-| Root directory | `/` |
-
-To deploy manually from your machine:
-```bash
-npm run build
-npx wrangler deploy
-```
-Wrangler is intentionally not a `package.json` dependency: its `workerd` binary needs glibc and would break `npm ci` on the Dockerfile's `node:22-alpine` image. `npx wrangler` fetches it on demand.
-
 ---
 
 ## Testing & Quality Verification

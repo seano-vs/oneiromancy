@@ -114,7 +114,7 @@ export const StatTiles: React.FC<{ player: CosmicPlayer; lambda: number; muted?:
           </span>
         </div>
         <div className={tile} title="This week's Stars (weekly favorability)">
-          <span className="text-slate-500 block text-[9px]">Wk Fav ★</span>
+          <span className="text-slate-500 block text-[9px]">Wk Fav</span>
           <span className={`font-bold ${TONE_TEXT[tone]}`}>{stars.toFixed(0)}</span>
         </div>
         <div className={tile} title={`Oracle at λ ${lambda.toFixed(2)}`}>

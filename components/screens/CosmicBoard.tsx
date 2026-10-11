@@ -31,7 +31,7 @@ import {useOneiromancy} from '@/context/OneiromancyContext';
 import {DEFAULT_CHAOS_LAMBDA} from '@/lib/scoring';
 import {TONE_LABEL, TONE_PILL, favorabilityTone, oracleScore, starsScore, statsPoints} from '@/lib/oracle';
 import {CosmicPlayer} from '@/types/oneiromancy';
-import {Eye, LayoutGrid, RefreshCw, Sparkles} from 'lucide-react';
+import {LayoutGrid, RefreshCw, Sparkles} from 'lucide-react';
 import React, {useCallback, useMemo, useState} from 'react';
 
 export interface CosmicBoardProps {
@@ -446,13 +446,6 @@ export const CosmicBoard: React.FC<CosmicBoardProps> = ({
                       </td>
                       <td className="py-2.5 px-4 text-center" onClick={(e) => e.stopPropagation()}>
                         <div className="flex items-center justify-center gap-1.5">
-                          <button
-                            type="button"
-                            onClick={() => handleInspect(player)}
-                            aria-label={`Inspect ${player.name}`}
-                            className="p-1 rounded text-slate-400 hover:text-cyan-300 hover:bg-slate-800">
-                            <Eye className="w-3.5 h-3.5" />
-                          </button>
                           <span
                             className={`px-2 py-0.5 text-[10px] rounded border ${
                               isAvailable
