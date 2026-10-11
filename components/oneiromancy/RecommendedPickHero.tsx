@@ -21,6 +21,7 @@ import GlassCard from '@/components/common/GlassCard';
 import PositionalBadge from '@/components/common/PositionalBadge';
 import { CosmicPlayer } from '@/types/oneiromancy';
 import { starsVerdictLabel } from '@/lib/scoring';
+import { starsScore } from '@/lib/oracle';
 import { Sparkles, ChevronDown, ChevronUp } from 'lucide-react';
 
 export interface RecommendedPickHeroProps {
@@ -175,10 +176,10 @@ export const RecommendedPickHero: React.FC<RecommendedPickHeroProps> = ({
             Stars
           </span>
           <span className="font-mono text-2xl font-bold text-teal-300">
-            {(player.favorability_score ?? 75).toFixed(0)}
+            {starsScore(player).toFixed(0)}
           </span>
           <span className="text-[9px] font-mono text-slate-500">
-            {starsVerdictLabel(player.favorability_score ?? 75)}
+            {starsVerdictLabel(starsScore(player))}
           </span>
         </div>
       </div>

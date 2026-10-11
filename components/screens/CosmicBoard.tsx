@@ -84,7 +84,7 @@ export function comparePlayersForBoard(
       primaryDiff = a.harmony_score - b.harmony_score;
       break;
     case 'favorability_score':
-      primaryDiff = (a.favorability_score ?? 70) - (b.favorability_score ?? 70);
+      primaryDiff = starsScore(a) - starsScore(b);
       break;
     case 'adp':
       primaryDiff = (b.adp || 999) - (a.adp || 999);

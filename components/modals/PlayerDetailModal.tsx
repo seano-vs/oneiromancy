@@ -132,7 +132,8 @@ export const PlayerDetailModal: React.FC<PlayerDetailModalProps> = ({
     0;
 
   const candidateProj = getWeeklyProj(player);
-  const candidateFav = player.favorability_score ?? 75;
+  // Stars are always computed live (starsScore), never read from the cached field.
+  const candidateFav = starsScore(player);
 
   const breakdown = player.divination_breakdown || {
     celestial: player.spirit_score ? Math.round(player.spirit_score * 0.95) : 85,
@@ -381,7 +382,7 @@ export const PlayerDetailModal: React.FC<PlayerDetailModalProps> = ({
               {comparisonRows.map(({ slotLabel, isStarter, rosterPlayer }) => {
                 const isSelf = String(rosterPlayer.id) === String(player.id);
                 const rosProj = getWeeklyProj(rosterPlayer);
-                const rosFav = rosterPlayer.favorability_score ?? 70;
+                const rosFav = starsScore(rosterPlayer);
 
                 const projDiff = candidateProj - rosProj;
                 const dsDiff = oracleScore(player, modalLambda) - oracleScore(rosterPlayer, modalLambda);

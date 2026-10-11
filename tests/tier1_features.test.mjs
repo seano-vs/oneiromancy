@@ -972,6 +972,11 @@ describe('Tier 1: Feature Coverage (19 Features x >=5 Tests)', () => {
       assert.ok(modal.includes('compareWith'), 'PlayerDetailModal must accept compareWith');
       assert.ok(modal.includes('Head-to-head:'), 'PlayerDetailModal must label head-to-head mode');
       // Updated in the 2026-10-11 wording pass: "Wk Fav" is now called Stars everywhere.
+      // The popup's Stars card and its head-to-head row must show the same number: both use the live
+      // starsScore(), never the cached favorability_score (owner saw 62 vs 60 for the same player).
+      assert.ok(modal.includes('const candidateFav = starsScore(player);') && modal.includes('const rosFav = starsScore(rosterPlayer);'),
+        'Head-to-head Stars must come from starsScore');
+      assert.ok(!/favorability_score/.test(modal), 'PlayerDetailModal must not read the cached favorability_score');
       for (const col of ['Proj Pts', 'Oracle', 'VOR', 'Spirit', 'Harmony', 'Stars']) {
         assert.ok(modal.includes(col), `Head-to-head must compare ${col}`);
       }
