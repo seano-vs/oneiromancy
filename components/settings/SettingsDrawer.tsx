@@ -59,10 +59,14 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
       return false;
     }
   });
+  const isMock = mode === 'mock';
   const hasConfiguredUsername =
     !isFirstLaunch && Boolean(draftState?.settings?.sleeper_username?.trim());
-  const currentUsername = draftState?.settings?.sleeper_username || 'OneiroVanguard';
-  const availableLeagues = hasConfiguredUsername
+  // Shown in a highlighted box until a real Sleeper account is connected.
+  const needsUsername = !hasConfiguredUsername;
+  const currentUsername = draftState?.settings?.sleeper_username || '';
+  // Sample data has no Sleeper leagues; never present it as if it were connected.
+  const availableLeagues = hasConfiguredUsername && !isMock
     ? draftState?.available_leagues || draftState?.settings?.available_leagues || []
     : [];
   const currentLeagueId = hasConfiguredUsername
@@ -155,7 +159,14 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
     if (loadMockData) {
       loadMockData();
     }
-    setInputUsername('OneiroVanguard');
+    // The sample league never fills in a username; keep the owner's real one.
+    let saved = '';
+    try {
+      saved = localStorage.getItem('oneiromancy_active_username')?.trim() || '';
+    } catch {
+      // Ignore localStorage access failures
+    }
+    setInputUsername(saved);
     setIsEditing(false);
     setIsFirstLaunch(false);
     if (wasFirstLaunch) {
@@ -252,7 +263,19 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
         )}
 
         {/* Active User Avatar & Identity Badge */}
-        {hasConfiguredUsername && (draftState?.user_avatar_url || draftState?.avatar_url || draftState?.avatar) && (
+        {/* Sample-data notice: nothing here is connected to Sleeper */}
+        {isMock && (
+          <div
+            data-testid="settings-mock-notice"
+            className="p-3 rounded-xl bg-purple-950/40 border border-purple-500/40 text-[11px] text-purple-200 font-sans leading-relaxed"
+          >
+            <span className="font-mono font-bold text-purple-300 block">Viewing sample data</span>
+            The mock league is made up and isn&apos;t connected to Sleeper. Nothing syncs or updates until you enter
+            your Sleeper username below.
+          </div>
+        )}
+
+        {!isMock && hasConfiguredUsername && (draftState?.user_avatar_url || draftState?.avatar_url || draftState?.avatar) && (
           <div
             data-testid="settings-user-profile"
             className="flex items-center gap-3 p-3 rounded-xl bg-purple-950/30 border border-purple-500/30 font-mono text-xs"
@@ -277,11 +300,21 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
           </div>
         )}
 
-        {/* Sleeper Username Input */}
-        <div className="space-y-1.5 font-mono text-xs">
+        {/* Sleeper Username Input: highlighted until an account is connected */}
+        <div
+          data-testid="username-section"
+          className={`space-y-1.5 font-mono text-xs ${
+            needsUsername
+              ? 'p-3.5 rounded-xl bg-cyan-950/40 border-2 border-cyan-400 shadow-[0_0_24px_rgba(34,211,238,0.35)]'
+              : ''
+          }`}
+        >
           <div className="flex items-center justify-between">
-            <label htmlFor="username-input" className="text-slate-300 font-semibold block">
-              Sleeper Username
+            <label
+              htmlFor="username-input"
+              className={needsUsername ? 'text-cyan-200 font-bold text-sm block' : 'text-slate-300 font-semibold block'}
+            >
+              {needsUsername ? 'Enter your Sleeper username' : 'Sleeper Username'}
             </label>
             <a
               href="https://docs.sleeper.com/"
@@ -308,7 +341,11 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
                 if (e.key === 'Enter') handleSave();
               }}
               placeholder="e.g. OneiroVanguard"
-              className="flex-1 p-2.5 rounded-xl bg-slate-900/90 border border-cyan-500/30 text-slate-100 font-mono text-xs focus:outline-none focus:border-cyan-400 transition-colors"
+              className={`flex-1 rounded-xl bg-slate-900/90 text-slate-100 font-mono focus:outline-none focus:border-cyan-300 transition-colors ${
+                needsUsername
+                  ? 'p-3 text-sm border-2 border-cyan-400/80 ring-2 ring-cyan-400/30'
+                  : 'p-2.5 text-xs border border-cyan-500/30'
+              }`}
               aria-label="Sleeper Username"
             />
           </div>
@@ -331,7 +368,7 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
             </div>
           )}
           {/* Real-time Dynamic Status Badge */}
-          {(isFetchingLeagues || isLoading || syncError || (hasConfiguredUsername && availableLeagues.length > 0)) && (
+          {!isMock && (isFetchingLeagues || isLoading || syncError || (hasConfiguredUsername && availableLeagues.length > 0)) && (
             <div
               id="username-status-badge"
               className={`p-2 rounded-lg text-[11px] font-mono flex items-center gap-1.5 transition-all ${
@@ -382,10 +419,14 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
             aria-label="League Selector"
             value={currentLeagueId}
             onChange={handleLeagueChange}
-            disabled={isLoading || !hasConfiguredUsername}
+            disabled={isLoading || !hasConfiguredUsername || isMock}
             className="w-full p-2.5 rounded-xl bg-slate-900/90 border border-cyan-500/30 text-slate-100 font-mono text-xs focus:outline-none focus:border-cyan-400 transition-colors disabled:opacity-50"
           >
-            {!hasConfiguredUsername ? (
+            {isMock ? (
+              <option value="" disabled className="bg-slate-900 text-slate-400">
+                Sample league (not on Sleeper)
+              </option>
+            ) : !hasConfiguredUsername ? (
               <option value="" disabled className="bg-slate-900 text-slate-400">
                 Enter a Sleeper username above to load leagues
               </option>
@@ -409,7 +450,7 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
             Dynamically queried from Sleeper API. Defaults to your first league.
           </span>
           {/* Fallback Manual League ID Input when availableLeagues is empty */}
-          {hasConfiguredUsername && availableLeagues.length === 0 && (
+          {!isMock && hasConfiguredUsername && availableLeagues.length === 0 && (
             <div className="mt-2 p-2.5 rounded-xl bg-slate-900/60 border border-amber-500/30 space-y-2">
               <div className="text-[11px] text-amber-300 font-semibold flex items-center gap-1.5">
                 <span>⚠️ No leagues detected for @{validatedUsername || currentUsername}</span>
@@ -490,12 +531,14 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
           <div className="space-y-0.5">
             <div className="flex items-center gap-1.5 font-mono text-xs font-semibold text-slate-200">
               <RefreshCw
-                className={`w-3.5 h-3.5 text-cyan-400 ${isAutoUpdate ? 'animate-spin' : ''}`}
+                className={`w-3.5 h-3.5 text-cyan-400 ${isAutoUpdate && !isMock ? 'animate-spin' : ''}`}
               />
               <span>Real-Time Auto-Update</span>
             </div>
             <p className="text-[10px] text-slate-400 font-sans">
-              Automatically poll Sleeper API for opponent picks and board updates.
+              {isMock
+                ? 'Off while viewing sample data: there is no Sleeper league to update from.'
+                : 'Automatically poll Sleeper API for opponent picks and board updates.'}
             </p>
           </div>
 
@@ -503,63 +546,19 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
             type="button"
             role="switch"
             aria-label="Toggle Real-Time Auto-Update"
-            aria-checked={isAutoUpdate}
+            aria-checked={isAutoUpdate && !isMock}
+            disabled={isMock}
             onClick={toggleAutoUpdate}
             className={`w-12 h-6 rounded-full p-0.5 transition-colors duration-200 ease-in-out ${
-              isAutoUpdate ? 'bg-cyan-500' : 'bg-slate-700'
-            }`}
+              isAutoUpdate && !isMock ? 'bg-cyan-500' : 'bg-slate-700'
+            } disabled:opacity-50 disabled:cursor-not-allowed`}
           >
             <div
               className={`w-5 h-5 rounded-full bg-slate-950 shadow-md transform transition-transform duration-200 ease-in-out ${
-                isAutoUpdate ? 'translate-x-6' : 'translate-x-0'
+                isAutoUpdate && !isMock ? 'translate-x-6' : 'translate-x-0'
               }`}
             />
           </button>
-        </div>
-
-        {/* Polling Interval Selector (Read-Only) */}
-        <div className="space-y-2 font-mono text-xs">
-          <span id="polling-interval-label" className="text-slate-300 font-semibold block">
-            Polling Frequency Interval
-          </span>
-          <div
-            role="radiogroup"
-            aria-labelledby="polling-interval-label"
-            aria-label="Polling Frequency Interval"
-            className="grid grid-cols-2 gap-2"
-          >
-            {[
-              { label: '5 Seconds (High Priority)', value: 5000, desc: 'High Priority' },
-              { label: '10 Seconds (Standard)', value: 10000, desc: 'Standard' },
-            ].map((option) => (
-              <button
-                key={option.value}
-                type="button"
-                role="radio"
-                aria-checked={currentInterval === option.value}
-                onClick={() => setPollInterval && setPollInterval(option.value)}
-                className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
-                  currentInterval === option.value
-                    ? 'bg-cyan-950/80 border-cyan-400 text-cyan-300 shadow-[0_0_8px_rgba(6,182,212,0.3)]'
-                    : 'bg-slate-900/60 border-white/10 text-slate-400 hover:border-white/20'
-                }`}
-              >
-                <div className="font-bold flex items-center justify-between">
-                  <span>{option.value / 1000}s Interval</span>
-                  {currentInterval === option.value && (
-                    <span className="text-[9px] px-1 py-0.2 bg-cyan-900/60 border border-cyan-500/30 rounded text-cyan-300">
-                      ACTIVE
-                    </span>
-                  )}
-                </div>
-                <div className="text-[10px] text-slate-500">{option.desc}</div>
-              </button>
-            ))}
-          </div>
-          <span className="text-[10px] text-slate-500 block">
-            Auto-throttles to 30s when application is in a background tab to preserve battery and
-            bandwidth.
-          </span>
         </div>
 
         {/* Read-Only System Configuration Badges */}

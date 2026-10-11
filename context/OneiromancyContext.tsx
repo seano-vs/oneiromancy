@@ -579,6 +579,10 @@ export const OneiromancyProvider: React.FC<OneiromancyProviderProps> = ({
     if (typeof window === 'undefined') return;
     try {
       const savedSlot = localStorage.getItem('oneiromancy_active_slot');
+      // Older builds saved the mock persona as the user's own account.
+      if (localStorage.getItem('oneiromancy_active_username') === 'OneiroVanguard') {
+        localStorage.removeItem('oneiromancy_active_username');
+      }
       const savedUsername = localStorage.getItem('oneiromancy_active_username');
       if (savedSlot) {
         const parsed = parseInt(savedSlot, 10);
@@ -729,17 +733,9 @@ export const OneiromancyProvider: React.FC<OneiromancyProviderProps> = ({
   const loadMockData = useCallback(() => {
     setModeState('mock');
     setSeasonContext(null);
-    const mockUsername = activeUsernameRef.current || 'OneiroVanguard';
-    activeUsernameRef.current = mockUsername;
-    if (typeof window !== 'undefined') {
-      try {
-        if (!localStorage.getItem('oneiromancy_active_username')) {
-          localStorage.setItem('oneiromancy_active_username', mockUsername);
-        }
-      } catch {
-        // Ignore localStorage errors
-      }
-    }
+    // Sample data never adopts, saves or syncs a username: the owner's real
+    // account (if any) stays as it was, and nothing looks connected.
+    const realUsername = activeUsernameRef.current || '';
     const targetSlot = activeSlotRef.current || 7;
     const teamsList = mock_oneiromancy_draft_2025.competitor_teams || [];
     const updatedTeams = teamsList.map((t) => {
@@ -763,7 +759,7 @@ export const OneiromancyProvider: React.FC<OneiromancyProviderProps> = ({
     );
     prevConfigRef.current = {
       draft_id: mock_oneiromancy_draft_2025.draft_id,
-      sleeper_username: mockUsername,
+      sleeper_username: realUsername,
       league_id: mockSettings.league_id ?? '',
     };
     setDraftState({
@@ -773,7 +769,8 @@ export const OneiromancyProvider: React.FC<OneiromancyProviderProps> = ({
       settings: {
         ...mockSettings,
         user_slot: targetSlot,
-        sleeper_username: mockUsername,
+        sleeper_username: realUsername,
+        available_leagues: [],
         mode: 'mock',
         offline_mode_active: false,
       },

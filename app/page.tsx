@@ -84,9 +84,7 @@ function OneiromancyApp() {
       syncWarning={syncWarning}
       onRetrySync={refreshDraft}
       sleeperUsername={
-        (mode === 'mock' && savedUsername) ||
-        draftState.settings?.sleeper_username ||
-        'OneiroVanguard'
+        mode === 'mock' ? savedUsername || '' : draftState.settings?.sleeper_username || ''
       }
       leagueId={draftState.settings?.league_id || '9000000000000000001'}
       draftId={draftState.draft_id}

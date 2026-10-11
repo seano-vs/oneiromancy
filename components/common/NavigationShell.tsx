@@ -107,7 +107,7 @@ export const NavigationShell: React.FC<NavigationShellProps> = ({
   syncError,
   syncWarning,
   onRetrySync,
-  sleeperUsername = 'OneiroVanguard',
+  sleeperUsername = '',
   userAvatarUrl,
   oracleLambda,
   onOpenOracle,
@@ -247,13 +247,23 @@ export const NavigationShell: React.FC<NavigationShellProps> = ({
           className="bg-purple-950/40 border-b border-purple-500/20 px-4 py-1.5 flex items-center justify-between gap-2 text-[11px] font-mono text-purple-300/90"
         >
           <span>🔮 Mock league · sample data, not your Sleeper account</span>
-          <button
-            type="button"
-            onClick={() => onModeChange?.('live')}
-            className="text-[11px] text-cyan-400 hover:underline shrink-0"
-          >
-            Back to {sleeperUsername && !/^oneirovan/i.test(sleeperUsername) ? sleeperUsername : 'live league'} →
-          </button>
+          {sleeperUsername ? (
+            <button
+              type="button"
+              onClick={() => onModeChange?.('live')}
+              className="text-[11px] text-cyan-400 hover:underline shrink-0"
+            >
+              Back to {sleeperUsername} →
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={onOpenSettings}
+              className="text-[11px] text-cyan-400 hover:underline shrink-0"
+            >
+              Connect your Sleeper account →
+            </button>
+          )}
         </div>
       )}
 

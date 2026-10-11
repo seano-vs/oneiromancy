@@ -74,6 +74,13 @@ behind a disclosure.
 3. **Mock mode is never mistaken for live.** Placeholder personas and league
    IDs must not reach Sleeper, and the UI must not say LIVE before an account
    is configured.
+   Loading the mock never fills in, saves or syncs a username (no persona
+   such as "OneiroVanguard" in the input or in storage). While the mock is
+   showing, nothing that implies a connection may appear: no "Found N
+   leagues", no profile, no league picked in the selector, and no
+   auto-update switch turned on. Without a real account, the way out is
+   "Connect your Sleeper account", not "Back to live league".
+
 4. **Verify against the source.** After changing any data path, open the app
    with a real account and compare what's rendered with Sleeper's API with a
    script, not by eye.
