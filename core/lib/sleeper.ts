@@ -5383,6 +5383,30 @@ export function transformToDraftState(
     p.draft_score = updatedDraft;
   }
 
+  // The blend above changes Spirit, so refresh each player's saved Stars (it
+  // was computed before the blend), and give any roster-slot copies the same
+  // numbers as the player list.
+  const refreshed = recomputeDraftScores(scoredCosmicBoard, settings);
+  const refreshedById = new Map<string, CosmicPlayer>();
+  for (let i = 0; i < scoredCosmicBoard.length; i++) {
+    scoredCosmicBoard[i].favorability_score = refreshed[i].favorability_score;
+    scoredCosmicBoard[i].favorability_verdict = refreshed[i].favorability_verdict;
+    refreshedById.set(String(scoredCosmicBoard[i].id), scoredCosmicBoard[i]);
+  }
+  for (const slot of fullRoster) {
+    const fresh = slot.player ? refreshedById.get(String(slot.player.id)) : undefined;
+    if (!slot.player || !fresh) continue;
+    slot.player = {
+      ...slot.player,
+      harmony_score: fresh.harmony_score,
+      divination_breakdown: fresh.divination_breakdown,
+      spirit_score: fresh.spirit_score,
+      draft_score: fresh.draft_score,
+      favorability_score: fresh.favorability_score,
+      favorability_verdict: fresh.favorability_verdict,
+    };
+  }
+
   const targetSlot =
     settings.user_slot || (userRoster ? Number(userRoster.roster_id) : 7);
 

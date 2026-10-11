@@ -95,6 +95,13 @@ owner asks**:
   | Squad Alchemy (harmony) | 0.15 |
   | Tarot & I-Ching (oracular) | 0.10 |
 
+  The Squad Alchemy pillar is blended **once per sync**, in
+  `transformToDraftState`: 0.65 × the player's fit with your roster + 0.35 ×
+  his natal value. Nothing else may blend it again. After the blend, the saved
+  Stars are refreshed, and the sync handler gives `my_roster` the player
+  list's numbers, so each player has one Spirit / Stars / Oracle on every
+  screen (tests 7.1 and 7.2 in the live Sleeper audit).
+
 Player numbers. **These four names are the app's whole vocabulary**: the UI
 uses exactly Stats, Spirit, Stars and Oracle (no "Wk Fav", "SpiritScore",
 "weekly favorability" or "Astral Favorability" on screen), and the Oracle

@@ -975,39 +975,31 @@ export const OneiromancyProvider: React.FC<OneiromancyProviderProps> = ({
           };
 
           const activeRoster = freshData.my_roster || prev.my_roster || [];
-          const activeRound = freshData.current_pick?.round || 1;
-          const boardWithSpirit = freshData.cosmic_board.map((player) => {
-            const baseRosterHarmony = calculateHarmony(activeRoster, player, activeRound);
-            const natalHarmony =
-              player.divination_breakdown?.harmony ?? player.harmony_score ?? 75.0;
-            const blendedHarmony = Number(
-              Math.min(
-                99.0,
-                Math.max(35.0, 0.65 * baseRosterHarmony + 0.35 * natalHarmony)
-              ).toFixed(1)
-            );
-            const breakdown = player.divination_breakdown
-              ? { ...player.divination_breakdown, harmony: blendedHarmony }
-              : {
-                  celestial: 78.0,
-                  numeric: 74.0,
-                  geomantic: 76.0,
-                  oracular: 72.0,
-                  harmony: blendedHarmony,
-                };
-            const spiritScore = computeSpiritScore(
-              breakdown,
-              mergedSettings.oracle_weights
-            );
-            return {
-              ...player,
-              harmony_score: blendedHarmony,
-              divination_breakdown: breakdown,
-              spirit_score: spiritScore,
-            };
-          });
-
+          // transformToDraftState already blends each player's harmony pillar with
+          // the user's roster once. Blending again here moved the player list's
+          // Spirit / Stars / Oracle away from the roster's for the same player.
+          const boardWithSpirit = freshData.cosmic_board;
           const recomputedBoard = recomputeDraftScores(boardWithSpirit, mergedSettings);
+          // Roster slots hold copies; give them the recomputed numbers so every
+          // screen shows one Spirit / Stars / Oracle per player.
+          const boardById = new Map(recomputedBoard.map((p) => [String(p.id), p]));
+          const syncedRoster = activeRoster.map((slot) => {
+            const fresh = slot.player ? boardById.get(String(slot.player.id)) : undefined;
+            return fresh && slot.player
+              ? {
+                  ...slot,
+                  player: {
+                    ...slot.player,
+                    harmony_score: fresh.harmony_score,
+                    divination_breakdown: fresh.divination_breakdown,
+                    spirit_score: fresh.spirit_score,
+                    draft_score: fresh.draft_score,
+                    favorability_score: fresh.favorability_score,
+                    favorability_verdict: fresh.favorability_verdict,
+                  },
+                }
+              : slot;
+          });
 
           const updatedIdealPath = (freshData.ideal_draft_path || []).map((step) => ({
             ...step,
@@ -1138,13 +1130,14 @@ export const OneiromancyProvider: React.FC<OneiromancyProviderProps> = ({
                   reconciledTeams,
                   null,
                   recomputedBoard,
-                  freshData.my_roster || prev.my_roster,
+                  syncedRoster,
                   freshData.weekly_matchup?.week || prev.weekly_matchup?.week || 1
                 );
 
           return {
             ...freshData,
             cosmic_board: recomputedBoard,
+            my_roster: syncedRoster,
             ideal_draft_path: updatedIdealPath,
             competitor_teams: reconciledTeams,
             weekly_matchup: reconciledMatchup,
