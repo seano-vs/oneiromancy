@@ -238,8 +238,8 @@ export const ChaosDial: React.FC<ChaosDialProps> = ({
           <div className="grid grid-cols-4 gap-2 pt-1">
             {[
               { label: '0.00 VOR', val: 0.0, name: 'Orthodoxy' },
-              { label: '0.35 Canonical', val: 0.35, name: 'Equilibrium' },
-              { label: '0.65 Mystic', val: 0.65, name: 'Ascendance' },
+              { label: '0.35 Balance', val: 0.35, name: 'Equilibrium' },
+              { label: '0.75 Canonical', val: 0.75, name: 'Ascendance' },
               { label: '1.00 Bedlam', val: 1.0, name: 'Bedlam' },
             ].map((preset) => {
               const isMatch = Math.abs(lambda - preset.val) < 0.01;

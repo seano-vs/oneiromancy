@@ -31,6 +31,12 @@ What that means in practice:
   records, points for, raw projections, the schedule). Sleeper data may
   appear as small, secondary context next to the Oracle rating, never as
   the headline, the default tab, or the sort order.
+- **The defaults are the owner's, not yours.** The default λ is **0.75**
+  (owner's call; upstream shipped 0.35). The default star weights are
+  Celestial 0.30, Numeric 0.20, Geomantic 0.25, Oracular 0.10, Harmony 0.15
+  ("carefully determined"). Never change either without being asked. Read
+  them from `DEFAULT_CHAOS_LAMBDA` and `DEFAULT_ORACLE_WEIGHTS` in
+  `core/lib/scoring.ts`; never hard-code a λ.
 - **Don't substitute your own product judgment for the mission.** When a
   design choice is unclear, choose the option that puts the owner's metrics
   first. "Users expect standings" or "projections are what people know" are

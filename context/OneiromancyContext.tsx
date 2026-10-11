@@ -78,11 +78,14 @@ import {
 
 
 
-const ORACLE_STORAGE_KEY = 'oneiromancy_oracle';
+// v2: λ and weights are stored only when the owner changes them, so a saved
+// value never pins an old default (v1 saved λ 0.35 as a side effect).
+const ORACLE_STORAGE_KEY = 'oneiromancy_oracle_v2';
 
 function saveOracleSettings(v: { chaos_lambda?: number; oracle_weights?: OracleWeights }): void {
   try {
-    localStorage.setItem(ORACLE_STORAGE_KEY, JSON.stringify(v));
+    const prev = JSON.parse(localStorage.getItem(ORACLE_STORAGE_KEY) || '{}');
+    localStorage.setItem(ORACLE_STORAGE_KEY, JSON.stringify({ ...prev, ...v }));
   } catch {
     // Storage may be unavailable (private mode); the session still works.
   }
@@ -344,7 +347,7 @@ export const OneiromancyProvider: React.FC<OneiromancyProviderProps> = ({
   const updateChaosLambda = useCallback((rawLambda: number) => {
     const lambda = clamp(rawLambda, 0.0, 1.0);
     setDraftState((prev) => {
-      saveOracleSettings({ chaos_lambda: lambda, oracle_weights: prev.settings.oracle_weights });
+      saveOracleSettings({ chaos_lambda: lambda });
       return recomputeDraftState(prev, { chaos_lambda: lambda });
     });
   }, []);
@@ -357,7 +360,7 @@ export const OneiromancyProvider: React.FC<OneiromancyProviderProps> = ({
       const currentWeights = prev.settings.oracle_weights ?? DEFAULT_ORACLE_WEIGHTS;
       const mergedWeights = { ...currentWeights, ...weights };
       const normWeights = normalizeOracleWeights(mergedWeights);
-      saveOracleSettings({ chaos_lambda: prev.settings.chaos_lambda, oracle_weights: normWeights });
+      saveOracleSettings({ oracle_weights: normWeights });
       return recomputeDraftState(prev, { oracle_weights: normWeights });
     });
   }, []);

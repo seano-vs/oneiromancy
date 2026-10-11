@@ -20,6 +20,7 @@ import React, { useEffect, useState } from 'react';
 import { useOneiromancy } from '@/context/OneiromancyContext';
 import UserAvatar from '@/components/common/UserAvatar';
 import { resetRateLimit } from '@/lib/sleeper';
+import { DEFAULT_CHAOS_LAMBDA } from '@/lib/scoring';
 import { X, Settings, RefreshCw, Globe, Sparkles, ExternalLink } from 'lucide-react';
 
 export interface SettingsDrawerProps {
@@ -579,7 +580,7 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
           <div className="flex justify-between items-center text-[10px]">
             <span className="text-slate-400">Chaos Factor (λ):</span>
             <span className="text-purple-300 font-bold">
-              {draftState?.settings?.chaos_lambda ?? 0.65} (Canonical Oneiromancy)
+              {draftState?.settings?.chaos_lambda ?? DEFAULT_CHAOS_LAMBDA} (Canonical Oneiromancy)
             </span>
           </div>
           <div className="flex justify-between items-center text-[10px]">

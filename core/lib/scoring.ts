@@ -63,7 +63,8 @@ export const DEFAULT_ORACLE_WEIGHTS: OracleWeights = {
   harmony: 0.15,
 };
 
-export const DEFAULT_CHAOS_LAMBDA = 0.35;
+// The owner's chosen default: lean on the stars.
+export const DEFAULT_CHAOS_LAMBDA = 0.75;
 
 // ============================================================================
 // Utility & Clamping

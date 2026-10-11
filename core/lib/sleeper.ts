@@ -2375,7 +2375,7 @@ export function synthesizeCosmicPlayerFromId(
   const vorNormalized = isMyTeam ? 75.0 : isDeepFreeAgent ? 25.0 : 62.0;
   const marketVor = isMyTeam ? 5.0 : isDeepFreeAgent ? -2.0 : 2.5;
   const draftScore =
-    Math.round((0.65 * vorNormalized + 0.35 * spiritScore) * 10) / 10;
+    Math.round(((1 - DEFAULT_CHAOS_LAMBDA) * vorNormalized + DEFAULT_CHAOS_LAMBDA * spiritScore) * 10) / 10;
 
   return {
     id: playerId,
@@ -5359,7 +5359,7 @@ export function transformToDraftState(
   }
 
   // Recompute squad harmony, spirit_score, and draft_score against the resolved user fullRoster
-  const activeLambda = settings.chaos_lambda ?? 0.35;
+  const activeLambda = settings.chaos_lambda ?? DEFAULT_CHAOS_LAMBDA;
   for (let i = 0; i < scoredCosmicBoard.length; i++) {
     const p = scoredCosmicBoard[i];
     const baseRosterHarmony = calculateHarmony(
