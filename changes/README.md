@@ -12,6 +12,8 @@ copy of Oneiromancy got to where it is, and the rules for changing it.
    validation.
 3. [`DECISIONS.md`](DECISIONS.md): every product decision, who made it (owner
    or agent), and whether it still stands.
+4. [`LESSONS_LEARNED.md`](LESSONS_LEARNED.md): the mistakes made so far and the
+   habit that prevents each, plus the checklist before saying "done".
 
 ## History (chronological logs)
 
@@ -35,3 +37,5 @@ ones; `DECISIONS.md` says which. Don't treat an old log as the current state.
 - Add a row to `DECISIONS.md` for every product decision, marking owner vs
   agent, and mark anything it supersedes.
 - Update `ARCHITECTURE.md` whenever the current state changes.
+- Add to `LESSONS_LEARNED.md` when something went wrong in a way the next
+  agent could repeat.

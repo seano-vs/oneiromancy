@@ -7,6 +7,10 @@ Each rule exists because the app once broke it. For how the app works today,
 see [`ARCHITECTURE.md`](ARCHITECTURE.md); for who decided what, see
 [`DECISIONS.md`](DECISIONS.md).
 
+
+See also [`LESSONS_LEARNED.md`](LESSONS_LEARNED.md) for the traps behind these rules
+and the checklist before saying "done".
+
 ## The mission (from the owner; this overrides everything else here)
 
 > "This apps job is to tell me an overall players advantage based on the
