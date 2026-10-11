@@ -32,6 +32,7 @@ register(new URL('./loader.mjs', import.meta.url));
 const oracle = await import('../core/lib/oracle.ts');
 const scoring = await import('../core/lib/scoring.ts');
 const headshots = await import('../components/common/PlayerHeadshot.tsx');
+const gameStatus = await import('../core/lib/gameStatus.ts');
 
 // --- fixtures -------------------------------------------------------------
 
@@ -335,6 +336,68 @@ describe('Tier 10: Oracle model and recommendations', () => {
         const src = fs.readFileSync(path.resolve(f), 'utf8');
         assert.ok(!src.includes('sleeper.com/leagues'), `${f} must not link to act in Sleeper`);
         assert.ok(!/in Sleeper</.test(src), `${f} must not offer "… in Sleeper" actions`);
+      }
+    });
+  });
+
+  describe('10.9 One lineup behind every recommendation (KaySwizz audit, 2026-10-11)', () => {
+    // A superflex roster: QB Allen, FLEX Watson (WR 16.0), SUPER_FLEX Olave (WR 16.2), bench QB Willis (16.8).
+    const sfRoster = () => {
+      const allen = player('Josh Allen', 'QB', 23.4, 70);
+      const watson = player('Christian Watson', 'WR', 14.0, 60);
+      const olave = player('Chris Olave', 'WR', 16.2, 75);
+      const willis = player('Malik Willis', 'QB', 18.8, 80);
+      const roster = [
+        slot('QB', ['QB'], allen),
+        slot('FLEX', ['RB', 'WR', 'TE'], watson),
+        slot('SUPER_FLEX', ['QB', 'RB', 'WR', 'TE'], olave),
+        slot('BN1', ['QB', 'RB', 'WR', 'TE'], willis),
+      ];
+      return { roster, allen, watson, olave, willis };
+    };
+
+    it('10.9.1 a QB coming off the bench is placed at Superflex, never Flex, and the WR it displaces is named', () => {
+      gameStatus.clearGameStatus();
+      const { roster, watson, olave, willis } = sfRoster();
+      const [swap] = oracle.computeLineupCheck(roster, 0.75);
+      assert.ok(swap, 'a swap is recommended');
+      assert.equal(swap.playerIn.id, willis.id);
+      assert.equal(swap.playerOut.id, watson.id);
+      assert.equal(swap.slot, 'Superflex', 'a QB can only go to Superflex');
+      assert.equal(swap.moved?.player.id, olave.id, 'Olave moves out of Superflex');
+      assert.equal(swap.moved?.to, 'Flex');
+    });
+
+    it('10.9.2 "would start" for a waiver add is judged against the recommended lineup, not the current one', () => {
+      gameStatus.clearGameStatus();
+      const fannin = player('Harold Fannin', 'TE', 10.5, 50);
+      const loveland = player('Colston Loveland', 'TE', 10.2, 85);
+      const sarratt = player('Elijah Sarratt', 'WR', 1.6, 60);
+      const extraWr = player('Spare WR', 'WR', 2.0, 60);
+      const otton = player('Cade Otton', 'TE', 8.7, 75, { draft_status: 'available' });
+      const roster = [
+        slot('TE', ['TE'], fannin),
+        slot('BN1', ['QB', 'RB', 'WR', 'TE'], loveland),
+        slot('BN2', ['QB', 'RB', 'WR', 'TE'], sarratt),
+        slot('BN3', ['QB', 'RB', 'WR', 'TE'], extraWr),
+      ];
+      assert.ok(oracle.oracleScore(otton, 0.75) > oracle.oracleScore(fannin, 0.75), 'Otton beats the current TE');
+      assert.ok(oracle.oracleScore(otton, 0.75) < oracle.oracleScore(loveland, 0.75), 'but not the recommended TE');
+      const moves = oracle.computeWaiverMoves([otton], roster, 0.75, 5, 5);
+      for (const m of moves) assert.equal(m.wouldStart, false, 'Otton would not start over Loveland');
+    });
+
+    it('10.9.3 players whose game has kicked off are never swapped, added or dropped', () => {
+      const { roster, willis } = sfRoster();
+      willis.team = 'MIA';
+      gameStatus.setGameStatus(5, { MIA: 'in_game', DET: 'pre_game' });
+      try {
+        assert.equal(oracle.computeLineupCheck(roster, 0.75).length, 0, 'a locked bench player cannot come in');
+        const lockedAdd = player('Locked FA', 'WR', 30, 90, { draft_status: 'available', team: 'MIA' });
+        const moves = oracle.computeWaiverMoves([lockedAdd], roster, 0.75, 5, 5);
+        assert.equal(moves.length, 0, 'a free agent whose game started cannot be added for this week');
+      } finally {
+        gameStatus.clearGameStatus();
       }
     });
   });

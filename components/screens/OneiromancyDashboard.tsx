@@ -182,11 +182,12 @@ export const OneiromancyDashboard: React.FC<OneiromancyDashboardProps> = ({
   }, [draftState?.elemental_traits, rosteredPlayers]);
 
   // Active celestial aspects and harmonic conjunctions
+  // Starters only, like the Squad Harmony score these stacks add to.
   const activeAspects = useMemo(() => {
     const aspects = [];
-    const qbs = rosteredPlayers.filter((p) => p.position === 'QB');
+    const qbs = startingPlayers.filter((p) => p.position === 'QB');
     for (const qb of qbs) {
-      const passCatchers = rosteredPlayers.filter(
+      const passCatchers = startingPlayers.filter(
         (p) =>
           (p.position === 'WR' || p.position === 'TE') && p.team === qb.team,
       );
@@ -202,7 +203,7 @@ export const OneiromancyDashboard: React.FC<OneiromancyDashboardProps> = ({
       }
     }
     return aspects;
-  }, [rosteredPlayers]);
+  }, [startingPlayers]);
 
   // Competitor teams compilation with authentic Sleeper team names
   const competitorTeams = useMemo<CompetitorTeam[]>(() => {
@@ -574,6 +575,11 @@ export const OneiromancyDashboard: React.FC<OneiromancyDashboardProps> = ({
             </div>
 
             <div className="space-y-2">
+              {activeAspects.length === 0 && (
+                <p className="text-[11px] font-sans text-slate-400">
+                  No QB stacks among your starters (+0 Harmony).
+                </p>
+              )}
               {activeAspects.map((aspect, idx) => (
                 <div
                   key={idx}
@@ -898,7 +904,7 @@ export const OneiromancyDashboard: React.FC<OneiromancyDashboardProps> = ({
                   <p className="text-[10px] font-sans text-slate-400">No one on bye.</p>
                 </div>
                 <div className="p-2 rounded bg-slate-900/60 border border-white/5 space-y-0.5">
-                  <span className="text-amber-300 font-bold">Amber</span>
+                  <span className="text-amber-300 font-bold">BYE</span>
                   <p className="text-[10px] font-sans text-slate-400">One or two players on bye.</p>
                 </div>
                 <div className="p-2 rounded bg-slate-900/60 border border-white/5 space-y-0.5">
@@ -930,6 +936,8 @@ export const OneiromancyDashboard: React.FC<OneiromancyDashboardProps> = ({
                       <span className="text-[9px] font-bold text-rose-400 bg-rose-950/80 px-1 py-0.2 rounded border border-rose-500/40">
                         CONFLICT
                       </span>
+                    ) : isLowConflict ? (
+                      <span className="text-[9px] font-bold text-amber-300">BYE</span>
                     ) : (
                       <span className="text-[9px] text-slate-500">OK</span>
                     )}

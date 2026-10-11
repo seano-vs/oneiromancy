@@ -149,6 +149,11 @@ export const WeeklyMoves: React.FC = () => {
                 </>
               ) : null}
             </span>
+            {s.moved && (
+              <span className="text-xs text-slate-400">
+                {s.moved.player.name} moves to {s.moved.to}.
+              </span>
+            )}
             <PairBars label="Stats" a={s.statsIn} b={s.statsOut} format={(n) => n.toFixed(1)} tone="stats" />
             <PairBars label="Stars" a={s.starsIn} b={s.starsOut} format={(n) => n.toFixed(0)} tone="stars" />
             <span className="text-xs font-mono text-slate-300">{lineupVerdict(s, lambda)}</span>

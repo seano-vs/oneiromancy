@@ -150,8 +150,17 @@ phone-only.
 
 ## 7. Recommendation rules (enforced in `oracle.ts`, tested in Tier 10)
 
-- **Lineup check:** fills the most restrictive slots first, using Oracle.
+- **One best lineup** (`optimalLineup`): fills the most restrictive slots
+  first, using Oracle. The lineup check, waiver "would start" and your side of
+  trades are all judged against it, so they never contradict each other.
+- **Locked players:** once a player's NFL game kicks off (`gameStatus.ts`, from
+  Sleeper's schedule, refreshed every 5 minutes), he is never swapped, added
+  or dropped. Locked starters keep their slot.
+- **Lineup check:** the swaps between the current lineup and the best one.
   Reports both players' Stats and Stars, and the λ at which the call flips.
+  When the new player can't take the benched player's slot himself (a QB into
+  Superflex), the slot is the one he takes and `moved` names who shifts where
+  ("Chris Olave moves to Flex").
 - **Waivers:**
   - Adds are only available, unrostered, healthy players.
   - Never drops a starter, a player the lineup check says to start, a player
@@ -159,7 +168,11 @@ phone-only.
     (dedicated slots + 1; QB = 3 in superflex).
   - Moves that would start rank first, and the limit applies after ranking.
 - **Trades:** a 1-for-1 where your bench player would start for them and theirs
-  for you, judged by Oracle. Gains are in Oracle points.
+  for you, judged by Oracle. Gains are in Oracle points. Your starters and
+  bench are those of the best lineup; theirs are as set in Sleeper.
+- **Projected total (head-to-head banner):** per starter, a finished game counts
+  only the actual score; a game in progress counts max(actual, projection);
+  otherwise the projection.
 - **Every player value** shows Oracle with points and Stars, never projections
   alone.
 
@@ -181,7 +194,7 @@ phone-only.
 | Key | Holds |
 | --- | --- |
 | `oneiromancy_active_username` | The owner's Sleeper username. Never the mock persona; a stale `OneiroVanguard` from older builds is cleared on load |
-| `oneiromancy_active_slot` | Draft slot |
+| `oneiromancy_active_slot` | Draft slot. On a live sync the slot Sleeper resolves from the username always wins; this is only a fallback |
 | `oneiromancy_oracle_v2` | `{ chaos_lambda?, oracle_weights? }`, each saved only when the owner changes it |
 
 ## 10. Mock mode
@@ -239,6 +252,12 @@ The definition of done is in the guidelines. In practice:
 3. Move λ and a star weight and confirm that every screen you touched changes.
 
 ## 13. Known gaps and open questions
+
+- **Invented matchup details.** Matchup cards show each player's *home*
+  stadium even on road games, a kickoff time picked from a fixed list (the
+  schedule has dates but no times), and a moon phase and planetary hour picked
+  per player, so two players in the same game can differ. Flagged in the
+  2026-10-11 KaySwizz audit; the owner decides how to handle them.
 
 - **Leaderboard tier chip.** It follows average Spirit, not rank, so the #1
   Overall team can show "Discordant (At Risk)". Kept as the owner's original

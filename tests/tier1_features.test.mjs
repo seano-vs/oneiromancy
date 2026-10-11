@@ -1896,9 +1896,12 @@ describe('Tier 1: Feature Coverage (19 Features x >=5 Tests)', () => {
         contextSource.includes(': (isMockMode ? (draftStateRef.current.settings?.user_slot || 7) : undefined);'),
         'OneiromancyContext must pass undefined to live fetcher in live mode when no slot selected'
       );
+      // Updated 2026-10-11 (see changes/2026-10-10-ux-rework.md): the slot Sleeper resolves from the username
+      // wins over the local guess. Preferring the guess (7 before the first sync) showed every user other than
+      // draft slot 7 someone else's team.
       assert.ok(
-        contextSource.includes('const resolvedSlot = currentActiveSlot !== undefined'),
-        'OneiromancyContext must resolve user slot falling back to freshData settings in live mode'
+        contextSource.includes('freshData.settings?.user_slot || currentActiveSlot || 7'),
+        'OneiromancyContext must prefer the Sleeper-resolved slot, falling back to the local guess'
       );
     });
   });

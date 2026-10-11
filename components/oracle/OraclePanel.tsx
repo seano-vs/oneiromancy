@@ -188,6 +188,7 @@ export const OraclePanel: React.FC<OraclePanelProps> = ({ isOpen, onClose }) => 
                       {' '}over <PlayerLink player={s.playerOut} vs={s.playerIn} onOpen={setInspected} />
                     </>
                   ) : null}
+                  {s.moved ? ` (${s.moved.player.name} moves to ${s.moved.to})` : ''}
                 </span>
                 <span className="text-[11px] font-mono text-slate-400">
                   {s.flipLambda !== null

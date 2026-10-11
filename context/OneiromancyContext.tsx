@@ -1019,10 +1019,18 @@ export const OneiromancyProvider: React.FC<OneiromancyProviderProps> = ({
                       ? prev.settings.available_leagues
                       : []));
 
-          const resolvedSlot = currentActiveSlot !== undefined
-            ? currentActiveSlot
-            : (freshData.settings?.user_slot || 7);
+          // The slot Sleeper resolved from the username wins. The local guess
+          // (a saved slot, or 7 before the first sync) only fills in when Sleeper
+          // couldn't resolve one; preferring the guess showed every user other
+          // than draft slot 7 someone else's team.
+          const resolvedSlot =
+            freshData.settings?.user_slot || currentActiveSlot || 7;
           activeSlotRef.current = resolvedSlot;
+          try {
+            localStorage.setItem('oneiromancy_active_slot', String(resolvedSlot));
+          } catch {
+            // Ignore localStorage errors
+          }
 
           const getWeeklyPts = (p?: CosmicPlayer | null): number => {
             if (!p) return 0;

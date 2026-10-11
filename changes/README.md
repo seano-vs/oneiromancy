@@ -26,6 +26,7 @@ ones; `DECISIONS.md` says which. Don't treat an old log as the current state.
 | [`2026-10-10-ux-review.html`](2026-10-10-ux-review.html) | UX review and mock-ups (open in a browser) |
 | [`2026-10-10-ux-rework.md`](2026-10-10-ux-rework.md) | Implementing the review, then every owner follow-up (read-only, Stars in every value, the mission, λ 0.75, welcome and mock, headshots, head-to-head, leaderboard restored, telemetry on This Week, Oracle panel, wording pass) |
 | [`2026-10-11-validation-pass.md`](2026-10-11-validation-pass.md) | Tests revisited (458 passing), full UI walkthrough against Sleeper ground truth, findings and open questions |
+| [`2026-10-11-second-user-audit.md`](2026-10-11-second-user-audit.md) | Audit as a second user (KaySwizz): wrong team shown to every non-slot-7 user, Superflex moves, one best lineup, locked players, live projection |
 
 ## Adding to this folder
 

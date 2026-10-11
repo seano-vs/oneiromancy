@@ -25,6 +25,7 @@
  *           Every ranking and recommendation in the app uses this number.
  */
 
+import { isLocked } from './gameStatus';
 import type {
   CompetitorTeam,
   CosmicPlayer,
@@ -173,6 +174,11 @@ export interface LineupSwap {
   starsFavor: 'in' | 'out' | 'even';
   /** λ at which this recommendation flips, when stats and stars disagree. */
   flipLambda: number | null;
+  /**
+   * Set when the new player can't take the benched player's slot himself
+   * (e.g. a QB into Superflex while that WR moves down to Flex).
+   */
+  moved?: { player: CosmicPlayer; to: string } | null;
 }
 
 /**
@@ -180,16 +186,30 @@ export interface LineupSwap {
  * WR, TE, then FLEX, then SUPER_FLEX), each with the best eligible player left.
  * Returns the swaps between the current lineup and that best lineup.
  */
-export function computeLineupCheck(roster: RosterSlot[], lambda: number): LineupSwap[] {
+/**
+ * The best lineup by Oracle: each starter slot (by slot_id) and who should
+ * fill it. Lineup checks, waiver and trade advice all judge against this, so
+ * they never contradict each other.
+ */
+export function optimalLineup(roster: RosterSlot[], lambda: number): Map<string, CosmicPlayer | null> {
   const starters = roster.filter(isStarterSlot);
-  const pool = roster.map((s) => s.player).filter((p): p is CosmicPlayer => Boolean(p));
-  if (starters.length === 0 || pool.length === 0) return [];
-
-  const order = [...starters].sort(
-    (a, b) => (a.eligible_positions?.length ?? 9) - (b.eligible_positions?.length ?? 9),
-  );
+  // Players whose game has kicked off are locked: starters keep their slot,
+  // bench players can't come in.
+  const pool = roster
+    .filter((s) => !(s.player && isLocked(s.player) && !isStarterSlot(s)))
+    .map((s) => s.player)
+    .filter((p): p is CosmicPlayer => Boolean(p));
   const used = new Set<string>();
   const best = new Map<string, CosmicPlayer | null>();
+  for (const slot of starters) {
+    if (slot.player && isLocked(slot.player)) {
+      used.add(String(slot.player.id));
+      best.set(String(slot.slot_id), slot.player);
+    }
+  }
+  const order = [...starters]
+    .filter((slot) => !best.has(String(slot.slot_id)))
+    .sort((a, b) => (a.eligible_positions?.length ?? 9) - (b.eligible_positions?.length ?? 9));
   for (const slot of order) {
     const choice = pool
       .filter((p) => !used.has(String(p.id)) && slot.eligible_positions?.includes(p.position))
@@ -197,6 +217,24 @@ export function computeLineupCheck(roster: RosterSlot[], lambda: number): Lineup
     if (choice) used.add(String(choice.id));
     best.set(String(slot.slot_id), choice ?? null);
   }
+  return best;
+}
+
+export function computeLineupCheck(roster: RosterSlot[], lambda: number): LineupSwap[] {
+  const starters = roster.filter(isStarterSlot);
+  const pool = roster.map((s) => s.player).filter((p): p is CosmicPlayer => Boolean(p));
+  if (starters.length === 0 || pool.length === 0) return [];
+
+  const best = optimalLineup(roster, lambda);
+  const used = new Set(
+    Array.from(best.values()).filter((p): p is CosmicPlayer => Boolean(p)).map((p) => String(p.id)),
+  );
+  const slotOf = (id: string) => {
+    return starters.find((s) => {
+      const p = best.get(String(s.slot_id));
+      return Boolean(p && String(p.id) === id);
+    });
+  };
 
   const currentIds = new Set(starters.map((s) => s.player && String(s.player.id)).filter(Boolean));
   const promoted = Array.from(used).filter((id) => !currentIds.has(id));
@@ -210,9 +248,15 @@ export function computeLineupCheck(roster: RosterSlot[], lambda: number): Lineup
     const candidates = demotedSlots
       .filter((s) => s.player && !takenOut.has(String(s.player.id)) && s.eligible_positions?.includes(pIn.position))
       .sort((a, b) => oracleScore(a.player, lambda) - oracleScore(b.player, lambda));
-    const outSlot = candidates[0] ?? demotedSlots.find((s) => s.player && !takenOut.has(String(s.player.id)));
+    const directSlot = candidates[0];
+    const outSlot = directSlot ?? demotedSlots.find((s) => s.player && !takenOut.has(String(s.player.id)));
     const pOut = outSlot?.player ?? null;
     if (pOut) takenOut.add(String(pOut.id));
+    // No direct fit: he takes another slot and its current player moves down
+    // into the benched player's slot (QB into Superflex, that WR to Flex).
+    const inSlot = directSlot ? directSlot : slotOf(id);
+    const shifted = !directSlot && inSlot?.player ? inSlot.player : null;
+    const shiftedTo = shifted ? slotOf(String(shifted.id)) : undefined;
 
     const statsIn = statsPoints(pIn);
     const statsOut = statsPoints(pOut);
@@ -225,7 +269,7 @@ export function computeLineupCheck(roster: RosterSlot[], lambda: number): Lineup
     const gain = oracleScore(pIn, lambda) - oracleScore(pOut, lambda);
     if (gain < 0.5) continue;
     swaps.push({
-      slot: outSlot ? slotLabel(outSlot) : 'Lineup',
+      slot: inSlot ? slotLabel(inSlot) : outSlot ? slotLabel(outSlot) : 'Lineup',
       playerIn: pIn,
       playerOut: pOut,
       statsIn,
@@ -236,6 +280,7 @@ export function computeLineupCheck(roster: RosterSlot[], lambda: number): Lineup
       statsFavor: favor(statsIn - statsOut),
       starsFavor: favor(dT),
       flipLambda: flip !== null && flip > 0 && flip < 1 ? Math.round(flip * 100) / 100 : null,
+      moved: shifted && shiftedTo ? { player: shifted, to: slotLabel(shiftedTo) } : null,
     });
   }
   return swaps.sort((a, b) => b.oracleGain - a.oracleGain);
@@ -301,24 +346,28 @@ export function computeWaiverMoves(
   const counts = countByPosition(rosterPlayers);
 
   const droppable = rosterPlayers
-    .filter((p) => !starterIds.has(String(p.id)))
+    .filter((p) => !starterIds.has(String(p.id)) && !isLocked(p))
     .filter((p) => !(currentWeek && p.bye_week === currentWeek && !isUnavailable(p)))
     .filter((p) => (counts[p.position] ?? 0) > (depth[p.position] ?? 1))
     .sort((a, b) => oracleScore(a, lambda) - oracleScore(b, lambda));
   if (droppable.length === 0) return [];
 
-  // Weakest current starter each position could replace, for "would start".
+  // Weakest starter each position could replace in the best lineup (after
+  // the lineup check's swaps), for "would start".
+  const best = optimalLineup(roster, lambda);
   const weakestStarterFor = (pos: NFLPosition): number => {
     const scores = roster
       .filter(isStarterSlot)
-      .filter((s) => s.eligible_positions?.includes(pos) && s.player)
-      .map((s) => oracleScore(s.player, lambda));
+      .filter((s) => s.eligible_positions?.includes(pos))
+      .map((s) => best.get(String(s.slot_id)))
+      .filter((p): p is CosmicPlayer => Boolean(p))
+      .map((p) => oracleScore(p, lambda));
     return scores.length ? Math.min(...scores) : Infinity;
   };
 
   const candidates = board
     .filter((p) => p.draft_status === 'available' && !rosterIds.has(String(p.id)))
-    .filter((p) => eligible.has(p.position) && !isUnavailable(p))
+    .filter((p) => eligible.has(p.position) && !isUnavailable(p) && !isLocked(p))
     .map((p) => ({ p, o: oracleScore(p, lambda) }))
     .sort((a, b) => b.o - a.o)
     .slice(0, 40);
@@ -460,7 +509,21 @@ export function computeTradePartners(
       bench: all.filter((p) => !starterIds.has(String(p.id))),
     };
   };
-  const mine = split(me);
+  // Your side is judged on the best lineup, not the one currently set, so a
+  // trade never "starts over" a player the lineup check already benches.
+  const bestIds = new Set(
+    Array.from(optimalLineup(roster, lambda).values())
+      .filter((p): p is CosmicPlayer => Boolean(p))
+      .map((p) => String(p.id)),
+  );
+  const current = split(me);
+  const mine = bestIds.size
+    ? {
+        all: current.all,
+        starters: current.all.filter((p) => bestIds.has(String(p.id))),
+        bench: current.all.filter((p) => !bestIds.has(String(p.id))),
+      }
+    : current;
   const myCounts = countByPosition(mine.all);
   const mySurplus = POS_ORDER.filter((pos) => (myCounts[pos] ?? 0) > (depth[pos] ?? 99));
   const isSuperflex = isSuperflexRoster(roster);

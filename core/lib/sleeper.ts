@@ -34,6 +34,7 @@
  *   to immediately clear active cooldowns and unblock lookups.
  */
 
+import { clearGameStatus, setGameStatus, teamGameStatus, type GameStatus } from './gameStatus';
 import {
   AscensionStep,
   AvailableLeague,
@@ -581,10 +582,14 @@ let seasonContext: SeasonContext | null = null;
 // Promise caches, so concurrent syncs share one request. Empty results are
 // evicted so they are retried on the next sync.
 const scheduleCache = new Map<string, Promise<SleeperScheduleGame[]>>();
+// Game statuses change on game days, so the schedule is refetched after this.
+const SCHEDULE_TTL_MS = 5 * 60 * 1000;
+const scheduleFetchedAt = new Map<string, number>();
 const matchupWeekCache = new Map<string, Promise<SleeperMatchup[]>>();
 
 export function setSeasonContext(ctx: SeasonContext | null): void {
   seasonContext = ctx;
+  if (!ctx) clearGameStatus();
 }
 
 export function getSeasonContext(): SeasonContext | null {
@@ -611,7 +616,7 @@ export function fetchNFLSchedule(
   season: string,
 ): Promise<SleeperScheduleGame[]> {
   const cached = scheduleCache.get(season);
-  if (cached) return cached;
+  if (cached && Date.now() - (scheduleFetchedAt.get(season) ?? 0) < SCHEDULE_TTL_MS) return cached;
   const request = (async (): Promise<SleeperScheduleGame[]> => {
     if (isRateLimited()) return [];
     checkRateLimit();
@@ -639,6 +644,7 @@ export function fetchNFLSchedule(
     return [];
   })();
   scheduleCache.set(season, request);
+  scheduleFetchedAt.set(season, Date.now());
   request.then((games) => {
     if (games.length === 0) scheduleCache.delete(season);
   });
@@ -743,6 +749,14 @@ export async function loadSeasonContext(
   await Promise.all(weekRequests);
 
   const byeWeeks = deriveByeWeeks(games);
+  const statusByTeam: Record<string, GameStatus> = {};
+  for (const g of games) {
+    if (g.week !== currentWeek) continue;
+    const st = g.status === 'complete' || g.status === 'in_game' ? g.status : 'pre_game';
+    statusByTeam[g.home] = st;
+    statusByTeam[g.away] = st;
+  }
+  setGameStatus(currentWeek, statusByTeam);
   const hasMatchups = Object.values(matchupsByWeek).some((m) => m.length > 0);
   if (!hasMatchups && Object.keys(byeWeeks).length === 0) {
     setSeasonContext(null);
@@ -3677,6 +3691,10 @@ export function deriveWeeklyMatchup(
         p.sleeper_projected_points ??
         p.projected_points ??
         14.5;
+      // A finished game counts only what he scored (even 0). In progress, the
+      // final can't be below the actual, so take the larger.
+      const status = week === seasonContext?.currentWeek ? teamGameStatus(p.team) : undefined;
+      if (status === 'complete') return acc + actualPts;
       return acc + (actualPts > 0 ? Math.max(actualPts, weeklyPts) : weeklyPts);
     }, 0);
     return Math.round(sum * 100) / 100;
@@ -3798,10 +3816,15 @@ export function deriveWeeklyMatchup(
     let aspectHighlights: string[];
 
     if (calc.health_penalty < 0) {
-      rationaleText = p.injury_status
-        ? `⚠️ 6th House affliction: ${p.name} (${sunSign} / ${elem}) is ${p.injury_status} (−22 Stars).`
-        : `⚠️ 6th House affliction: ${p.name} (${sunSign} / ${elem}) has no projection this week (−22 Stars).`;
-      aspectHighlights = ['⚠️ 6th House affliction (−22)', p.injury_status || 'No projection'];
+      const onBye = Boolean(p.bye_week && p.bye_week === week);
+      rationaleText = onBye
+        ? `🌑 Fallow week: ${p.name} (${sunSign} / ${elem}) is on bye (−22 Stars).`
+        : p.injury_status
+          ? `⚠️ 6th House affliction: ${p.name} (${sunSign} / ${elem}) is ${p.injury_status} (−22 Stars).`
+          : `⚠️ 6th House affliction: ${p.name} (${sunSign} / ${elem}) has no projection this week (−22 Stars).`;
+      aspectHighlights = onBye
+        ? ['🌑 Bye week (−22)']
+        : ['⚠️ 6th House affliction (−22)', p.injury_status || 'No projection'];
     } else if (calc.verdict === 'HEAVILY FAVORED') {
       rationaleText = `✨ Apex alignment: ${p.name} (${sunSign} / ${elem}) rides a ${stadiumObj.zodiac_ascendant} trine at ${stadiumName}.`;
       aspectHighlights = [`✨ ${stadiumObj.zodiac_ascendant} Trine`, stadiumObj.geo_magnetic_resonance];

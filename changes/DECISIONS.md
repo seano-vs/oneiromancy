@@ -8,6 +8,7 @@ an owner decision, ask.
 
 | # | Date | Decision | By | Status | Details |
 | --- | --- | --- | --- | --- | --- |
+| 32 | 2026-10-11 | Lineup, waiver and trade advice share one best lineup; players whose game has kicked off are never moved; the slot Sleeper resolves from the username always identifies "you" | agent (owner: "use a friend's username… exhaustive analysis") | current | [second-user audit](2026-10-11-second-user-audit.md) |
 | 31 | 2026-10-11 | **One vocabulary**: Stats, Spirit, Stars, Oracle, and the legend's four verdicts, the same on every screen. Every explainer matches the real formula (Stars rows sum to the score, Harmony = 50 + trine + stacks + balance), and numbers that aren't in any score are removed | **owner** ("make sure our wording is consistent") | current | [ux-rework § wording pass](2026-10-10-ux-rework.md) |
 | 30 | 2026-10-11 | The Oracle panel always shows the star weights and the astrology reference expanded (no disclosure) | **owner** | current | [ux-rework § small cleanups](2026-10-10-ux-rework.md) |
 | 29 | 2026-10-11 | **No bench penalty.** A player's weekly favorability / Stars is always scored as a starter (+8), never −6 for sitting on the bench, so it never depends on the lineup slot. Applies to the matchup detail cards, board favorability and matchup recompute | **owner** | current | [validation pass § findings](2026-10-11-validation-pass.md) |
