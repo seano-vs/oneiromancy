@@ -1492,10 +1492,9 @@ export const MatchupsScreen: React.FC<MatchupsScreenProps> = ({
                 past.opponent_name ||
                 past.opponent_team?.team_name ||
                 'Opponent';
+              // Only show an alignment the data actually carries; never a constant placeholder.
               const alignment =
-                past.astral_alignment ||
-                past.team_comparison?.astral_edge_summary ||
-                'Aligned';
+                past.astral_alignment || past.team_comparison?.astral_edge_summary || null;
               const outcome =
                 past.result ||
                 (past.user_team &&
@@ -1519,9 +1518,11 @@ export const MatchupsScreen: React.FC<MatchupsScreenProps> = ({
                     <div className="font-bold text-slate-200">
                       Week {past.week}: vs {opponentName}
                     </div>
-                    <div className="text-[10px] text-slate-400">
-                      Astral Alignment: {alignment}
-                    </div>
+                    {alignment && (
+                      <div className="text-[10px] text-slate-400">
+                        Astral Alignment: {alignment}
+                      </div>
+                    )}
                   </div>
                   <div className="text-right">
                     <div
