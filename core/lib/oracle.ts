@@ -293,6 +293,9 @@ export function computeWaiverMoves(
   const starterIds = new Set(
     roster.filter(isStarterSlot).map((s) => s.player && String(s.player.id)).filter(Boolean) as string[],
   );
+  // Also protect anyone the lineup check says to start, so the app never
+  // recommends starting a player and dropping him in the same breath.
+  for (const swap of computeLineupCheck(roster, lambda)) starterIds.add(String(swap.playerIn.id));
   const eligible = new Set(roster.flatMap((s) => s.eligible_positions ?? []));
   const depth = minimumDepth(roster);
   const counts = countByPosition(rosterPlayers);

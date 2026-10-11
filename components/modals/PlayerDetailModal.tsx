@@ -21,7 +21,13 @@ import PositionalBadge from '@/components/common/PositionalBadge';
 import PlayerHeadshot, { TeamLogo } from '@/components/common/PlayerHeadshot';
 import { CosmicPlayer, RosterSlot } from '@/types/oneiromancy';
 import { useOptionalOneiromancy } from '@/context/OneiromancyContext';
-import { DEFAULT_CHAOS_LAMBDA, classifyWeeklyFavorability, haversineDistance } from '@/lib/scoring';
+import {
+  DEFAULT_CHAOS_LAMBDA,
+  DEFAULT_ORACLE_WEIGHTS,
+  classifyWeeklyFavorability,
+  haversineDistance,
+  normalizeOracleWeights,
+} from '@/lib/scoring';
 import { TONE_PILL, favorabilityTone, oracleScore, starsScore } from '@/lib/oracle';
 import { X, Sparkles, Compass, Shield, ArrowRightLeft } from 'lucide-react';
 
@@ -52,6 +58,9 @@ export const PlayerDetailModal: React.FC<PlayerDetailModalProps> = ({
   const comparisonKey = `${player?.id ?? ''}|${compareWith?.id ?? ''}`;
   useEffect(() => setShowRoster(false), [comparisonKey]);
   const modalLambda = ctx?.draftState?.settings?.chaos_lambda ?? DEFAULT_CHAOS_LAMBDA;
+  // The owner's current star weights, as set in the Oracle panel.
+  const pillarWeights = normalizeOracleWeights(ctx?.draftState?.settings?.oracle_weights ?? DEFAULT_ORACLE_WEIGHTS);
+  const pct = (w: number) => `${Math.round(w * 100)}%`;
   useEffect(() => {
     if (!isOpen || typeof window === 'undefined') return;
     const onKeyDown = (e: KeyboardEvent) => {
@@ -550,31 +559,31 @@ export const PlayerDetailModal: React.FC<PlayerDetailModalProps> = ({
           <div className="space-y-2 pt-1">
             {[
               {
-                name: 'Celestial Transits (30%)',
+                name: `Celestial Transits (${pct(pillarWeights.celestial)})`,
                 val: breakdown.celestial,
                 color: 'bg-cyan-400',
                 desc: 'Planetary alignments & natal transit aspects',
               },
               {
-                name: 'Stadium Feng Shui (25%)',
+                name: `Stadium Feng Shui (${pct(pillarWeights.geomantic)})`,
                 val: breakdown.geomantic,
                 color: 'bg-emerald-400',
                 desc: 'Magnetic venue orientation & dome enclosure atmosphere',
               },
               {
-                name: 'Jersey Gematria (20%)',
+                name: `Jersey Gematria (${pct(pillarWeights.numeric)})`,
                 val: breakdown.numeric,
                 color: 'bg-purple-400',
                 desc: 'Life path root resonance & master number harmony',
               },
               {
-                name: 'Squad Alchemy (15%)',
+                name: `Squad Alchemy (${pct(pillarWeights.harmony)})`,
                 val: breakdown.harmony,
                 color: 'bg-amber-400',
                 desc: 'Western Trine synergy & 3.0x correlation stack bonus',
               },
               {
-                name: 'Tarot & Oracular (10%)',
+                name: `Tarot & I-Ching (${pct(pillarWeights.oracular)})`,
                 val: breakdown.oracular,
                 color: 'bg-rose-400',
                 desc: 'Major Arcana archetype & hexagram resonance',

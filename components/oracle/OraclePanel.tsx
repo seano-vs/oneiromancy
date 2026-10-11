@@ -38,10 +38,11 @@ export interface OraclePanelProps {
   onClose: () => void;
 }
 
+// Symmetric around the middle; "Mostly stars" is the owner's default λ.
 const PRESETS = [
   { value: 0, label: 'Stats only' },
-  { value: 0.35, label: 'Mostly stats' },
-  { value: 0.65, label: 'Mostly stars' },
+  { value: 1 - DEFAULT_CHAOS_LAMBDA, label: 'Mostly stats' },
+  { value: DEFAULT_CHAOS_LAMBDA, label: 'Mostly stars', isDefault: true },
   { value: 1, label: 'Stars only' },
 ];
 
@@ -143,6 +144,7 @@ export const OraclePanel: React.FC<OraclePanelProps> = ({ isOpen, onClose }) => 
                 }`}
               >
                 {p.label}
+                {p.isDefault && <span className="block text-[9px] opacity-70">default</span>}
               </button>
             ))}
           </div>
