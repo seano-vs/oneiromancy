@@ -317,8 +317,10 @@ export const ChaosDial: React.FC<ChaosDialProps> = ({
       <GlassCard variant="panel" glowColor="gold" className="p-5 space-y-4">
         <button
           type="button"
-          onClick={() => setIsAccordionOpen(!isAccordionOpen)}
-          className="w-full flex items-center justify-between text-left group"
+          onClick={() => !embedded && setIsAccordionOpen(!isAccordionOpen)}
+          aria-expanded={embedded || isAccordionOpen}
+          disabled={embedded}
+          className="w-full flex items-center justify-between text-left group disabled:cursor-default"
         >
           <div className="space-y-0.5">
             <span className="text-xs font-mono uppercase tracking-wider text-amber-400 font-semibold flex items-center gap-1.5">
@@ -329,12 +331,14 @@ export const ChaosDial: React.FC<ChaosDialProps> = ({
               The five pillars behind Stars. Weights are normalized, so they always act as 100%.
             </p>
           </div>
-          <div className="p-1 rounded-md text-slate-400 group-hover:text-slate-200 bg-slate-800/60 border border-white/10">
-            {isAccordionOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-          </div>
+          {!embedded && (
+            <div className="p-1 rounded-md text-slate-400 group-hover:text-slate-200 bg-slate-800/60 border border-white/10">
+              {isAccordionOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+            </div>
+          )}
         </button>
 
-        {isAccordionOpen && (
+        {(embedded || isAccordionOpen) && (
           <div className="space-y-4 pt-2 border-t border-white/10">
             {/* 5 Divination Weight Telemetry Meters (Read-Only) */}
             {[

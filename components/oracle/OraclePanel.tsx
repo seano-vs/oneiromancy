@@ -17,7 +17,7 @@
 'use client';
 
 import React, { useEffect, useMemo, useState } from 'react';
-import { X, ChevronDown, ChevronUp, Compass } from 'lucide-react';
+import { X, Compass } from 'lucide-react';
 import { useOneiromancy } from '@/context/OneiromancyContext';
 import ChaosDial from '@/components/screens/ChaosDial';
 import PlayerDetailModal from '@/components/modals/PlayerDetailModal';
@@ -53,7 +53,6 @@ const PRESETS = [
 export const OraclePanel: React.FC<OraclePanelProps> = ({ isOpen, onClose }) => {
   const { draftState, updateChaosLambda } = useOneiromancy();
   const lambda = draftState.settings?.chaos_lambda ?? DEFAULT_CHAOS_LAMBDA;
-  const [showAdvanced, setShowAdvanced] = useState(false);
   const [inspected, setInspected] = useState<InspectTarget | null>(null);
   const roster = draftState.my_roster ?? NO_MY_ROSTER;
   const board = draftState.cosmic_board ?? NO_COSMIC_BOARD;
@@ -193,21 +192,9 @@ export const OraclePanel: React.FC<OraclePanelProps> = ({ isOpen, onClose }) => 
           )}
         </section>
 
-        <section className="rounded-xl border border-white/10">
-          <button
-            type="button"
-            onClick={() => setShowAdvanced((v) => !v)}
-            aria-expanded={showAdvanced}
-            className="w-full flex items-center justify-between p-3 text-xs font-mono text-slate-300"
-          >
-            <span>Star weights and astrology reference</span>
-            {showAdvanced ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-          </button>
-          {showAdvanced && (
-            <div className="p-3 pt-0">
-              <ChaosDial embedded />
-            </div>
-          )}
+        {/* Star weights and the astrology reference are always shown (owner preference). */}
+        <section aria-label="Star weights and astrology reference">
+          <ChaosDial embedded />
         </section>
       </div>
       <div onClick={(e) => e.stopPropagation()}>

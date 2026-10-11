@@ -40,7 +40,7 @@ writes to Sleeper and never links out to act there.
 | Shell | `components/common/NavigationShell.tsx` | Header (tabs, Oracle chip, status, avatar), mock banner, phone tab bar |
 | Shared UI | `components/common/PlayerLink.tsx`, `PlayerHeadshot.tsx`, `PlayerTiles.tsx`, `PositionalBadge.tsx`, `UserAvatar.tsx`, `GlassCard.tsx` | Clickable names, Sleeper CDN images, the Marketplace look (tags, delta badges, stat tiles with Wk Fav ★), badges |
 | Player popup | `components/modals/PlayerDetailModal.tsx` | Extended view; role comparison or head-to-head (`compareWith`) |
-| Oracle panel | `components/oracle/OraclePanel.tsx` (+ `screens/ChaosDial.tsx` embedded) | λ slider and presets, preview, star weights, astrology reference |
+| Oracle panel | `components/oracle/OraclePanel.tsx` (+ `screens/ChaosDial.tsx` embedded) | λ slider and presets, preview, then star weights and the astrology reference, always expanded |
 | Screens | `components/screens/*.tsx`, `components/oneiromancy/*.tsx` | See §6 |
 | Settings | `components/settings/SettingsDrawer.tsx` | Welcome / username, league picker, mock, auto-update |
 
