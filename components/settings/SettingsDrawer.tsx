@@ -20,7 +20,6 @@ import React, { useEffect, useState } from 'react';
 import { useOneiromancy } from '@/context/OneiromancyContext';
 import UserAvatar from '@/components/common/UserAvatar';
 import { resetRateLimit } from '@/lib/sleeper';
-import { DEFAULT_CHAOS_LAMBDA } from '@/lib/scoring';
 import { X, Settings, RefreshCw, Globe, Sparkles, ExternalLink } from 'lucide-react';
 
 export interface SettingsDrawerProps {
@@ -559,84 +558,6 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
               }`}
             />
           </button>
-        </div>
-
-        {/* Read-Only System Configuration Badges */}
-        <div className="p-3 rounded-xl bg-slate-950/80 border border-white/10 font-mono text-[11px] text-slate-300 space-y-2">
-          <div className="flex justify-between items-center text-xs font-bold text-slate-200 border-b border-white/5 pb-1.5">
-            <span className="flex items-center gap-1.5 text-cyan-400">
-              <Settings className="w-3.5 h-3.5" />
-              <span>Engine Calibration (Read-Only)</span>
-            </span>
-            <span className="text-[10px] text-emerald-400 bg-emerald-950/60 border border-emerald-500/30 px-1.5 py-0.2 rounded">
-              LOCKED
-            </span>
-          </div>
-          <div className="flex justify-between items-center text-[10px]">
-            <span className="text-slate-400">Data Ingestion Engine:</span>
-            <span className="text-cyan-300 font-bold">Python Pipeline SQLite Daemon</span>
-          </div>
-          <div className="flex justify-between items-center text-[10px]">
-            <span className="text-slate-400">Chaos Factor (λ):</span>
-            <span className="text-purple-300 font-bold">
-              {draftState?.settings?.chaos_lambda ?? DEFAULT_CHAOS_LAMBDA} (Canonical Oneiromancy)
-            </span>
-          </div>
-          <div className="flex justify-between items-center text-[10px]">
-            <span className="text-slate-400">Canonical Sleeper User:</span>
-            <span className="text-amber-300 font-bold">
-              {hasConfiguredUsername
-                ? (draftState?.settings?.sleeper_username ?? 'OneiroVanguard')
-                : 'Not configured'}
-            </span>
-          </div>
-          <div data-testid="settings-user-profile" className="flex justify-between items-center text-[10px]">
-            <span className="text-slate-400">Active Roster / Team:</span>
-            <span id="active-team-badge" className="text-emerald-300 font-bold flex items-center gap-1.5">
-              {hasConfiguredUsername ? (
-                <>
-                  <UserAvatar
-                    src={draftState?.user_avatar_url || draftState?.avatar_url || draftState?.settings?.user_avatar_url}
-                    alt={draftState?.settings?.sleeper_username || 'User'}
-                    fallbackText={draftState?.settings?.sleeper_username || 'User'}
-                    size="sm"
-                    isUser={true}
-                    testId="settings-user-avatar"
-                  />
-                  <span>
-                    {draftState?.competitor_teams?.find(
-                      (t) =>
-                        t.is_user ||
-                        (draftState?.settings?.user_id && t.owner_id === draftState.settings.user_id) ||
-                        (draftState?.settings?.user_slot && t.slot === draftState.settings.user_slot)
-                    )?.name ||
-                      (draftState?.settings?.sleeper_username &&
-                      !['oneirovanguard', 'oneirovangard'].includes(
-                        draftState.settings.sleeper_username.toLowerCase()
-                      )
-                        ? `${draftState.settings.sleeper_username} (You)`
-                        : 'AstralOracles (You)')}
-                  </span>
-                </>
-              ) : (
-                <span className="text-slate-500">Awaiting username...</span>
-              )}
-            </span>
-          </div>
-          <div className="flex justify-between items-center text-[10px]">
-            <span className="text-slate-400">Active League ID:</span>
-            <span className="text-cyan-300 font-mono">
-              {hasConfiguredUsername
-                ? (draftState?.settings?.league_id ?? '9000000000000000001')
-                : 'None'}
-            </span>
-          </div>
-          <div className="flex justify-between items-center text-[10px]">
-            <span className="text-slate-400">Draft ID:</span>
-            <span className="text-cyan-300 font-mono">
-              {hasConfiguredUsername && draftState?.draft_id ? draftState.draft_id : 'None'}
-            </span>
-          </div>
         </div>
 
         {/* Drawer Footer Actions */}
