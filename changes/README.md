@@ -20,7 +20,7 @@ ones; `DECISIONS.md` says which. Don't treat an old log as the current state.
 
 | Log | What it covers |
 | --- | --- |
-| [`2026-10-10-private-copy-build-fixes-cloudflare.md`](2026-10-10-private-copy-build-fixes-cloudflare.md) | Private copy of google/oneiromancy, lockfile and build fixes, Cloudflare Workers deployment |
+| [`2026-10-10-private-copy-build-fixes-cloud-deploy.md`](2026-10-10-private-copy-build-fixes-cloud-deploy.md) | Private copy of google/oneiromancy, lockfile and build fixes, cloud deployment |
 | [`2026-10-10-live-site-audit.md`](2026-10-10-live-site-audit.md) | First audit of the live site with a real Sleeper account |
 | [`2026-10-10-live-site-fixes.md`](2026-10-10-live-site-fixes.md) | Fixes from that audit: real byes, dates, matchups, records; polling |
 | [`2026-10-10-ux-review.html`](2026-10-10-ux-review.html) | UX review and mock-ups (open in a browser) |

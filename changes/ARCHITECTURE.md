@@ -16,8 +16,8 @@ writes to Sleeper and never links out to act there.
 ## 2. Stack and deployment
 
 - Next.js 14 (App Router) built as a **static export** (`next build` → `out/`).
-- Deployed as a **Cloudflare Worker serving static assets** (`wrangler.jsonc`)
-  through Workers Builds on pushes to `main`. Live at https://one.seance.sh.
+- Deployed as **static assets on a cloud edge host** (`wrangler.jsonc`), built
+  by CI on every push to `main`. Live at https://one.seance.sh.
 - All Sleeper calls happen **in the browser**. There is no server, database or
   pipeline. (An upstream "Python Pipeline SQLite Daemon" label described
   something that doesn't exist and was removed.)

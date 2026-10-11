@@ -35,6 +35,6 @@ an owner decision, ask.
 | 6 | 2026-10-10 | Recommendations honor the league: depth, superflex, byes, injuries; never drop a starter | agent | current | [oracle.ts](../core/lib/oracle.ts) |
 | 5 | 2026-10-10 | Starters come from the current week's matchup; byes, dates, opponents and scores from real Sleeper data | agent | current | [live-site fixes](2026-10-10-live-site-fixes.md) |
 | 4 | 2026-10-10 | Mystical names stay as eyebrows, with plain titles | agent (owner liked the voice) | current | guideline 14 |
-| 3 | 2026-10-10 | Deploy the static export as a Cloudflare Worker via Workers Builds | owner request | current | [private copy](2026-10-10-private-copy-build-fixes-cloudflare.md) |
+| 3 | 2026-10-10 | Deploy the static export to a static-assets cloud host via CI builds on push | owner request | current | [private copy](2026-10-10-private-copy-build-fixes-cloud-deploy.md) |
 | 2 | 2026-10-10 | Private copy of google/oneiromancy; never push upstream | **owner** | current | same |
 | 1 | 2026-10-10 | Don't fix the test loader unless asked | **owner** | **resolved by #26**: the loader was fine; the test files' import order was the bug | — |

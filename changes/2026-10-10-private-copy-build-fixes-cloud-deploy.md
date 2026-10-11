@@ -1,34 +1,34 @@
-# 2026-10-10: Private copy, build fixes, and Cloudflare Workers deployment
+# 2026-10-10: Private copy, build fixes, and cloud deployment
 
 > **Status (2026-10-11):** historical log. The deployment described here is current. The test baseline is not: tiers 1–4 now run and all 457 tests pass, because the "loader bug" was the test files' static imports running before the loader registration. See [`2026-10-11-validation-pass.md`](2026-10-11-validation-pass.md).
 
 This log covers the work that turned this repository from an empty private repo
 into a private copy of [google/oneiromancy](https://github.com/google/oneiromancy)
-that builds from a clean install and deploys as a Cloudflare Worker through
-Workers Builds.
+that builds from a clean install and deploys to a static-assets cloud host through
+its CI build pipeline.
 
 | Commit | Summary |
 | --- | --- |
 | `d446f7a`, `b7b9c82` | Upstream history (google/oneiromancy `main`), unchanged |
 | `89580fa` | Fix malformed scoped-package `resolved` URLs in `package-lock.json` |
 | `1c43c64` | Fix lint and type errors that break `next build` |
-| `ebcfcb6` | Deploy as a static-assets Cloudflare Worker via Workers Builds |
+| `ebcfcb6` | Deploy the static export to a cloud host via CI builds |
 
 ## Goals
 
 1. Keep a **private** copy of google/oneiromancy. GitHub can't make a private
    fork of a public repo, so this is a copy with upstream's history, not a fork.
    google/oneiromancy is read-only upstream and must never be pushed to.
-2. Make `npm ci` succeed from a clean cache, which is what Cloudflare's builder
+2. Make `npm ci` succeed from a clean cache, which is what the cloud CI builder
    does.
 3. Make `npm run build` (`next build` plus a static export to `out/`) pass.
-4. Deploy `out/` as a Cloudflare Worker through Workers Builds, without
+4. Deploy `out/` to a static-assets cloud host through CI builds, without
    breaking the existing Docker and App Engine deployment paths.
 5. Leave behavior and test results otherwise unchanged.
 
 ## Environment used for verification
 
-- Node 22.22.0, npm 10.9.4. Cloudflare's build image defaults to Node 24; the
+- Node 22.22.0, npm 10.9.4. The CI build image defaults to Node 24; the
   build is expected to work on both, but only Node 22 was tested here.
 - Every build check started from `npm ci --cache "$(mktemp -d)"`, so no cached
   tarball could hide a broken lockfile.
@@ -67,7 +67,7 @@ https://registry.npmjs.org/@scope/name/-/name-x.y.z.tgz          (correct)
 ```
 
 Installs that use a warm npm cache can hide this, but a clean install, like
-Cloudflare's, fails with 404s.
+the host's, fails with 404s.
 
 **Fix.**
 
@@ -204,12 +204,12 @@ already checked.
 
 ---
 
-## Step 4: Cloudflare Workers (`ebcfcb6`)
+## Step 4: Cloud deployment (`ebcfcb6`)
 
 ### Approach
 
 The app is a pure static export (`output: 'export'` in `next.config.mjs`), so
-the Worker is **assets only**: no Worker script, no bindings. Cloudflare serves
+the deployment is **assets only**: no server script, no bindings. The host serves
 `out/` directly from its asset storage.
 
 ### `wrangler.jsonc`
@@ -225,8 +225,7 @@ the Worker is **assets only**: no Worker script, no bindings. Cloudflare serves
 }
 ```
 
-- `name` must match the Worker's name in the Cloudflare dashboard. Workers
-  Builds uses it to decide which Worker to deploy.
+- `name` must match the project's name in the hosting dashboard. The CI build uses it to pick the project to deploy.
 - `not_found_handling: "single-page-application"` serves `index.html` for
   unmatched routes, the same fallback as the last handler in `app.yaml` and as
   `server.js`.
@@ -242,8 +241,8 @@ the Worker is **assets only**: no Worker script, no bindings. Cloudflare serves
 ```
 
 `server.js` sets `X-Content-Type-Options: nosniff` on every response. Next
-copies `public/` into `out/`, and Cloudflare reads `out/_headers` to apply the
-same header. Cloudflare does not serve `_headers` as an asset (verified below).
+copies `public/` into `out/`, and the host reads `out/_headers` to apply the
+same header. The host does not serve `_headers` as an asset (verified below).
 Other hosts (Docker via `server.js`, App Engine) ignore the file.
 
 ### Wrangler is not a `package.json` dependency
@@ -253,18 +252,17 @@ Other hosts (Docker via `server.js`, App Engine) ignore the file.
 **Why.** Wrangler depends on `workerd`, whose binary needs glibc 2.35, and its
 postinstall step runs that binary. The `Dockerfile` builds on
 `node:22-alpine` (musl), so adding wrangler would break `npm ci` in the Docker
-build. `npx wrangler deploy`, which is Workers Builds' default deploy command,
+build. `npx wrangler deploy`, which is the CI's default deploy command,
 fetches wrangler on demand instead.
 
-**Trade-off.** The wrangler version isn't pinned by the lockfile. Workers
-Builds uses whatever wrangler `npx` resolves at deploy time.
+**Trade-off.** The wrangler version isn't pinned by the lockfile. The CI build uses whatever wrangler `npx` resolves at deploy time.
 
 ### Other changes
 
 - `.gitignore`: added `.wrangler/` (local state from `wrangler dev`).
-- `README.md`: added "Option C: Cloudflare Workers" under Production
-  Deployment Options, with the Workers Builds settings, manual deploy commands,
-  and a note on why wrangler isn't a dependency.
+- `README.md`: added a cloud deployment option under Production Deployment
+  Options, with the CI settings, manual deploy commands, and a note on why
+  wrangler isn't a dependency.
 
 ### Verification
 
@@ -288,18 +286,18 @@ From a clean `npm ci` and `npm run build`:
 
 ---
 
-## Step 5: Push and Workers Builds settings
+## Step 5: Push and CI builds settings
 
 `main` was pushed to `origin` (`seano-vs/oneiromancy`). The same commit was
 also pushed to the session's working branch, `ccr-7b1d5021-87x6ml`. Nothing was
 pushed to `upstream`.
 
-Workers Builds settings (Workers & Pages → Create → Import a repository →
+CI builds settings (the host's "import a repository" flow →
 `seano-vs/oneiromancy`):
 
 | Setting | Value |
 | --- | --- |
-| Worker name | `oneiromancy` (must match `name` in `wrangler.jsonc`) |
+| Project name | `oneiromancy` (must match `name` in `wrangler.jsonc`) |
 | Production branch | `main` |
 | Build command | `npm run build` |
 | Deploy command | `npx wrangler deploy` (default) |
@@ -329,7 +327,7 @@ No environment variables or bindings are needed.
 - Stale `caniuse-lite` / Browserslist warning during the build.
 - Upstream's dependabot branches (fetched with the upstream remote, not
   copied to origin).
-- No `NEXT_FONT_GOOGLE_MOCKED_RESPONSES` font mock was committed. Cloudflare's
+- No `NEXT_FONT_GOOGLE_MOCKED_RESPONSES` font mock was committed. the host's
   builders have network access.
 
 ## Keeping up with upstream

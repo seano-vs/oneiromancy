@@ -2,7 +2,7 @@
   // Must match the deployed project's name.
   "name": "oneiromancy",
   "compatibility_date": "2026-10-01",
-  // Static assets only; there is no Worker script. `npm run build` writes
+  // Static assets only; there is no server script. `npm run build` writes
   // the static export to ./out. Unmatched routes serve index.html, matching
   // the SPA fallback in app.yaml.
   "assets": {
