@@ -22,6 +22,7 @@ import BoardControls, {
   PositionFilterValue,
 } from '@/components/board/BoardControls';
 import PlayerCardRow from '@/components/board/PlayerCardRow';
+import PlayerHeadshot, { TeamLogo } from '@/components/common/PlayerHeadshot';
 import GlassCard from '@/components/common/GlassCard';
 import PositionalBadge from '@/components/common/PositionalBadge';
 import PlayerDetailModal from '@/components/modals/PlayerDetailModal';
@@ -408,7 +409,8 @@ export const CosmicBoard: React.FC<CosmicBoardProps> = ({
                       }`}>
                       <td className="py-2.5 px-3 text-center text-slate-500 font-bold">{idx + 1}</td>
                       <td className="py-2.5 px-4 font-sans font-semibold text-slate-100">
-                        <div className="flex items-center gap-1.5 min-w-0">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <PlayerHeadshot player={player} size="sm" />
                           <span className="truncate">{player.name}</span>
                           {player.injury_status && (
                             <span
@@ -426,6 +428,7 @@ export const CosmicBoard: React.FC<CosmicBoardProps> = ({
                         <PositionalBadge position={player.position} size="sm" />
                       </td>
                       <td className="py-2.5 px-3 text-slate-400 whitespace-nowrap">
+                        <TeamLogo team={player.team} className="mr-1.5" />
                         {player.team} · Bye {player.bye_week || '—'}
                       </td>
                       <td className="py-2.5 px-3 text-right text-slate-100 font-bold tabular-nums">

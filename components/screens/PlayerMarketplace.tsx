@@ -30,6 +30,7 @@ import {DEFAULT_CHAOS_LAMBDA, isPlayerSigned} from '@/lib/scoring';
 import {deriveEligiblePositions, getSeasonContext} from '@/lib/sleeper';
 import {computeWaiverMoves, elementRelation, statsPoints} from '@/lib/oracle';
 import {PairBars} from '@/components/oneiromancy/WeeklyMoves';
+import PlayerLink, {type InspectTarget} from '@/components/common/PlayerLink';
 import {
   CosmicPlayer,
   NFLPosition,
@@ -470,11 +471,18 @@ export const PlayerMarketplace: React.FC<PlayerMarketplaceProps> = ({
   const [inspectedPlayer, setInspectedPlayer] = useState<CosmicPlayer | null>(
     null,
   );
+  // Set when opened from a recommendation, so the view compares the two players.
+  const [inspectedVs, setInspectedVs] = useState<CosmicPlayer | null>(null);
+  const openTarget = useCallback((t: InspectTarget) => {
+    setInspectedVs(t.vs);
+    setInspectedPlayer(t.player);
+  }, []);
 
   const currentPick = context.draftState?.current_pick;
 
   const handleInspect = useCallback(
     (player: CosmicPlayer) => {
+      setInspectedVs(null);
       setInspectedPlayer(player);
       context.selectPlayer?.(player);
     },
@@ -752,7 +760,9 @@ export const PlayerMarketplace: React.FC<PlayerMarketplaceProps> = ({
                     {move.statsGain.toFixed(1)} pts, Stars {move.starsAdd.toFixed(0)} vs {move.starsDrop.toFixed(0)})
                   </span>
                   <span className="text-base font-semibold text-slate-100">
-                    Add {move.add.name} <span className="font-normal text-slate-400">for</span> {move.drop.name}
+                    Add <PlayerLink player={move.add} vs={move.drop} onOpen={openTarget} />{' '}
+                    <span className="font-normal text-slate-400">for</span>{' '}
+                    <PlayerLink player={move.drop} vs={move.add} onOpen={openTarget} />
                   </span>
                   <PairBars
                     label="Stats"
@@ -775,7 +785,7 @@ export const PlayerMarketplace: React.FC<PlayerMarketplaceProps> = ({
                   <div className="flex flex-wrap gap-2">
                     <button
                       type="button"
-                      onClick={() => setInspectedPlayer(move.add)}
+                      onClick={() => openTarget({ player: move.add, vs: move.drop })}
                       className="px-3 py-1.5 rounded-lg border border-white/15 text-xs text-slate-200 hover:border-cyan-400/60">
                       {move.add.name.split(' ').slice(-1)[0]} details
                     </button>
@@ -1012,8 +1022,12 @@ export const PlayerMarketplace: React.FC<PlayerMarketplaceProps> = ({
       {/* Player Detail Modal */}
       <PlayerDetailModal
         player={inspectedPlayer}
+        compareWith={inspectedVs}
         isOpen={Boolean(inspectedPlayer)}
-        onClose={() => setInspectedPlayer(null)}
+        onClose={() => {
+          setInspectedPlayer(null);
+          setInspectedVs(null);
+        }}
       />
     </div>
   );

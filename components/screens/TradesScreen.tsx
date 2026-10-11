@@ -21,6 +21,7 @@ import UserAvatar from '@/components/common/UserAvatar';
 import PositionalBadge from '@/components/common/PositionalBadge';
 import PlayerMarketplace from '@/components/screens/PlayerMarketplace';
 import PlayerDetailModal from '@/components/modals/PlayerDetailModal';
+import PlayerLink, { type InspectTarget } from '@/components/common/PlayerLink';
 import { useOneiromancy } from '@/context/OneiromancyContext';
 import {
   TONE_PILL,
@@ -34,22 +35,6 @@ import {
 } from '@/lib/oracle';
 import { DEFAULT_CHAOS_LAMBDA } from '@/lib/scoring';
 import type { CompetitorTeam, CosmicPlayer, ElementType, RosterSlot } from '@/types/oneiromancy';
-
-/** A player's name that opens their extended view. */
-const PlayerName: React.FC<{ p: CosmicPlayer; onOpen: (p: CosmicPlayer) => void; className?: string }> = ({
-  p,
-  onOpen,
-  className = '',
-}) => (
-  <button
-    type="button"
-    onClick={() => onOpen(p)}
-    aria-label={`View ${p.name} details`}
-    className={`text-left underline decoration-dotted decoration-slate-500 underline-offset-2 hover:text-cyan-300 hover:decoration-cyan-400 ${className}`}
-  >
-    {p.name}
-  </button>
-);
 
 /** Oracle, Stats and Stars together; a player's value is never projection alone. */
 const ValueLine: React.FC<{ p: CosmicPlayer; lambda: number }> = ({ p, lambda }) => {
@@ -79,7 +64,7 @@ export const TradesScreen: React.FC = () => {
   const roster = draftState.my_roster ?? NO_MY_ROSTER;
   const lambda = draftState.settings?.chaos_lambda ?? DEFAULT_CHAOS_LAMBDA;
   const [openTeam, setOpenTeam] = useState<number | null>(null);
-  const [inspected, setInspected] = useState<CosmicPlayer | null>(null);
+  const [inspected, setInspected] = useState<InspectTarget | null>(null);
 
   const partners = useMemo(() => computeTradePartners(teams, board, roster, lambda), [teams, board, roster, lambda]);
   const byId = useMemo(() => new Map(board.map((p) => [String(p.id), p])), [board]);
@@ -146,12 +131,12 @@ export const TradesScreen: React.FC = () => {
                       <div className="p-2 rounded-lg bg-slate-950/60 border border-white/10">
                         <span className="text-[10px] font-mono text-slate-500 uppercase">You give</span>
                         <div className="text-slate-100 font-semibold">
-                          <PlayerName p={p.give.player} onOpen={setInspected} />{' '}
+                          <PlayerLink player={p.give.player} vs={p.give.replaces} onOpen={setInspected} />{' '}
                           <span className="font-mono font-normal text-slate-400">{p.give.player.position}</span>
                         </div>
                         <ValueLine p={p.give.player} lambda={lambda} />
                         <div className="text-[11px] text-slate-400">
-                          Would start over <PlayerName p={p.give.replaces} onOpen={setInspected} /> (+
+                          Would start over <PlayerLink player={p.give.replaces} vs={p.give.player} onOpen={setInspected} /> (+
                           {p.give.gain.toFixed(1)} Oracle)
                         </div>
                       </div>
@@ -160,12 +145,12 @@ export const TradesScreen: React.FC = () => {
                       <div className="p-2 rounded-lg bg-slate-950/60 border border-white/10">
                         <span className="text-[10px] font-mono text-slate-500 uppercase">You get</span>
                         <div className="text-slate-100 font-semibold">
-                          <PlayerName p={p.get.player} onOpen={setInspected} />{' '}
+                          <PlayerLink player={p.get.player} vs={p.get.replaces} onOpen={setInspected} />{' '}
                           <span className="font-mono font-normal text-slate-400">{p.get.player.position}</span>
                         </div>
                         <ValueLine p={p.get.player} lambda={lambda} />
                         <div className="text-[11px] text-slate-400">
-                          Would start over your <PlayerName p={p.get.replaces} onOpen={setInspected} /> (+
+                          Would start over your <PlayerLink player={p.get.replaces} vs={p.get.player} onOpen={setInspected} /> (+
                           {p.get.gain.toFixed(1)} Oracle)
                         </div>
                       </div>
@@ -191,7 +176,7 @@ export const TradesScreen: React.FC = () => {
                     {rosterPlayers.map((pl) => (
                       <li key={pl.id} className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs">
                         <PositionalBadge position={pl.position} size="sm" />
-                        <PlayerName p={pl} onOpen={setInspected} className="text-slate-200 truncate min-w-0" />
+                        <PlayerLink player={pl} onOpen={setInspected} className="text-slate-200 truncate min-w-0" />
                         <span className="ml-auto">
                           <ValueLine p={pl} lambda={lambda} />
                         </span>
@@ -206,7 +191,8 @@ export const TradesScreen: React.FC = () => {
       )}
 
       <PlayerDetailModal
-        player={inspected}
+        player={inspected?.player ?? null}
+        compareWith={inspected?.vs ?? null}
         isOpen={inspected !== null}
         onClose={() => setInspected(null)}
         roster={roster}

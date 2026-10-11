@@ -530,45 +530,29 @@ export const OneiromancyDashboard: React.FC<OneiromancyDashboardProps> = ({
         </GlassCard>
       )}
 
-      {/* 4. Harmony Score & Metaphysical Team Synergy (on demand) */}
-      <button
-        type="button"
-        onClick={() => setIsHarmonyOpen((v) => !v)}
-        aria-expanded={isHarmonyOpen}
-        className="flex items-center justify-between gap-3 p-4 rounded-xl bg-slate-900/70 border border-white/10 text-left hover:border-amber-500/40">
-        <span className="flex items-center gap-2">
-          <Trophy className="w-4 h-4 text-amber-400" />
-          <span className="font-serif text-base font-bold text-slate-100">Team harmony</span>
-          <span className="text-xs font-mono text-amber-300">{harmonyScore} / 100</span>
-        </span>
-        <span className="text-xs font-mono text-slate-400 flex items-center gap-1">
-          {isHarmonyOpen ? 'Hide' : 'Elements, aspects and stacks'}
-          {isHarmonyOpen ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
-        </span>
-      </button>
-      {isHarmonyOpen && (
-      <GlassCard variant="panel" className="p-4 sm:p-6 space-y-5">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b border-white/10 pb-3">
-          <div className="flex items-center gap-2">
-            <Trophy className="w-5 h-5 text-amber-400" />
-            <div>
-              <h3 className="font-serif text-lg font-bold text-slate-100 flex items-center gap-2">
-                <span>Harmony Score & Metaphysical Team Synergy</span>
-                <span className="text-xs font-mono font-normal px-2 py-0.5 rounded bg-amber-950/80 border border-amber-500/30 text-amber-300">
-                  {harmonyScore} / 100 HARMONY
-                </span>
-              </h3>
-              <p className="text-[11px] font-sans text-slate-400">
-                Holistic vibrational alignment across elemental balance,
-                celestial aspect synergy, and schedule symmetry.
-              </p>
-            </div>
-          </div>
-          <span className="text-xs font-mono text-cyan-300 bg-cyan-950/60 border border-cyan-500/30 px-2.5 py-1 rounded-full">
-            RESONANCE ACTIVE
+      {/* 4. Team harmony: one card; the header toggles the body open in place */}
+      <section className="rounded-xl bg-slate-900/70 border border-white/10 overflow-hidden">
+        <button
+          type="button"
+          onClick={() => setIsHarmonyOpen((v) => !v)}
+          aria-expanded={isHarmonyOpen}
+          aria-controls="team-harmony-body"
+          className="w-full flex items-center justify-between gap-3 p-4 text-left hover:bg-white/5">
+          <span className="flex items-center gap-2">
+            <Trophy className="w-4 h-4 text-amber-400" />
+            <span className="font-serif text-base font-bold text-slate-100">Team harmony</span>
+            <span className="text-xs font-mono text-amber-300">{harmonyScore} / 100</span>
           </span>
-        </div>
-
+          <span className="text-xs font-mono text-slate-400 flex items-center gap-1">
+            {isHarmonyOpen ? 'Hide' : 'Elements, aspects and stacks'}
+            {isHarmonyOpen ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+          </span>
+        </button>
+        {isHarmonyOpen && (
+          <div id="team-harmony-body" className="px-4 sm:px-6 pb-5 pt-4 space-y-5 border-t border-white/10">
+            <p className="text-[11px] font-sans text-slate-400">
+              How well your lineup works as a unit: elemental balance, celestial aspects, and schedule symmetry.
+            </p>
         {/* Harmony Explanation Guide (Collapsible Details for Less-is-More Decluttering) */}
         <details className="group rounded-xl bg-slate-950/60 border border-cyan-500/20 text-xs overflow-hidden transition-all">
           <summary className="p-3 font-mono text-cyan-300 font-semibold cursor-pointer hover:bg-white/5 flex items-center justify-between select-none">
@@ -886,9 +870,9 @@ export const OneiromancyDashboard: React.FC<OneiromancyDashboardProps> = ({
             </div>
           </div>
         </div>
-      </GlassCard>
-
-      )}
+          </div>
+        )}
+      </section>
 
       {/* 5. Your Team's Current State: Roster Slots */}
       <GlassCard variant="panel" className="p-4 sm:p-6 space-y-4">

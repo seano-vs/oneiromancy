@@ -16,8 +16,9 @@
 
 'use client';
 
-import React, { useContext, useEffect } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import PositionalBadge from '@/components/common/PositionalBadge';
+import PlayerHeadshot, { TeamLogo } from '@/components/common/PlayerHeadshot';
 import { CosmicPlayer, RosterSlot } from '@/types/oneiromancy';
 import { useOptionalOneiromancy } from '@/context/OneiromancyContext';
 import { DEFAULT_CHAOS_LAMBDA, classifyWeeklyFavorability, haversineDistance } from '@/lib/scoring';
@@ -30,6 +31,11 @@ export interface PlayerDetailModalProps {
   onClose: () => void;
   onDraft?: (playerId: string) => void;
   roster?: RosterSlot[];
+  /**
+   * Opened from a recommendation ("start X over Y"): compare head-to-head with
+   * the other player in it instead of the whole roster.
+   */
+  compareWith?: CosmicPlayer | null;
 }
 
 export const PlayerDetailModal: React.FC<PlayerDetailModalProps> = ({
@@ -37,8 +43,14 @@ export const PlayerDetailModal: React.FC<PlayerDetailModalProps> = ({
   isOpen,
   onClose,
   roster: propRoster,
+  compareWith = null,
 }) => {
   const ctx = useOptionalOneiromancy();
+  // Head-to-head by default when opened from a recommendation; the owner can
+  // switch to the whole-roster view.
+  const [showRoster, setShowRoster] = useState(false);
+  const comparisonKey = `${player?.id ?? ''}|${compareWith?.id ?? ''}`;
+  useEffect(() => setShowRoster(false), [comparisonKey]);
   const modalLambda = ctx?.draftState?.settings?.chaos_lambda ?? DEFAULT_CHAOS_LAMBDA;
   useEffect(() => {
     if (!isOpen || typeof window === 'undefined') return;
@@ -74,6 +86,9 @@ export const PlayerDetailModal: React.FC<PlayerDetailModalProps> = ({
       seenIds.add(String(slot.player.id));
     }
   }
+  const isMine =
+    player.draft_status === 'my_team' ||
+    activeRoster.some((s) => s.player && String(s.player.id) === String(player.id));
   const hasPopulatedRosterSlots = activeRoster.some((s) => Boolean(s.player));
   if (!hasPopulatedRosterSlots) {
     for (const bp of boardRostered) {
@@ -87,6 +102,19 @@ export const PlayerDetailModal: React.FC<PlayerDetailModalProps> = ({
       }
     }
   }
+
+  // Never compare a player with himself.
+  const teammates = sameRoleTeamPlayers.filter((r) => String(r.rosterPlayer.id) !== String(player.id));
+  const headToHead = Boolean(compareWith) && !showRoster;
+  const comparisonRows = headToHead
+    ? [
+        {
+          slotLabel: 'VS',
+          isStarter: false,
+          rosterPlayer: compareWith as CosmicPlayer,
+        },
+      ]
+    : teammates;
 
   const getWeeklyProj = (p: CosmicPlayer) =>
     p.weekly_projected_points ??
@@ -179,10 +207,13 @@ export const PlayerDetailModal: React.FC<PlayerDetailModalProps> = ({
       >
         {/* Modal Top Header */}
         <div className="flex justify-between items-start border-b border-white/10 pb-3">
-          <div className="space-y-1">
+          <div className="flex items-start gap-3 min-w-0">
+          <PlayerHeadshot key={String(player.id)} player={player} size="lg" />
+          <div className="space-y-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
               <PositionalBadge position={player.position} size="md" />
               <span className="text-xs font-mono text-cyan-300 bg-cyan-950/80 px-2 py-0.5 rounded border border-cyan-500/30">
+                <TeamLogo team={player.team} className="mr-1" />
                 {player.team} • Bye {player.bye_week || '—'} • #{player.jersey_number}
               </span>
               {player.injury_status && (
@@ -203,6 +234,7 @@ export const PlayerDetailModal: React.FC<PlayerDetailModalProps> = ({
             >
               {player.name}
             </h2>
+          </div>
           </div>
           <button
             type="button"
@@ -306,20 +338,38 @@ export const PlayerDetailModal: React.FC<PlayerDetailModalProps> = ({
           <div className="flex items-center justify-between flex-wrap gap-2">
             <span className="text-xs uppercase font-bold text-cyan-300 tracking-wider flex items-center gap-1.5">
               <ArrowRightLeft className="w-3.5 h-3.5 text-cyan-400" />
-              Role Comparison vs. Your Team ({player.position})
+              {headToHead
+                ? `Head-to-head: ${player.name} vs. ${compareWith?.name}`
+                : isMine
+                  ? `Role Comparison vs. Your Other ${player.position}s`
+                  : `Role Comparison vs. Your Team (${player.position})`}
             </span>
-            <span className="text-[10px] text-slate-400">
-              {sameRoleTeamPlayers.length} {player.position}{sameRoleTeamPlayers.length === 1 ? '' : 's'} on active roster
-            </span>
+            {compareWith ? (
+              <button
+                type="button"
+                onClick={() => setShowRoster((v) => !v)}
+                className="text-[10px] text-cyan-300 underline hover:text-cyan-200"
+              >
+                {headToHead ? `Compare with all your ${player.position}s` : `Back to ${compareWith.name}`}
+              </button>
+            ) : (
+              <span className="text-[10px] text-slate-400">
+                {teammates.length} {isMine ? 'other ' : ''}
+                {player.position}
+                {teammates.length === 1 ? '' : 's'} on your roster
+              </span>
+            )}
           </div>
 
-          {sameRoleTeamPlayers.length === 0 ? (
+          {comparisonRows.length === 0 ? (
             <div className="p-3 rounded-lg bg-slate-900/60 border border-white/5 text-slate-400 text-[11px]">
-              No rostered {player.position}s found on your active squad — {player.name} would fill an open {player.position} role directly.
+              {isMine
+                ? `${player.name} is your only ${player.position}.`
+                : `No rostered ${player.position}s found on your active squad — ${player.name} would fill an open ${player.position} role directly.`}
             </div>
           ) : (
             <div className="space-y-2 pt-1">
-              {sameRoleTeamPlayers.map(({ slotLabel, isStarter, rosterPlayer }) => {
+              {comparisonRows.map(({ slotLabel, isStarter, rosterPlayer }) => {
                 const isSelf = String(rosterPlayer.id) === String(player.id);
                 const rosProj = getWeeklyProj(rosterPlayer);
                 const rosFav = rosterPlayer.favorability_score ?? 70;
@@ -330,7 +380,8 @@ export const PlayerDetailModal: React.FC<PlayerDetailModalProps> = ({
                 const spiritDiff = player.spirit_score - rosterPlayer.spirit_score;
                 const harmDiff = player.harmony_score - rosterPlayer.harmony_score;
                 const favDiff = candidateFav - rosFav;
-                const isUpgrade = dsDiff > 0.2 || projDiff > 0.5;
+                // Verdicts follow the Oracle (stats and stars), never projections alone.
+                const isUpgrade = dsDiff > 0.2;
 
                 const fmtDiff = (d: number, decimals = 1) =>
                   `${d >= 0 ? '+' : ''}${d.toFixed(decimals)}`;
@@ -382,9 +433,17 @@ export const PlayerDetailModal: React.FC<PlayerDetailModalProps> = ({
                       >
                         {isSelf
                           ? 'CURRENTLY INSPECTED'
-                          : isUpgrade
-                            ? `UPGRADE (${fmtDiff(projDiff)} pts, ${fmtDiff(dsDiff)} Oracle)`
-                            : `KEEP ${rosterPlayer.name} (${fmtDiff(dsDiff)} Oracle)`}
+                          : headToHead
+                            ? dsDiff >= 0
+                              ? `${player.name} by ${Math.abs(dsDiff).toFixed(1)} Oracle`
+                              : `${rosterPlayer.name} by ${Math.abs(dsDiff).toFixed(1)} Oracle`
+                            : isMine
+                              ? dsDiff >= 0
+                                ? `AHEAD OF ${rosterPlayer.name} (${fmtDiff(dsDiff)} Oracle)`
+                                : `BEHIND ${rosterPlayer.name} (${fmtDiff(dsDiff)} Oracle)`
+                              : isUpgrade
+                                ? `UPGRADE (${fmtDiff(dsDiff)} Oracle, ${fmtDiff(projDiff)} pts)`
+                                : `KEEP ${rosterPlayer.name} (${fmtDiff(dsDiff)} Oracle)`}
                       </span>
                     </div>
 

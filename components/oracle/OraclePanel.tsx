@@ -20,6 +20,8 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { X, ChevronDown, ChevronUp, Compass } from 'lucide-react';
 import { useOneiromancy } from '@/context/OneiromancyContext';
 import ChaosDial from '@/components/screens/ChaosDial';
+import PlayerDetailModal from '@/components/modals/PlayerDetailModal';
+import PlayerLink, { type InspectTarget } from '@/components/common/PlayerLink';
 import { DEFAULT_CHAOS_LAMBDA } from '@/lib/scoring';
 import { getSeasonContext } from '@/lib/sleeper';
 import { computeLineupCheck, computeWaiverMoves } from '@/lib/oracle';
@@ -51,6 +53,7 @@ export const OraclePanel: React.FC<OraclePanelProps> = ({ isOpen, onClose }) => 
   const { draftState, updateChaosLambda } = useOneiromancy();
   const lambda = draftState.settings?.chaos_lambda ?? DEFAULT_CHAOS_LAMBDA;
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const [inspected, setInspected] = useState<InspectTarget | null>(null);
   const roster = draftState.my_roster ?? NO_MY_ROSTER;
   const board = draftState.cosmic_board ?? NO_COSMIC_BOARD;
   const currentWeek = getSeasonContext()?.currentWeek;
@@ -63,12 +66,13 @@ export const OraclePanel: React.FC<OraclePanelProps> = ({ isOpen, onClose }) => 
 
   useEffect(() => {
     if (!isOpen || typeof window === 'undefined') return;
+    // With a player open on top, Escape closes only the player view.
     const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
+      if (e.key === 'Escape' && !inspected) onClose();
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [isOpen, onClose]);
+  }, [isOpen, onClose, inspected]);
 
   if (!isOpen) return null;
 
@@ -158,8 +162,15 @@ export const OraclePanel: React.FC<OraclePanelProps> = ({ isOpen, onClose }) => 
                 className="p-3 rounded-lg bg-slate-900/60 border border-white/10 text-sm flex flex-col gap-0.5"
               >
                 <span className="text-slate-100">
-                  {s.slot}: start <strong>{s.playerIn.name}</strong>
-                  {s.playerOut ? <> over {s.playerOut.name}</> : null}
+                  {s.slot}: start{' '}
+                  <strong>
+                    <PlayerLink player={s.playerIn} vs={s.playerOut ?? null} onOpen={setInspected} />
+                  </strong>
+                  {s.playerOut ? (
+                    <>
+                      {' '}over <PlayerLink player={s.playerOut} vs={s.playerIn} onOpen={setInspected} />
+                    </>
+                  ) : null}
                 </span>
                 <span className="text-[11px] font-mono text-slate-400">
                   {s.flipLambda !== null
@@ -171,7 +182,11 @@ export const OraclePanel: React.FC<OraclePanelProps> = ({ isOpen, onClose }) => 
           )}
           {topWaiver && (
             <div className="p-3 rounded-lg bg-slate-900/60 border border-white/10 text-sm">
-              Top waiver move: add <strong>{topWaiver.add.name}</strong>, drop {topWaiver.drop.name}
+              Top waiver move: add{' '}
+              <strong>
+                <PlayerLink player={topWaiver.add} vs={topWaiver.drop} onOpen={setInspected} />
+              </strong>
+              , drop <PlayerLink player={topWaiver.drop} vs={topWaiver.add} onOpen={setInspected} />
             </div>
           )}
         </section>
@@ -192,6 +207,15 @@ export const OraclePanel: React.FC<OraclePanelProps> = ({ isOpen, onClose }) => 
             </div>
           )}
         </section>
+      </div>
+      <div onClick={(e) => e.stopPropagation()}>
+        <PlayerDetailModal
+          player={inspected?.player ?? null}
+          compareWith={inspected?.vs ?? null}
+          isOpen={inspected !== null}
+          onClose={() => setInspected(null)}
+          roster={roster}
+        />
       </div>
     </div>
   );

@@ -16,8 +16,10 @@
 
 'use client';
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useOneiromancy } from '@/context/OneiromancyContext';
+import PlayerDetailModal from '@/components/modals/PlayerDetailModal';
+import PlayerLink, { type InspectTarget } from '@/components/common/PlayerLink';
 import { DEFAULT_CHAOS_LAMBDA } from '@/lib/scoring';
 import { getSeasonContext } from '@/lib/sleeper';
 import {
@@ -89,6 +91,7 @@ const MoveCard: React.FC<{ kind: string; kindClass: string; children: React.Reac
 
 export const WeeklyMoves: React.FC = () => {
   const { draftState, setTab } = useOneiromancy();
+  const [inspected, setInspected] = useState<InspectTarget | null>(null);
   const lambda = draftState.settings?.chaos_lambda ?? DEFAULT_CHAOS_LAMBDA;
   const roster = draftState.my_roster ?? NO_MY_ROSTER;
   const board = draftState.cosmic_board ?? NO_COSMIC_BOARD;
@@ -139,8 +142,12 @@ export const WeeklyMoves: React.FC = () => {
         {swaps.map((s) => (
           <MoveCard key={`swap-${s.playerIn.id}`} kind={`Lineup · ${s.slot}`} kindClass="text-cyan-300">
             <span className="text-base font-semibold text-slate-100">
-              Start {s.playerIn.name}
-              {s.playerOut ? ` over ${s.playerOut.name}` : ''}
+              Start <PlayerLink player={s.playerIn} vs={s.playerOut ?? null} onOpen={setInspected} />
+              {s.playerOut ? (
+                <>
+                  {' '}over <PlayerLink player={s.playerOut} vs={s.playerIn} onOpen={setInspected} />
+                </>
+              ) : null}
             </span>
             <PairBars label="Stats" a={s.statsIn} b={s.statsOut} format={(n) => n.toFixed(1)} tone="stats" />
             <PairBars label="Stars" a={s.starsIn} b={s.starsOut} format={(n) => n.toFixed(0)} tone="stars" />
@@ -151,7 +158,8 @@ export const WeeklyMoves: React.FC = () => {
         {waiver && (
           <MoveCard kind={`Waiver · ${waiver.add.position}`} kindClass="text-emerald-300">
             <span className="text-base font-semibold text-slate-100">
-              Add {waiver.add.name} ({waiver.add.team}), drop {waiver.drop.name}
+              Add <PlayerLink player={waiver.add} vs={waiver.drop} onOpen={setInspected} /> ({waiver.add.team}),
+              drop <PlayerLink player={waiver.drop} vs={waiver.add} onOpen={setInspected} />
             </span>
             <span className="text-xs text-slate-400">{waiver.reason}</span>
             <div className="flex flex-wrap gap-2">
@@ -178,15 +186,28 @@ export const WeeklyMoves: React.FC = () => {
         {trade && (
           <MoveCard kind="Trade idea · lineup fit" kindClass="text-purple-300">
             <span className="text-base font-semibold text-slate-100">
-              {trade.give && trade.get
-                ? `Offer ${trade.give.player.name} to ${trade.team.name.replace(/\s*\(You\)$/, '')} for ${trade.get.player.name}`
-                : `${trade.team.name.replace(/\s*\(You\)$/, '')} is short at ${trade.youCanOffer.join(' and ')}`}
+              {trade.give && trade.get ? (
+                <>
+                  Offer <PlayerLink player={trade.give.player} vs={trade.get.player} onOpen={setInspected} /> to{' '}
+                  {trade.team.name.replace(/\s*\(You\)$/, '')} for{' '}
+                  <PlayerLink player={trade.get.player} vs={trade.give.player} onOpen={setInspected} />
+                </>
+              ) : (
+                `${trade.team.name.replace(/\s*\(You\)$/, '')} is short at ${trade.youCanOffer.join(' and ')}`
+              )}
             </span>
             <span className="text-xs text-slate-400">{trade.summary}</span>
             <div className="flex flex-wrap gap-2">{tabButton('See trade partners', 'trades')}</div>
           </MoveCard>
         )}
       </ol>
+      <PlayerDetailModal
+        player={inspected?.player ?? null}
+        compareWith={inspected?.vs ?? null}
+        isOpen={inspected !== null}
+        onClose={() => setInspected(null)}
+        roster={roster}
+      />
     </section>
   );
 };

@@ -18,6 +18,7 @@
 
 import React from 'react';
 import PositionalBadge from '@/components/common/PositionalBadge';
+import PlayerHeadshot, { TeamLogo } from '@/components/common/PlayerHeadshot';
 import { CosmicPlayer } from '@/types/oneiromancy';
 import { DEFAULT_CHAOS_LAMBDA } from '@/lib/scoring';
 import { TONE_LABEL, TONE_PILL, favorabilityTone, oracleScore, starsScore, statsPoints } from '@/lib/oracle';
@@ -58,6 +59,7 @@ export const PlayerCardRow: React.FC<PlayerCardRowProps> = ({
       } ${className}`}
     >
       <span className="font-mono text-xs text-slate-500 w-6 shrink-0 text-right">{rank}</span>
+      <PlayerHeadshot player={player} size="md" />
       <div className="min-w-0 flex-1 flex flex-col gap-0.5">
         <span className="font-sans font-semibold text-sm text-slate-100 break-words">
           {player.name}
@@ -65,6 +67,7 @@ export const PlayerCardRow: React.FC<PlayerCardRowProps> = ({
         <span className="flex items-center gap-1.5 font-mono text-[11px] text-slate-400 flex-wrap">
           <PositionalBadge position={player.position} size="sm" />
           <span>
+            <TeamLogo team={player.team} className="mr-1" />
             {player.team} · Bye {player.bye_week || '—'}
           </span>
           {player.injury_status && (
