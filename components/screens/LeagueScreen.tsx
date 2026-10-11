@@ -20,16 +20,8 @@ import React, { useMemo, useState } from 'react';
 import PositionalBadge from '@/components/common/PositionalBadge';
 import UserAvatar from '@/components/common/UserAvatar';
 import { useOneiromancy } from '@/context/OneiromancyContext';
-import {
-  TONE_LABEL,
-  TONE_PILL,
-  computeTeamOracles,
-  favorabilityTone,
-  oracleScore,
-  starsScore,
-  statsPoints,
-  type TeamOracle,
-} from '@/lib/oracle';
+import CelestialLeaderboardGraph from '@/components/oneiromancy/CelestialLeaderboardGraph';
+import { TONE_LABEL, TONE_PILL, favorabilityTone, oracleScore, starsScore, statsPoints } from '@/lib/oracle';
 import { DEFAULT_CHAOS_LAMBDA } from '@/lib/scoring';
 import type { CompetitorTeam, CosmicPlayer, RosterSlot } from '@/types/oneiromancy';
 
@@ -39,97 +31,17 @@ const NO_COMPETITOR_TEAMS: CompetitorTeam[] = [];
 
 const SLOT_LABEL: Record<string, string> = { SUPER_FLEX: 'SF', FLEX: 'FLEX', REC_FLEX: 'FLEX', WRRB_FLEX: 'FLEX' };
 
-type RankBy = 'oracle' | 'stars' | 'points';
-const RANK_LABEL: Record<RankBy, string> = { oracle: 'Oracle', stars: 'Stars', points: 'Projected pts' };
-
 /**
- * League: every team's current lineup rated by the user's own metrics (λ and
- * star weights). Sleeper already shows standings; this shows what it can't.
+ * League: the Celestial Leaderboard (Overall, Spirit, Draft, Harmony) first,
+ * then any team's lineup. Sleeper already shows standings; this doesn't.
  */
-const OracleRow: React.FC<{
-  r: TeamOracle;
-  rank: number;
-  mine?: TeamOracle;
-  lambda: number;
-  selected: boolean;
-  onSelect: () => void;
-}> = ({ r, rank, mine, lambda, selected, onSelect }) => {
-  const name = r.team.name.replace(/\s*\(You\)$/, '');
-  const isMe = Boolean(r.team.is_user);
-  const delta = mine && !isMe ? r.oracle - mine.oracle : null;
-  const tone = favorabilityTone(r.stars);
-  return (
-    <li>
-      <button
-        type="button"
-        onClick={onSelect}
-        aria-pressed={selected}
-        className={`w-full text-left p-3 rounded-xl border flex flex-col gap-1.5 transition-colors ${
-          isMe
-            ? 'bg-purple-950/40 border-purple-400/60'
-            : selected
-              ? 'bg-slate-900/90 border-cyan-400/50'
-              : 'bg-slate-900/70 border-white/10 hover:border-white/25'
-        }`}
-      >
-        <div className="flex items-center gap-2.5 min-w-0">
-          <span className="w-6 shrink-0 text-xs font-mono text-slate-500">#{rank}</span>
-          <UserAvatar src={r.team.avatar_url || r.team.avatar} alt={`${name} avatar`} fallbackText={name} size="sm" />
-          <span className="min-w-0 truncate font-semibold text-slate-100">{name}</span>
-          {isMe && (
-            <span className="shrink-0 text-[9px] font-mono uppercase px-1 rounded bg-purple-500/20 text-purple-200 border border-purple-400/40">
-              You
-            </span>
-          )}
-          <span className="ml-auto shrink-0 text-right">
-            <span className="block font-mono text-lg font-bold text-purple-100 tabular-nums leading-none">
-              {r.oracle.toFixed(1)}
-            </span>
-            <span className="block text-[9px] font-mono uppercase text-slate-500">Oracle</span>
-          </span>
-        </div>
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 pl-8 text-[11px] font-mono text-slate-400">
-          <span title={TONE_LABEL[tone]} className={`px-1 rounded border ${TONE_PILL[tone]}`}>
-            Stars {r.stars.toFixed(1)}
-          </span>
-          <span>{r.points.toFixed(1)} proj pts</span>
-          {delta !== null && (
-            <span className={delta > 0 ? 'text-rose-300' : delta < 0 ? 'text-emerald-300' : 'text-slate-400'}>
-              {delta > 0 ? `+${delta.toFixed(1)} over you` : delta < 0 ? `${delta.toFixed(1)} under you` : 'even with you'}
-            </span>
-          )}
-          {typeof r.team.wins === 'number' && (
-            <span className="text-slate-600">
-              {r.team.wins}-{r.team.losses}
-              {r.team.ties ? `-${r.team.ties}` : ''}
-            </span>
-          )}
-        </div>
-        {r.best && r.worst && (
-          <div className="pl-8 text-[11px] text-slate-500">
-            Strongest {r.best.name} ({oracleScore(r.best, lambda).toFixed(1)}) · weakest {r.worst.name} (
-            {oracleScore(r.worst, lambda).toFixed(1)})
-          </div>
-        )}
-      </button>
-    </li>
-  );
-};
-
 export const LeagueScreen: React.FC = () => {
   const { draftState } = useOneiromancy();
-  const [rankBy, setRankBy] = useState<RankBy>('oracle');
   const teams = draftState.competitor_teams ?? NO_COMPETITOR_TEAMS;
   const board = draftState.cosmic_board ?? NO_COSMIC_BOARD;
   const lambda = draftState.settings?.chaos_lambda ?? DEFAULT_CHAOS_LAMBDA;
   const byId = useMemo(() => new Map(board.map((p) => [String(p.id), p])), [board]);
   const me = teams.find((t) => t.is_user);
-  const ratings = useMemo(() => computeTeamOracles(teams, board, lambda), [teams, board, lambda]);
-  const ranked = useMemo(
-    () => [...ratings].sort((a, b) => b[rankBy] - a[rankBy]),
-    [ratings, rankBy],
-  );
-  const mine = ratings.find((r) => r.team.is_user);
   const [selected, setSelected] = useState<number | undefined>(undefined);
   const team = teams.find((t) => t.roster_id === (selected ?? me?.roster_id)) ?? teams[0];
   const slots = (draftState.settings?.roster_positions || (draftState as any).roster_positions || []).filter(
@@ -192,64 +104,19 @@ export const LeagueScreen: React.FC = () => {
         </span>
         <h2 className="font-serif text-2xl sm:text-3xl font-bold text-slate-100 tracking-wide">League</h2>
         <p className="text-xs text-slate-400 font-sans">
-          Every team&apos;s current starting lineup, rated by your Oracle: stats and Stars blended at λ{' '}
-          {lambda.toFixed(2)} with your star weights.{' '}
+          Every team ranked by your celestial metrics. They follow your star weights and λ:{' '}
           <button
             type="button"
             onClick={() => window.dispatchEvent(new Event('oneiromancy:open-oracle'))}
             className="text-purple-300 underline hover:text-purple-200"
           >
-            Adjust the Oracle
+            adjust them
           </button>
+          .
         </p>
       </div>
 
-      <section aria-labelledby="league-oracle-heading" className="flex flex-col gap-3">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <h3 id="league-oracle-heading" className="font-serif text-xl font-bold text-slate-100">
-            Oracle rankings
-          </h3>
-          <div role="group" aria-label="Rank teams by" className="flex gap-1">
-            {(Object.keys(RANK_LABEL) as RankBy[]).map((k) => (
-              <button
-                key={k}
-                type="button"
-                aria-pressed={rankBy === k}
-                onClick={() => setRankBy(k)}
-                className={`px-2.5 py-1 rounded-lg text-[11px] font-mono border ${
-                  rankBy === k
-                    ? 'border-purple-400 bg-purple-950/60 text-purple-100'
-                    : 'border-white/10 text-slate-400 hover:text-slate-200'
-                }`}
-              >
-                {RANK_LABEL[k]}
-              </button>
-            ))}
-          </div>
-        </div>
-        {ranked.length === 0 ? (
-          <p className="p-4 rounded-xl bg-slate-900/70 border border-white/10 text-sm text-slate-300">
-            No lineups to rate yet. Lineups appear once rosters have starters.
-          </p>
-        ) : (
-          <ol className="flex flex-col gap-2" data-testid="league-oracle-rankings">
-            {ranked.map((r, i) => (
-              <OracleRow
-                key={r.team.roster_id}
-                r={r}
-                rank={i + 1}
-                mine={mine}
-                lambda={lambda}
-                selected={r.team.roster_id === team?.roster_id}
-                onSelect={() => {
-                  setSelected(r.team.roster_id);
-                  document.getElementById('league-rosters-heading')?.scrollIntoView({ behavior: 'smooth' });
-                }}
-              />
-            ))}
-          </ol>
-        )}
-      </section>
+      <CelestialLeaderboardGraph competitorTeams={teams} cosmicBoard={board} userSlot={me?.slot ?? 1} />
 
       <section aria-labelledby="league-rosters-heading" className="flex flex-col gap-3">
         <div className="flex flex-wrap items-baseline justify-between gap-2">
@@ -260,6 +127,11 @@ export const LeagueScreen: React.FC = () => {
             Competitor Rosters · by Oracle
           </span>
         </div>
+        <p className="text-[11px] text-slate-400 font-sans -mt-1">
+          <span className="text-purple-200 font-mono">Oracle</span> blends a player&apos;s projected points with
+          this week&apos;s Stars, weighted by your λ ({lambda.toFixed(2)}): Oracle = (1 − λ) × Stats + λ × Stars.
+          It&apos;s the score behind the lineup, waiver and trade picks.
+        </p>
         <label className="flex items-center gap-2 text-xs font-mono text-slate-400">
           Team
           <select

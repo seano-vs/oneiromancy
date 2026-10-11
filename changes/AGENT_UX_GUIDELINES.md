@@ -37,6 +37,9 @@ What that means in practice:
   ("carefully determined"). Never change either without being asked. Read
   them from `DEFAULT_CHAOS_LAMBDA` and `DEFAULT_ORACLE_WEIGHTS` in
   `core/lib/scoring.ts`; never hard-code a λ.
+- **Every number on screen is explained where it appears.** A score the page
+  never defines (e.g. a bare "Oracle 66.7") reads as noise. Name it and give
+  its formula or a one-line meaning next to it, or don't show it.
 - **Don't substitute your own product judgment for the mission.** When a
   design choice is unclear, choose the option that puts the owner's metrics
   first. "Users expect standings" or "projections are what people know" are
@@ -127,9 +130,12 @@ behind a disclosure.
     rounded value that's displayed. The brand accent is never a status color.
 12. **Legends match the UI exactly.** Every tier a component can render
     appears in its legend, with the same name, thresholds and color.
-13. **Don't alarm about non-problems.** A first-place team never wears a red
-    "At Risk" badge. Show celestial tiers on standings as quiet secondary
-    information.
+13. **Keep the owner's original celestial screens.** The owner prefers the
+    original Celestial Leaderboard (Overall / Spirit / Draft / Harmony tabs,
+    medals, colored verdict chips, slot labels) to any redesign: "look at how
+    visually clean and colored the original was." Its tier chips stay as
+    designed. Don't restyle or replace an original screen without asking;
+    propose the change instead.
 
 ## 4. Copy
 

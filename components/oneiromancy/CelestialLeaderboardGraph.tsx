@@ -23,7 +23,7 @@ import { CompetitorTeam, CosmicPlayer } from '@/types/oneiromancy';
 import { calculateTeamCelestialMetrics } from '@/lib/scoring';
 import { Trophy, ChevronDown, ChevronUp } from 'lucide-react';
 
-export type LeaderboardMetric = 'standings' | 'overall' | 'spirit' | 'draft' | 'harmony';
+export type LeaderboardMetric = 'overall' | 'spirit' | 'draft' | 'harmony';
 
 export interface CelestialLeaderboardGraphProps {
   competitorTeams: CompetitorTeam[];
@@ -38,10 +38,7 @@ export const CelestialLeaderboardGraph: React.FC<CelestialLeaderboardGraphProps>
   userSlot,
   className = '',
 }) => {
-  const hasRecords = competitorTeams.some((t) => typeof t.wins === 'number');
-  const [selectedMetric, setMetric] = useState<LeaderboardMetric | null>(null);
-  const metric: LeaderboardMetric =
-    selectedMetric ?? (hasRecords ? 'standings' : 'overall');
+  const [metric, setMetric] = useState<LeaderboardMetric>('overall');
   const [showAllTeams, setShowAllTeams] = useState<boolean>(true);
 
   // Compute deterministic metrics for every team (strictly invariant to active user)
@@ -55,16 +52,7 @@ export const CelestialLeaderboardGraph: React.FC<CelestialLeaderboardGraphProps>
       let displayValue = metrics.compositeScore.toFixed(1);
       let metricUnit = 'PTS';
 
-      if (metric === 'standings') {
-        const w = team.wins ?? 0;
-        const l = team.losses ?? 0;
-        const t = team.ties ?? 0;
-        const pf = team.points_for ?? 0;
-        // Wins first, ties as half a win, then points for as the tiebreaker.
-        value = (w + t / 2) * 100000 + pf;
-        displayValue = `${w}-${l}${t ? `-${t}` : ''} · ${pf.toFixed(1)} PF`;
-        metricUnit = 'RECORD';
-      } else if (metric === 'spirit') {
+      if (metric === 'spirit') {
         value = metrics.spiritScore;
         displayValue = metrics.spiritScore.toFixed(1);
         metricUnit = 'SPIRIT';
@@ -149,33 +137,19 @@ export const CelestialLeaderboardGraph: React.FC<CelestialLeaderboardGraphProps>
           </div>
           <div>
             <h3 className="font-serif text-lg font-bold text-slate-100 flex items-center gap-2">
-              <span>Standings</span>
+              <span>Celestial Leaderboard & Standings</span>
               <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-amber-950/80 border border-amber-500/40 text-amber-300 font-normal">
                 12-TEAM MATRIX
               </span>
             </h3>
             <p className="text-[11px] font-sans text-slate-400">
-              Records and points from Sleeper. Other tabs rank teams by their roster&apos;s Oracle metrics.
+              Comparative astrological rankings across Spirit, Draft, and Harmony metrics.
             </p>
           </div>
         </div>
 
         {/* Metric Selector Pills */}
         <div className="flex items-center gap-1 p-1 rounded-lg bg-slate-950/80 border border-white/10 text-xs font-mono self-stretch sm:self-auto justify-between sm:justify-start">
-          {hasRecords && (
-            <button
-              type="button"
-              data-testid="leaderboard-toggle-standings"
-              onClick={() => setMetric('standings')}
-              className={`px-2.5 py-1 rounded text-[11px] transition-all font-bold ${
-                metric === 'standings'
-                  ? 'bg-amber-500 text-slate-950 shadow-[0_0_8px_rgba(245,158,11,0.4)]'
-                  : 'text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              Standings
-            </button>
-          )}
           <button
             type="button"
             data-testid="leaderboard-toggle-overall"
@@ -271,11 +245,9 @@ export const CelestialLeaderboardGraph: React.FC<CelestialLeaderboardGraphProps>
                   />
 
                   <div className="truncate flex items-center gap-1.5 min-w-0">
-                    {!hasRecords && (
-                      <span className="text-[10px] text-slate-500 font-mono shrink-0">
-                        Slot {item.slotNum}
-                      </span>
-                    )}
+                    <span className="text-[10px] text-slate-500 font-mono shrink-0">
+                      Slot {item.slotNum}
+                    </span>
                     <span
                       className={`font-bold truncate ${
                         item.isUser
@@ -299,17 +271,18 @@ export const CelestialLeaderboardGraph: React.FC<CelestialLeaderboardGraphProps>
 
                 {/* Score & Verdict Badges */}
                 <div className="flex items-center gap-2 shrink-0">
-                  {/* Spirit as quiet secondary information, never a warning */}
                   <span
-                    title={item.metrics.verdict}
-                    className="hidden sm:flex items-center gap-1.5 text-[10px] font-mono text-slate-400 whitespace-nowrap">
-                    Spirit {item.metrics.spiritScore.toFixed(1)}
-                    <span className="w-10 h-1 rounded bg-slate-800 overflow-hidden">
-                      <span
-                        className="block h-full bg-purple-400/70"
-                        style={{ width: `${Math.max(0, Math.min(100, (item.metrics.spiritScore - 50) * 2))}%` }}
-                      />
-                    </span>
+                    className={`text-[9px] px-1.5 py-0.5 rounded-full border whitespace-nowrap hidden sm:inline ${
+                      item.metrics.tier === 'Favorable'
+                        ? 'bg-emerald-950/60 border-emerald-500/30 text-emerald-300'
+                        : item.metrics.tier === 'Volatile'
+                        ? 'bg-amber-950/60 border-amber-500/30 text-amber-300'
+                        : item.metrics.tier === 'Discordant'
+                        ? 'bg-rose-950/60 border-rose-500/30 text-rose-300'
+                        : 'bg-sky-950/60 border-sky-500/30 text-sky-300'
+                    }`}
+                  >
+                    {item.metrics.verdict}
                   </span>
 
                   <span

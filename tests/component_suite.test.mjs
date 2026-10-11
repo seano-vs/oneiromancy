@@ -524,13 +524,14 @@ describe('Tier 8: React Component RTL Iteration & UI Suite', () => {
       assert.ok(screen.getByText('Your moves'), 'Must lead with the ranked weekly moves');
     });
 
-    test('8.4.6 LeagueScreen should lead with Oracle rankings, not Sleeper standings', () => {
+    test('8.4.6 LeagueScreen should lead with the Celestial Leaderboard, not Sleeper standings', () => {
       render(
         jsx(OneiromancyProvider, { initialDraftState: testDraftState }, jsx(LeagueScreen, {}))
       );
 
-      assert.ok(screen.getByText('Oracle rankings'), 'Must render Oracle rankings');
-      assert.equal(screen.queryByText('Standings'), null, 'Must not lead with Sleeper standings');
+      assert.ok(screen.getByText('Celestial Leaderboard & Standings'), 'Must render the Celestial Leaderboard');
+      assert.ok(screen.getByTestId('leaderboard-toggle-overall'), 'Must offer the Overall ranking');
+      assert.equal(screen.queryByTestId('leaderboard-toggle-standings'), null, 'Must not offer a Sleeper standings view');
       assert.ok(screen.getByText('Competitor Rosters · by Oracle'), 'Must render competitor rosters section');
     });
 
