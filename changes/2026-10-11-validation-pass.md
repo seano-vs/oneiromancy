@@ -8,7 +8,7 @@ then update these docs. This log covers that pass.
 | --- | --- |
 | `e8d1986` | Tests: tiers 1–4 run again; stale UI checks updated; new Tier 10; original visual details restored |
 | `b304688` | Matchups: no constant "Astral Alignment: Aligned" on past weeks |
-| (this commit) | Docs: `ARCHITECTURE.md`, `DECISIONS.md`, this log, `README.md`, status notes on older logs, guidelines |
+| `066b1ed` | Docs: `ARCHITECTURE.md`, `DECISIONS.md`, this log, `README.md`, status notes on older logs, guidelines |
 
 ## 1. Tests
 
