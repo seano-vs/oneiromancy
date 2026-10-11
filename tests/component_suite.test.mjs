@@ -518,8 +518,11 @@ describe('Tier 8: React Component RTL Iteration & UI Suite', () => {
       );
 
       assert.ok(screen.getByText('Ideal Team & League Telemetry'), 'Must render screen title');
-      assert.ok(screen.getByText('Weekly Matchup & Start/Sit Oracle'), 'Must render matchup section');
-      assert.ok(screen.getByText('Week 2'), 'Must default to Week 2 matchup badge');
+      assert.ok(
+        screen.getByText('Team Celestial Telemetry & Astral Favorability Index'),
+        'Must lead with the team celestial telemetry'
+      );
+      assert.equal(screen.queryByText('Weekly Matchup & Start/Sit Oracle'), null, 'The redundant matchup card is gone');
       assert.ok(screen.getByText(/SolarFlare/i), 'Must show Week 2 opponent SolarFlare');
       assert.ok(screen.getByText('Your moves'), 'Must lead with the ranked weekly moves');
     });

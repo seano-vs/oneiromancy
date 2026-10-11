@@ -101,7 +101,7 @@ function OneiromancyApp() {
               <h2 id="matchup-details-heading" className="font-serif text-xl font-bold text-slate-100">
                 Matchup details
               </h2>
-              <MatchupsScreen embedded />
+              <MatchupsScreen embedded part="details" />
             </section>
           </div>
         )}

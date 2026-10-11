@@ -18,7 +18,6 @@
 
 import GlassCard from '@/components/common/GlassCard';
 import PositionalBadge from '@/components/common/PositionalBadge';
-import UserAvatar from '@/components/common/UserAvatar';
 import PlayerDetailModal from '@/components/modals/PlayerDetailModal';
 import AscensionTimeline from '@/components/oneiromancy/AscensionTimeline';
 import CelestialLeaderboardGraph from '@/components/oneiromancy/CelestialLeaderboardGraph';
@@ -30,11 +29,10 @@ import {
 } from '@/lib/mockData';
 import {deriveWeeklyMatchup, getSeasonContext} from '@/lib/sleeper';
 import WeeklyMoves from '@/components/oneiromancy/WeeklyMoves';
-import {TONE_PILL, computeTeamOracles, favorabilityTone, starsScore, statsPoints} from '@/lib/oracle';
-import {DEFAULT_CHAOS_LAMBDA as ORACLE_DEFAULT_LAMBDA} from '@/lib/scoring';
+import MatchupsScreen from '@/components/screens/MatchupsScreen';
+import {TONE_PILL, favorabilityTone, starsScore, statsPoints} from '@/lib/oracle';
 import {
   calculateTeamCelestialMetrics,
-  calculateWinProbability,
   classifySpiritScoreTier,
   computeRosterHarmony,
 } from '@/lib/scoring';
@@ -47,7 +45,6 @@ import {
   WeeklyMatchup,
 } from '@/types/oneiromancy';
 import {
-  Activity,
   ArrowRight,
   Calendar,
   CheckCircle2,
@@ -58,7 +55,6 @@ import {
   Info,
   Shield,
   Sparkles,
-  Swords,
   TrendingUp,
   Trophy,
   Users,
@@ -135,17 +131,6 @@ export const OneiromancyDashboard: React.FC<OneiromancyDashboardProps> = ({
     draftState?.settings?.user_slot,
     draftState?.isLive,
   ]);
-
-  // The matchup headline is each lineup's Oracle at the user's λ and weights.
-  const oracleLambda = draftState?.settings?.chaos_lambda ?? ORACLE_DEFAULT_LAMBDA;
-  const matchupOracles = useMemo(() => {
-    const ratings = computeTeamOracles(draftState?.competitor_teams ?? [], cosmicBoard, oracleLambda);
-    const find = (rid?: number) => ratings.find((r) => r.team.roster_id === rid);
-    return {
-      user: find(weeklyMatchup?.user_team?.roster_id),
-      opp: find(weeklyMatchup?.opponent_team?.roster_id),
-    };
-  }, [draftState?.competitor_teams, cosmicBoard, oracleLambda, weeklyMatchup]);
 
   // Compute roster telemetry
   const rosteredPlayers = useMemo(() => {
@@ -359,176 +344,10 @@ export const OneiromancyDashboard: React.FC<OneiromancyDashboardProps> = ({
         </p>
       </div>
 
+      {/* This week's team comparison: head-to-head and celestial telemetry */}
+      {weeklyMatchup && <MatchupsScreen embedded part="comparison" />}
+
       <WeeklyMoves />
-
-      {/* 1. Weekly Matchup & Start/Sit Oracle Summary */}
-      {weeklyMatchup && (
-        <GlassCard
-          variant="panel"
-          className="p-4 sm:p-6 space-y-4 border-cyan-500/30 shadow-[0_0_20px_rgba(6,182,212,0.1)]">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b border-white/10 pb-3">
-            <div className="flex items-center gap-2">
-              <Swords className="w-5 h-5 text-cyan-400" />
-              <div>
-                <h3 className="font-serif text-lg font-bold text-slate-100 flex items-center gap-2">
-                  <span>Weekly Matchup & Start/Sit Oracle</span>
-                  <span className="text-xs font-mono font-normal px-2 py-0.5 rounded bg-cyan-950/80 border border-cyan-500/30 text-cyan-300">
-                    Week {weeklyMatchup.week}
-                  </span>
-                </h3>
-                <p className="text-[11px] font-sans text-slate-400">
-                  {weeklyMatchup.opponent_team.team_name} · {weeklyMatchup.date_range || `Week ${weeklyMatchup.week}`}
-                </p>
-              </div>
-            </div>
-            <span className="text-xs font-mono text-emerald-400 bg-emerald-950/60 border border-emerald-500/30 px-2.5 py-1 rounded-full flex items-center gap-1.5">
-              <Activity className="w-3 h-3 animate-pulse" />
-              MATCHUP #{weeklyMatchup.matchup_id} ACTIVE
-            </span>
-          </div>
-
-          {/* Matchup Duel Head-to-Head Banner */}
-          <div className="grid grid-cols-1 sm:grid-cols-7 gap-3 items-center bg-slate-950/60 p-4 rounded-xl border border-white/5">
-            {/* User Team */}
-            <div className="sm:col-span-3 flex items-center gap-3 p-2 rounded-lg bg-cyan-950/30 border border-cyan-500/30">
-              <UserAvatar
-                src={weeklyMatchup.user_team.avatar_url}
-                alt={`${weeklyMatchup.user_team.team_name} avatar`}
-                fallbackText={weeklyMatchup.user_team.team_name}
-                size="lg"
-                isUser={true}
-                testId="matchup-summary-user-avatar"
-                data-testid="matchup-summary-user-avatar"
-              />
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-1.5">
-                  <span className="font-serif font-bold text-sm text-cyan-200 truncate">
-                    {weeklyMatchup.user_team.team_name}
-                  </span>
-                  <span className="text-[9px] font-mono uppercase px-1 rounded bg-cyan-500/20 text-cyan-300 border border-cyan-500/40">
-                    YOU
-                  </span>
-                </div>
-                <div className="text-[11px] font-mono text-slate-400 truncate">
-                  Mgr: {weeklyMatchup.user_team.owner_name}
-                </div>
-                {matchupOracles.user && (
-                  <div className="text-lg font-mono font-bold text-cyan-400 mt-0.5 leading-tight">
-                    {matchupOracles.user.oracle.toFixed(1)}{' '}
-                    <span className="text-[10px] text-slate-400 font-normal">Oracle lineup</span>
-                  </div>
-                )}
-                <div className="text-[11px] font-mono text-slate-400">
-                  {typeof weeklyMatchup.team_comparison?.user_astral_favorability === 'number' && (
-                    <span className="text-purple-200">
-                      Stars {weeklyMatchup.team_comparison.user_astral_favorability.toFixed(1)} ·{' '}
-                    </span>
-                  )}
-                  {weeklyMatchup.user_team.projected_points.toFixed(2)} proj pts
-                </div>
-                {weeklyMatchup.status === 'active' && weeklyMatchup.score_user !== undefined && (
-                  <div className="text-[11px] font-mono text-emerald-300">
-                    Live: {weeklyMatchup.score_user.toFixed(2)}
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* VS Badge & Dynamic Win Probability */}
-            {(() => {
-              const winProbData = calculateWinProbability(
-                weeklyMatchup.user_team.projected_points,
-                weeklyMatchup.opponent_team.projected_points,
-                weeklyMatchup.user_team.harmony_score,
-                weeklyMatchup.opponent_team.harmony_score,
-              );
-              const winProb =
-                weeklyMatchup.win_probability ?? winProbData.winProbability;
-              const winProbLabel =
-                weeklyMatchup.win_probability_label ??
-                winProbData.favorabilityLabel;
-              const isFavorite = winProb >= 50.0;
-
-              return (
-                <div className="sm:col-span-1 flex flex-col items-center justify-center text-center py-1">
-                  <span className="text-xs font-serif font-bold text-slate-400 px-2 py-1 rounded-full bg-slate-900 border border-white/10">
-                    VS
-                  </span>
-                  <div className="mt-1 flex flex-col items-center gap-0.5">
-                    <span
-                      className={`text-xs font-mono font-bold ${isFavorite ? 'text-emerald-400' : 'text-purple-400'}`}>
-                      {winProb.toFixed(1)}% Win Prob
-                    </span>
-                    <span className="text-[8px] font-mono uppercase tracking-wider text-cyan-300 font-semibold px-1 rounded bg-cyan-950/80 border border-cyan-500/30 max-w-[110px] truncate text-center block">
-                      {winProbLabel}
-                    </span>
-                    {/* Visual Probability Bar Gauge */}
-                    <div className="w-16 h-1.5 bg-slate-800 rounded-full overflow-hidden mt-1 border border-white/10">
-                      <div
-                        className={`h-full rounded-full transition-all duration-500 ${
-                          isFavorite
-                            ? 'bg-gradient-to-r from-cyan-500 to-emerald-400'
-                            : 'bg-gradient-to-r from-purple-500 to-rose-400'
-                        }`}
-                        style={{
-                          width: `${Math.min(Math.max(winProb, 5), 95)}%`,
-                        }}
-                      />
-                    </div>
-                  </div>
-                </div>
-              );
-            })()}
-
-            {/* Opponent Team */}
-            <div className="sm:col-span-3 flex items-center gap-3 p-2 rounded-lg bg-slate-900/40 border border-white/10">
-              <UserAvatar
-                src={weeklyMatchup.opponent_team.avatar_url}
-                alt={`${weeklyMatchup.opponent_team.team_name} avatar`}
-                fallbackText={weeklyMatchup.opponent_team.team_name}
-                size="lg"
-                isUser={false}
-                testId="matchup-summary-opp-avatar"
-                data-testid="matchup-summary-opp-avatar"
-              />
-              <div className="min-w-0 flex-1">
-                <div className="font-serif font-bold text-sm text-slate-200 truncate">
-                  {weeklyMatchup.opponent_team.team_name}
-                </div>
-                <div className="text-[11px] font-mono text-slate-400 truncate">
-                  Mgr: {weeklyMatchup.opponent_team.owner_name}
-                </div>
-                {matchupOracles.opp && (
-                  <div className="text-lg font-mono font-bold text-purple-300 mt-0.5 leading-tight">
-                    {matchupOracles.opp.oracle.toFixed(1)}{' '}
-                    <span className="text-[10px] text-slate-400 font-normal">Oracle lineup</span>
-                  </div>
-                )}
-                <div className="text-[11px] font-mono text-slate-400">
-                  {typeof weeklyMatchup.team_comparison?.opponent_astral_favorability === 'number' && (
-                    <span className="text-purple-200">
-                      Stars {weeklyMatchup.team_comparison.opponent_astral_favorability.toFixed(1)} ·{' '}
-                    </span>
-                  )}
-                  {weeklyMatchup.opponent_team.projected_points.toFixed(2)} proj pts
-                </div>
-                {weeklyMatchup.status === 'active' && weeklyMatchup.score_opponent !== undefined && (
-                  <div className="text-[11px] font-mono text-emerald-300">
-                    Live: {weeklyMatchup.score_opponent.toFixed(2)}
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-
-          <a
-            href="#matchup-details-heading"
-            className="self-start text-xs font-mono text-cyan-300 hover:underline"
-          >
-            Player-by-player matchup details ↓
-          </a>
-        </GlassCard>
-      )}
 
       {/* 4. Team harmony: one card; the header toggles the body open in place */}
       <section className="rounded-xl bg-slate-900/70 border border-white/10 overflow-hidden">

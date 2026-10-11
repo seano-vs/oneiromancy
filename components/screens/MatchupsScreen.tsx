@@ -68,14 +68,22 @@ export interface MatchupsScreenProps {
   className?: string;
   /** Rendered under This Week: no page title, explainer collapsed. */
   embedded?: boolean;
+  /**
+   * 'comparison': only the team comparison card (head-to-head banner and
+   * celestial telemetry). 'details': everything except that card.
+   */
+  part?: 'all' | 'comparison' | 'details';
 }
 
 export const MatchupsScreen: React.FC<MatchupsScreenProps> = ({
   weeklyMatchup: propWeeklyMatchup,
   className = '',
   embedded = false,
+  part = 'all',
 }) => {
   const context = useOneiromancy();
+  const showComparison = part !== 'details';
+  const showDetails = part !== 'comparison';
   const resolveActiveMatchupWeek = useCallback(() => {
     if (propWeeklyMatchup?.week) return propWeeklyMatchup.week;
     if (context.draftState?.weekly_matchup?.week) {
@@ -597,7 +605,7 @@ export const MatchupsScreen: React.FC<MatchupsScreenProps> = ({
     <div
       className={`flex flex-col gap-6 w-full max-w-5xl mx-auto ${className}`}>
       {/* Title (standalone only) */}
-      {!embedded && (
+      {!embedded && showDetails && (
         <div className="space-y-1">
           <span className="text-[10px] font-mono uppercase tracking-widest text-purple-300/80">
             Celestial Matchup Divination
@@ -609,6 +617,8 @@ export const MatchupsScreen: React.FC<MatchupsScreenProps> = ({
         </div>
       )}
 
+      {showDetails && (
+      <>
       {/* How favorability works: one disclosure, matching the actual formula */}
       <details className="group rounded-xl border border-white/10 bg-slate-950/70 text-xs">
         <summary className="cursor-pointer list-none p-3 flex items-center justify-between gap-2 font-mono text-cyan-300">
@@ -687,7 +697,11 @@ export const MatchupsScreen: React.FC<MatchupsScreenProps> = ({
         </div>
       </div>
 
+      </>
+      )}
+
       {/* Team Celestial Comparison Card */}
+      {showComparison && (
       <GlassCard
         variant="panel"
         className="p-5 sm:p-6 space-y-6 border-cyan-500/30 shadow-[0_0_25px_rgba(6,182,212,0.12)]">
@@ -1283,7 +1297,10 @@ export const MatchupsScreen: React.FC<MatchupsScreenProps> = ({
           })()}
         </div>
       </GlassCard>
+      )}
 
+      {showDetails && (
+      <>
       {/* Player-Level Stadium & Date Favorability Breakdown */}
       <div className="space-y-4">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
@@ -1521,6 +1538,8 @@ export const MatchupsScreen: React.FC<MatchupsScreenProps> = ({
             })}
           </div>
         </GlassCard>
+      )}
+      </>
       )}
     </div>
   );
