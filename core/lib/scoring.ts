@@ -239,8 +239,16 @@ export function recomputeDraftScores(
   const len = players.length;
   const result = new Array<CosmicPlayer>(len);
 
+  const weights = settings?.oracle_weights;
   for (let i = 0; i < len; i++) {
-    const p = players[i];
+    const src = players[i];
+    // Spirit is the owner's star weights applied to the divination breakdown,
+    // so changing a weight must change every player's Spirit (and Stars).
+    const spirit =
+      weights && src.divination_breakdown
+        ? computeSpiritScore(src.divination_breakdown, weights)
+        : src.spirit_score;
+    const p = spirit === src.spirit_score ? src : { ...src, spirit_score: spirit };
     const blended = oneMinusLambda * p.vor_normalized + lambda * p.spirit_score;
     const draftScore =
       blended < 0.0
@@ -1302,9 +1310,32 @@ export function recomputeDraftState(
         };
       },
     );
+    // Team astral favorability is the mean Stars of each side's starters, so
+    // it follows the owner's weights too.
+    const meanStars = (isUser: boolean): number | undefined => {
+      const xs = recomputedFavs
+        .filter((f) => Boolean(f.is_user_team) === isUser && !f.is_benched)
+        .map((f) => Number(f.favorability_score))
+        .filter((n) => Number.isFinite(n));
+      return xs.length ? Math.round((xs.reduce((a, n) => a + n, 0) / xs.length) * 10) / 10 : undefined;
+    };
+    const comparison = state.weekly_matchup.team_comparison;
+    const userStars = meanStars(true);
+    const oppStars = meanStars(false);
     recomputedMatchup = {
       ...state.weekly_matchup,
       player_favorabilities: recomputedFavs,
+      team_comparison: comparison
+        ? {
+            ...comparison,
+            ...(userStars !== undefined
+              ? { user_astral_favorability: userStars, user_favorability_index: userStars }
+              : {}),
+            ...(oppStars !== undefined
+              ? { opponent_astral_favorability: oppStars, opponent_favorability_index: oppStars }
+              : {}),
+          }
+        : comparison,
     };
   }
 

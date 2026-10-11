@@ -4,16 +4,50 @@ Read this before changing anything user-facing in this repo. It distills two
 audits of the live app (`2026-10-10-live-site-audit.md` and
 `2026-10-10-ux-review.html`). Each rule exists because the app once broke it.
 
+## The mission (from the owner; this overrides everything else here)
+
+> "This apps job is to tell me an overall players advantage based on the
+> scoring metrics WE set. Stop defaulting to what you think is best and stick
+> to my mission."
+>
+> "When I go to the league page, it defaults to standings. I CAN ALREADY SEE
+> THIS INFORMATION ON THE SLEEPER APP. THIS PROVIDES ME LESS VALUE THEN JUST
+> GOING TO THE APP ITSELF."
+>
+> "The chaos gauge or whatever it's called isn't there for aesthetics."
+
+What that means in practice:
+
+- **The value is the owner's scoring model, not Sleeper's data.** The model
+  is the Oracle: Stats and Stars blended by the chaos λ, with Stars shaped
+  by the owner's star weights (the chaos dial). Every player and every team
+  is judged by it.
+- **The chaos dial is a control, not decoration.** λ and the star weights
+  must change what the app ranks and recommends, and they must persist
+  across syncs and reloads. If moving them changes nothing on a screen, that
+  screen is broken. (This happened: the weights were saved but never
+  applied, and a reload reset them. Test it in a browser every time.)
+- **Never default a view to something Sleeper already shows** (standings,
+  records, points for, raw projections, the schedule). Sleeper data may
+  appear as small, secondary context next to the Oracle rating, never as
+  the headline, the default tab, or the sort order.
+- **Don't substitute your own product judgment for the mission.** When a
+  design choice is unclear, choose the option that puts the owner's metrics
+  first. "Users expect standings" or "projections are what people know" are
+  not reasons; ask instead of guessing.
+
 ## The product in one sentence
 
-Oneiromancy helps a Sleeper fantasy football manager **acquire and position
-players** using celestial standings. In season, every screen must serve one of
-the manager's four weekly calls:
+Oneiromancy rates every player and team by the owner's own scoring model
+(the Oracle) so a Sleeper manager can **acquire and position players** by
+it. In season, every screen must serve one of the manager's four weekly
+calls, each answered in Oracle terms:
 
-1. **Who do I start?** (positioning: lineup)
-2. **Who do I add or drop?** (acquiring: waivers)
-3. **Who do I trade with?** (acquiring: trades)
-4. **Where do I stand?** (context: standings, matchups, byes)
+1. **Who do I start?** (positioning: lineup by Oracle)
+2. **Who do I add or drop?** (acquiring: waivers by Oracle gain)
+3. **Who do I trade with?** (acquiring: trades by mutual Oracle gain)
+4. **Where do I stand?** (every team's lineup rated by Oracle, not the
+   Sleeper standings)
 
 If a feature doesn't help answer one of these, it doesn't ship, or it goes
 behind a disclosure.
@@ -131,4 +165,7 @@ behind a disclosure.
       a concrete move (players, slot, reason) without acting on Sleeper.
 - [ ] Every player value shown carries Stars and Oracle, and every ranking
       or "would start" comparison uses Oracle, not projected points.
+- [ ] No screen or tab defaults to information the Sleeper app already shows.
+- [ ] Moving λ and a star weight in the Oracle panel visibly changes the
+      ratings and order on every screen you touched (checked in a browser).
 - [ ] A `changes/` entry records what changed, why, and how it was verified.

@@ -77,6 +77,33 @@ import {
 // ============================================================================
 
 
+
+const ORACLE_STORAGE_KEY = 'oneiromancy_oracle';
+
+function saveOracleSettings(v: { chaos_lambda?: number; oracle_weights?: OracleWeights }): void {
+  try {
+    localStorage.setItem(ORACLE_STORAGE_KEY, JSON.stringify(v));
+  } catch {
+    // Storage may be unavailable (private mode); the session still works.
+  }
+}
+
+function loadOracleSettings(): { chaos_lambda?: number; oracle_weights?: OracleWeights } | null {
+  try {
+    const raw = localStorage.getItem(ORACLE_STORAGE_KEY);
+    if (!raw) return null;
+    const v = JSON.parse(raw);
+    const out: { chaos_lambda?: number; oracle_weights?: OracleWeights } = {};
+    if (typeof v?.chaos_lambda === 'number') out.chaos_lambda = clamp(v.chaos_lambda, 0, 1);
+    if (v?.oracle_weights && typeof v.oracle_weights === 'object') {
+      out.oracle_weights = normalizeOracleWeights(v.oracle_weights);
+    }
+    return Object.keys(out).length ? out : null;
+  } catch {
+    return null;
+  }
+}
+
 /** Keep a harmony breakdown only while it still adds up to the shown score. */
 function harmonyPartsIfMatching(
   parts: { label: string; points: number }[] | undefined,
@@ -317,6 +344,7 @@ export const OneiromancyProvider: React.FC<OneiromancyProviderProps> = ({
   const updateChaosLambda = useCallback((rawLambda: number) => {
     const lambda = clamp(rawLambda, 0.0, 1.0);
     setDraftState((prev) => {
+      saveOracleSettings({ chaos_lambda: lambda, oracle_weights: prev.settings.oracle_weights });
       return recomputeDraftState(prev, { chaos_lambda: lambda });
     });
   }, []);
@@ -329,6 +357,7 @@ export const OneiromancyProvider: React.FC<OneiromancyProviderProps> = ({
       const currentWeights = prev.settings.oracle_weights ?? DEFAULT_ORACLE_WEIGHTS;
       const mergedWeights = { ...currentWeights, ...weights };
       const normWeights = normalizeOracleWeights(mergedWeights);
+      saveOracleSettings({ chaos_lambda: prev.settings.chaos_lambda, oracle_weights: normWeights });
       return recomputeDraftState(prev, { oracle_weights: normWeights });
     });
   }, []);
@@ -532,6 +561,14 @@ export const OneiromancyProvider: React.FC<OneiromancyProviderProps> = ({
         weekly_matchup: updatedMatchup,
       };
     });
+  }, []);
+
+  // Restore the owner's Oracle (λ and star weights) on mount. They are the
+  // scoring model every screen ranks by, so they must survive a reload.
+  useEffect(() => {
+    const saved = loadOracleSettings();
+    if (!saved) return;
+    setDraftState((prev) => recomputeDraftState(prev, saved));
   }, []);
 
   // Hydrate active persona from localStorage on mount (SSR-safe)

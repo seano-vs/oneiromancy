@@ -562,3 +562,49 @@ export function teamStacks(players: CosmicPlayer[]): string[] {
   });
   return out;
 }
+
+// ---------------------------------------------------------------------------
+// Team ratings (League): every team judged by the user's own metrics
+// ---------------------------------------------------------------------------
+
+export interface TeamOracle {
+  team: CompetitorTeam;
+  /** Mean Oracle of the current starting lineup at the user's λ and weights. */
+  oracle: number;
+  /** Mean Stars of the starters. */
+  stars: number;
+  /** Sum of the starters' projected points. */
+  points: number;
+  starters: CosmicPlayer[];
+  /** Highest- and lowest-Oracle starters, for "why". */
+  best: CosmicPlayer | null;
+  worst: CosmicPlayer | null;
+}
+
+/** Rates every team's current lineup by Oracle, highest first. */
+export function computeTeamOracles(
+  teams: CompetitorTeam[],
+  board: CosmicPlayer[],
+  lambda: number,
+): TeamOracle[] {
+  const byId = new Map(board.map((p) => [String(p.id), p]));
+  const out: TeamOracle[] = [];
+  for (const team of teams) {
+    const starters = (team.starters ?? [])
+      .map((id) => byId.get(String(id)))
+      .filter((p): p is CosmicPlayer => Boolean(p));
+    if (starters.length === 0) continue;
+    const mean = (f: (p: CosmicPlayer) => number) => starters.reduce((a, p) => a + f(p), 0) / starters.length;
+    const ranked = [...starters].sort((a, b) => oracleScore(b, lambda) - oracleScore(a, lambda));
+    out.push({
+      team,
+      oracle: Math.round(mean((p) => oracleScore(p, lambda)) * 10) / 10,
+      stars: Math.round(mean(starsScore) * 10) / 10,
+      points: Math.round(starters.reduce((a, p) => a + statsPoints(p), 0) * 10) / 10,
+      starters,
+      best: ranked[0] ?? null,
+      worst: ranked[ranked.length - 1] ?? null,
+    });
+  }
+  return out.sort((a, b) => b.oracle - a.oracle);
+}

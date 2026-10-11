@@ -30,7 +30,8 @@ import {
 } from '@/lib/mockData';
 import {deriveWeeklyMatchup, getSeasonContext} from '@/lib/sleeper';
 import WeeklyMoves from '@/components/oneiromancy/WeeklyMoves';
-import {TONE_PILL, favorabilityTone, starsScore, statsPoints} from '@/lib/oracle';
+import {TONE_PILL, computeTeamOracles, favorabilityTone, starsScore, statsPoints} from '@/lib/oracle';
+import {DEFAULT_CHAOS_LAMBDA as ORACLE_DEFAULT_LAMBDA} from '@/lib/scoring';
 import {
   calculateTeamCelestialMetrics,
   calculateWinProbability,
@@ -134,6 +135,17 @@ export const OneiromancyDashboard: React.FC<OneiromancyDashboardProps> = ({
     draftState?.settings?.user_slot,
     draftState?.isLive,
   ]);
+
+  // The matchup headline is each lineup's Oracle at the user's λ and weights.
+  const oracleLambda = draftState?.settings?.chaos_lambda ?? ORACLE_DEFAULT_LAMBDA;
+  const matchupOracles = useMemo(() => {
+    const ratings = computeTeamOracles(draftState?.competitor_teams ?? [], cosmicBoard, oracleLambda);
+    const find = (rid?: number) => ratings.find((r) => r.team.roster_id === rid);
+    return {
+      user: find(weeklyMatchup?.user_team?.roster_id),
+      opp: find(weeklyMatchup?.opponent_team?.roster_id),
+    };
+  }, [draftState?.competitor_teams, cosmicBoard, oracleLambda, weeklyMatchup]);
 
   // Compute roster telemetry
   const rosteredPlayers = useMemo(() => {
@@ -400,18 +412,20 @@ export const OneiromancyDashboard: React.FC<OneiromancyDashboardProps> = ({
                 <div className="text-[11px] font-mono text-slate-400 truncate">
                   Mgr: {weeklyMatchup.user_team.owner_name}
                 </div>
-                <div className="text-sm font-mono font-bold text-cyan-400 mt-0.5">
-                  {weeklyMatchup.user_team.projected_points.toFixed(2)}{' '}
-                  <span className="text-[10px] text-slate-400 font-normal">
-                    Proj Pts
-                  </span>
-                </div>
-                {typeof weeklyMatchup.team_comparison?.user_astral_favorability === 'number' && (
-                  <div className="text-[11px] font-mono text-purple-200">
-                    Stars {weeklyMatchup.team_comparison.user_astral_favorability.toFixed(1)}{' '}
-                    <span className="text-slate-500">avg starter</span>
+                {matchupOracles.user && (
+                  <div className="text-lg font-mono font-bold text-cyan-400 mt-0.5 leading-tight">
+                    {matchupOracles.user.oracle.toFixed(1)}{' '}
+                    <span className="text-[10px] text-slate-400 font-normal">Oracle lineup</span>
                   </div>
                 )}
+                <div className="text-[11px] font-mono text-slate-400">
+                  {typeof weeklyMatchup.team_comparison?.user_astral_favorability === 'number' && (
+                    <span className="text-purple-200">
+                      Stars {weeklyMatchup.team_comparison.user_astral_favorability.toFixed(1)} ·{' '}
+                    </span>
+                  )}
+                  {weeklyMatchup.user_team.projected_points.toFixed(2)} proj pts
+                </div>
                 {weeklyMatchup.status === 'active' && weeklyMatchup.score_user !== undefined && (
                   <div className="text-[11px] font-mono text-emerald-300">
                     Live: {weeklyMatchup.score_user.toFixed(2)}
@@ -484,18 +498,20 @@ export const OneiromancyDashboard: React.FC<OneiromancyDashboardProps> = ({
                 <div className="text-[11px] font-mono text-slate-400 truncate">
                   Mgr: {weeklyMatchup.opponent_team.owner_name}
                 </div>
-                <div className="text-sm font-mono font-bold text-purple-300 mt-0.5">
-                  {weeklyMatchup.opponent_team.projected_points.toFixed(2)}{' '}
-                  <span className="text-[10px] text-slate-400 font-normal">
-                    Proj Pts
-                  </span>
-                </div>
-                {typeof weeklyMatchup.team_comparison?.opponent_astral_favorability === 'number' && (
-                  <div className="text-[11px] font-mono text-purple-200">
-                    Stars {weeklyMatchup.team_comparison.opponent_astral_favorability.toFixed(1)}{' '}
-                    <span className="text-slate-500">avg starter</span>
+                {matchupOracles.opp && (
+                  <div className="text-lg font-mono font-bold text-purple-300 mt-0.5 leading-tight">
+                    {matchupOracles.opp.oracle.toFixed(1)}{' '}
+                    <span className="text-[10px] text-slate-400 font-normal">Oracle lineup</span>
                   </div>
                 )}
+                <div className="text-[11px] font-mono text-slate-400">
+                  {typeof weeklyMatchup.team_comparison?.opponent_astral_favorability === 'number' && (
+                    <span className="text-purple-200">
+                      Stars {weeklyMatchup.team_comparison.opponent_astral_favorability.toFixed(1)} ·{' '}
+                    </span>
+                  )}
+                  {weeklyMatchup.opponent_team.projected_points.toFixed(2)} proj pts
+                </div>
                 {weeklyMatchup.status === 'active' && weeklyMatchup.score_opponent !== undefined && (
                   <div className="text-[11px] font-mono text-emerald-300">
                     Live: {weeklyMatchup.score_opponent.toFixed(2)}

@@ -53,6 +53,12 @@ function OneiromancyApp() {
       setTab('oneiromancy');
     }
   }, [activeTab, setTab]);
+  // Screens open the Oracle panel in place, without leaving their tab.
+  useEffect(() => {
+    const open = () => setIsOracleOpen(true);
+    window.addEventListener('oneiromancy:open-oracle', open);
+    return () => window.removeEventListener('oneiromancy:open-oracle', open);
+  }, []);
 
   // In mock mode the settings hold the demo persona; the Live button should
   // still name the user's own saved Sleeper account.
