@@ -1,5 +1,7 @@
 # 2026-10-10: Fixes from the live site audit
 
+> **Status (2026-10-11):** historical log. The Standings tab added here was later removed at the owner's request (Sleeper already shows standings), and the tiers 1–4 "loader bug" was an import-order bug in those test files, fixed on 2026-10-11. See [`ARCHITECTURE.md`](ARCHITECTURE.md) and [`DECISIONS.md`](DECISIONS.md).
+
 Follow-up to `2026-10-10-live-site-audit.md`. Goal: make every data point
 that has a real-world source come from Sleeper, make labels agree with their
 legends, and stop the request storm. Verified in Chromium against a local

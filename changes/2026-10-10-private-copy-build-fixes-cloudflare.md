@@ -1,5 +1,7 @@
 # 2026-10-10: Private copy, build fixes, and Cloudflare Workers deployment
 
+> **Status (2026-10-11):** historical log. The deployment described here is current. The test baseline is not: tiers 1–4 now run and all 457 tests pass, because the "loader bug" was the test files' static imports running before the loader registration. See [`2026-10-11-validation-pass.md`](2026-10-11-validation-pass.md).
+
 This log covers the work that turned this repository from an empty private repo
 into a private copy of [google/oneiromancy](https://github.com/google/oneiromancy)
 that builds from a clean install and deploys as a Cloudflare Worker through

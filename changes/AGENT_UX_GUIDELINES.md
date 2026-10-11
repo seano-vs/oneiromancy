@@ -2,7 +2,10 @@
 
 Read this before changing anything user-facing in this repo. It distills two
 audits of the live app (`2026-10-10-live-site-audit.md` and
-`2026-10-10-ux-review.html`). Each rule exists because the app once broke it.
+`2026-10-10-ux-review.html`) and every correction the owner has made since.
+Each rule exists because the app once broke it. For how the app works today,
+see [`ARCHITECTURE.md`](ARCHITECTURE.md); for who decided what, see
+[`DECISIONS.md`](DECISIONS.md).
 
 ## The mission (from the owner; this overrides everything else here)
 
@@ -55,8 +58,9 @@ calls, each answered in Oracle terms:
 1. **Who do I start?** (positioning: lineup by Oracle)
 2. **Who do I add or drop?** (acquiring: waivers by Oracle gain)
 3. **Who do I trade with?** (acquiring: trades by mutual Oracle gain)
-4. **Where do I stand?** (every team's lineup rated by Oracle, not the
-   Sleeper standings)
+4. **Where do I stand?** (every team ranked by the owner's celestial metrics
+   on the original Celestial Leaderboard: Overall, Spirit, Draft, Harmony.
+   Not the Sleeper standings.)
 
 If a feature doesn't help answer one of these, it doesn't ship, or it goes
 behind a disclosure.
@@ -173,8 +177,13 @@ behind a disclosure.
 
 ## Definition of done for UI changes
 
-- [ ] `npx tsc --noEmit` clean; `npm run build` passes; `npm test` no worse
-      than baseline (see the latest `changes/` log).
+- [ ] `npx tsc --noEmit` clean; `npm run build` passes; **`npm test` all
+      green** (457+ tests across 11 tiers as of 2026-10-11). If a source-level
+      test pins old UI text you changed on purpose, update it to the new
+      behavior with a comment. If you removed a feature, mark the test
+      `REMOVED:` and tell the owner. Never skip, delete or weaken a test to get
+      green.
+- [ ] New logic in `core/lib/` has tests (Tier 10 for the Oracle model).
 - [ ] Opened in a real browser at **1440×900 and 390×844** with a real Sleeper
       account. Every changed control clicked; no console errors; no horizontal
       overflow.
@@ -187,4 +196,10 @@ behind a disclosure.
 - [ ] No screen or tab defaults to information the Sleeper app already shows.
 - [ ] Moving λ and a star weight in the Oracle panel visibly changes the
       ratings and order on every screen you touched (checked in a browser).
-- [ ] A `changes/` entry records what changed, why, and how it was verified.
+- [ ] No celestial value is a constant placeholder; if the data has none,
+      hide it.
+- [ ] Owner defaults (λ 0.75, weights 30/25/20/15/10) are untouched unless the
+      owner asked.
+- [ ] A `changes/` entry records what changed, why, and how it was verified;
+      `DECISIONS.md` has a row for any product decision; `ARCHITECTURE.md`
+      reflects the new state.

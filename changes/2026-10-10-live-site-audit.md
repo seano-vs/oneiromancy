@@ -1,5 +1,7 @@
 # 2026-10-10: Live site audit (one.seance.sh, user McTwerkface)
 
+> **Status (2026-10-11):** historical audit. Its findings were fixed in `2026-10-10-live-site-fixes.md`; the app has since been reworked. See [`ARCHITECTURE.md`](ARCHITECTURE.md).
+
 ## Method
 
 - Drove https://one.seance.sh in headless Chromium (Playwright) at desktop
