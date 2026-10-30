@@ -57,3 +57,9 @@ already contained all of this repo's code), and `changes/` was kept.
 - At 390 px the Roster radar card clips its labels and the thresholds
   panel.
 - `ARCHITECTURE.md` §6 (screens) predates the new tab layout.
+
+## Deploy
+
+The hosting worker's Git connection had been removed, so pushes after the
+merge didn't trigger builds. The owner reconnected it on 2026-10-30; this
+note was pushed to trigger the first build from the reconnected repo.
