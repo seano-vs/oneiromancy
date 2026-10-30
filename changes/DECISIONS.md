@@ -8,6 +8,7 @@ an owner decision, ask.
 
 | # | Date | Decision | By | Status | Details |
 | --- | --- | --- | --- | --- | --- |
+| 34 | 2026-10-30 | Track google/oneiromancy: take upstream's code as-is (including its new default star weights 10/10/25/10/45 and React 18), with only the fixes needed to install and build (ESLint 9, Next 16.4.3 security patch) | **owner** ("pull that in and merge") | current; changes #22's weights | [upstream merge](2026-10-30-upstream-merge.md) |
 | 33 | 2026-10-11 | Matchup cards show real games (kickoff, venue, opponent; computed moon and planetary hour), Harmony is a % everywhere, and element callouts are read from each roster's starters | **owner** | current | [second-user audit § follow-up](2026-10-11-second-user-audit.md) |
 | 32 | 2026-10-11 | Lineup, waiver and trade advice share one best lineup; players whose game has kicked off are never moved; the slot Sleeper resolves from the username always identifies "you" | agent (owner: "use a friend's username… exhaustive analysis") | current | [second-user audit](2026-10-11-second-user-audit.md) |
 | 31 | 2026-10-11 | **One vocabulary**: Stats, Spirit, Stars, Oracle, and the legend's four verdicts, the same on every screen. Every explainer matches the real formula (Stars rows sum to the score, Harmony = 50 + trine + stacks + balance), and numbers that aren't in any score are removed | **owner** ("make sure our wording is consistent") | current | [ux-rework § wording pass](2026-10-10-ux-rework.md) |
@@ -19,7 +20,7 @@ an owner decision, ask.
 | 25 | 2026-10-11 | Restore original visual details the rework dropped: glowing active-tab bar and status dot, "Divination Spotlight Pick", "Active Transits & Conjunctions" | agent, following #20 | current | [validation pass](2026-10-11-validation-pass.md) |
 | 24 | 2026-10-11 | λ presets are symmetric around the default: 0, 1 − default, default, 1 | agent, following #22 | current | [ux-rework § Divination Equilibrium](2026-10-10-ux-rework.md) |
 | 23 | 2026-10-11 | Player popup pillars show the owner's live weights, not fixed 30/25/20/15/10 | owner flagged | current | same |
-| 22 | 2026-10-11 | **Default λ is 0.75** (upstream shipped 0.35). Star weights stay at 30/25/20/15/10 ("carefully determined") | **owner** | current | [ux-rework § default λ](2026-10-10-ux-rework.md) |
+| 22 | 2026-10-11 | **Default λ is 0.75** (upstream shipped 0.35). Star weights stay at 30/25/20/15/10 ("carefully determined") | **owner** | λ current; weights superseded by #34 (upstream changed them) | [ux-rework § default λ](2026-10-10-ux-rework.md) |
 | 21 | 2026-10-11 | This Week leads with the Team Celestial Telemetry; the "Weekly Matchup & Start/Sit Oracle" card is removed as redundant | **owner** | current | [ux-rework § This Week](2026-10-10-ux-rework.md) |
 | 20 | 2026-10-11 | **League shows the original Celestial Leaderboard** (Overall / Spirit / Draft / Harmony, colored chips). Keep the owner's original celestial screens; don't restyle them unasked | **owner** | current; supersedes #17 | [ux-rework § leaderboard](2026-10-10-ux-rework.md) |
 | 19 | 2026-10-11 | Every number on screen is explained where it appears | **owner** ("what is an Oracle number?") | current | guidelines |
