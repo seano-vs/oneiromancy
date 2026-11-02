@@ -63,3 +63,20 @@ already contained all of this repo's code), and `changes/` was kept.
 The hosting worker's Git connection had been removed, so pushes after the
 merge didn't trigger builds. The owner reconnected it on 2026-10-30; this
 note was pushed to trigger the first build from the reconnected repo.
+
+## 2026-11-02: second sync (upstream 8743f9c)
+
+Upstream adopted the install fixes (ESLint 9 flat config, `eslint .`) and
+moved to React 19.3, TypeScript 6, Tailwind 4 and lucide-react 1.x; its
+components now lint clean. Every path outside `changes/` again matches
+upstream, with one exception: upstream still pins Next.js 16.4.0, which
+`next build` refuses (critical advisories), so `next` and
+`eslint-config-next` are 16.4.3 here, and upstream test 18.5's pinned
+version assertion says 16.4.3 to match. Landing that bump upstream removes the
+last difference.
+
+Verified: clean `npm ci`, `tsc` clean, lint clean, build OK, `npm test`
+519 passed / 2 failed (upstream's own 5.18), browser walkthrough as two
+league members at desktop and 390 px with no errors. npm audit still lists
+22 advisories in dev-only build tooling (babel, browserslist, flatted,
+minimatch, zod, @humanfs/node), left for upstream.
