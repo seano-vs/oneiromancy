@@ -14,27 +14,30 @@
  * limitations under the License.
  */
 
-// ESLint 9 flat config. Next.js 16 removed `next lint`; `npm run lint` runs
-// ESLint directly with Next's Core Web Vitals rules over the app code (the
-// same folders `next lint` covered).
-import nextVitals from 'eslint-config-next/core-web-vitals';
+import nextCoreWebVitals from 'eslint-config-next/core-web-vitals';
 
-const config = [
-  ...nextVitals,
+const eslintConfig = [
+  ...nextCoreWebVitals,
+  {
+    // TODO(ohnoseano): Refactor legacy effect/ref patterns to re-enable React Compiler rules.
+    rules: {
+      'react-hooks/set-state-in-effect': 'off',
+      'react-hooks/preserve-manual-memoization': 'off',
+      'react-hooks/immutability': 'off',
+      'react-hooks/refs': 'off',
+    },
+  },
   {
     ignores: [
       '.next/**',
       'out/**',
+      'dist/**',
+      'tests/dist/**',
       'node_modules/**',
+      '.npm_runtime/**',
       'next-env.d.ts',
-      'tests/**',
-      'scripts/**',
-      'mocks/**',
-      'public/**',
-      '*.config.js',
-      'server.js',
     ],
   },
 ];
 
-export default config;
+export default eslintConfig;
