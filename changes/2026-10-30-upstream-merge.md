@@ -80,3 +80,12 @@ Verified: clean `npm ci`, `tsc` clean, lint clean, build OK, `npm test`
 league members at desktop and 390 px with no errors. npm audit still lists
 22 advisories in dev-only build tooling (babel, browserslist, flatted,
 minimatch, zod, @humanfs/node), left for upstream.
+
+## 2026-11-06: third sync (upstream 5018617)
+
+Upstream reworked the player popup, board and recommendations, and builds
+now use webpack (`next build --webpack`). It still pins Next.js 16.4.0, so
+the same single difference remains: `next` / `eslint-config-next` 16.4.3 and
+test 18.5's version assertion. Verified: clean `npm ci`, `tsc` and lint
+clean, build OK, `npm test` 581 passed / 0 failed, browser walkthrough as two
+league members (desktop and 390 px) with no errors.
