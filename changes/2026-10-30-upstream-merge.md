@@ -89,3 +89,15 @@ the same single difference remains: `next` / `eslint-config-next` 16.4.3 and
 test 18.5's version assertion. Verified: clean `npm ci`, `tsc` and lint
 clean, build OK, `npm test` 581 passed / 0 failed, browser walkthrough as two
 league members (desktop and 390 px) with no errors.
+
+## 2026-11-09: fourth sync (upstream dd2296c), exact mirror
+
+Upstream now pins Next.js 16.4.2, outside the advisories' range (16.0.0 to
+16.4.0), so `next build` runs on pure upstream. The 16.4.3 bump and the test
+18.5 edit are dropped: **every path outside `changes/` matches upstream
+exactly.** Verified on pure upstream: clean `npm ci`, no Next.js advisory
+(npm audit: 14 in dev-only tooling, 0 critical), `tsc` and lint clean, build
+OK, `npm test` 609 passed / 0 failed, browser walkthrough as two league
+members (desktop and 390 px) with no errors and the right week-9 opponents.
+The matchup screen no longer labels the user's own team "(You)"; it shows
+the team name and "Mgr: <username>".
