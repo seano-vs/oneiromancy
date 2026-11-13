@@ -101,3 +101,13 @@ OK, `npm test` 609 passed / 0 failed, browser walkthrough as two league
 members (desktop and 390 px) with no errors and the right week-9 opponents.
 The matchup screen no longer labels the user's own team "(You)"; it shows
 the team name and "Mgr: <username>".
+
+## 2026-11-13: fifth sync (upstream accb093), exact mirror
+
+Upstream reworked the matchup screen, settings drawer and context (and added
+`OraclePlaceholderMarker`). Still Next.js 16.4.2; every path outside
+`changes/` matches upstream exactly. Verified on pure upstream: clean
+`npm ci`, `tsc` and lint clean, build OK, `npm test` 618 passed / 0 failed,
+npm audit unchanged (14 in dev-only tooling, 0 critical), browser walkthrough
+as two league members (desktop and 390 px) with no errors and the right
+week-10 opponents.
