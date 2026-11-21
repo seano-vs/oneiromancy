@@ -111,3 +111,21 @@ Upstream reworked the matchup screen, settings drawer and context (and added
 npm audit unchanged (14 in dev-only tooling, 0 critical), browser walkthrough
 as two league members (desktop and 390 px) with no errors and the right
 week-10 opponents.
+
+## 2026-11-21: sixth sync (upstream b7cbef2)
+
+Upstream added a point-differential engine (`core/lib/pointDiffEngine.ts`,
+`pointDiffWeights.ts`), `core/lib/esotericObservables.ts`, an analysis write-up
+under `docs/`, and restyled most screens. It also **removed the ESPN
+scoreboard lookup** on purpose: games now come only from Sleeper's schedule,
+so kickoffs show the date with "time TBA" and neutral-site games show the
+home team's stadium. Kept as upstream chose.
+
+Next.js 16.0.0 to 16.4.4 now has seven moderate advisories (e.g.
+GHSA-7qx7-33qx-rqx2, GHSA-pc58-hwjq-p385) and `next build` refuses upstream's
+16.4.2 again, so `next` / `eslint-config-next` are 16.4.6 here and test
+18.5's version assertion matches. That is the only difference from upstream
+outside `changes/`. Verified: clean `npm ci`, `tsc` and lint clean, build OK,
+`npm test` 627 passed / 0 failed, npm audit 13 in dev-only tooling (0
+critical, none in Next.js), browser walkthrough as two league members
+(desktop and 390 px) with no errors and the right week-11 opponents.

@@ -856,7 +856,7 @@ describe('Tier 1: Feature Coverage (19 Features x >=5 Tests)', () => {
       const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
       const lockRaw = fs.readFileSync(lockPath, 'utf8');
       const lock = JSON.parse(lockRaw);
-      assert.equal(pkg.dependencies.next, '16.4.2', 'Next.js dependency must be 16.4.2');
+      assert.equal(pkg.dependencies.next, '16.4.6', 'Next.js dependency must be 16.4.6 (16.0.0-16.4.4 have advisories and next build refuses to run)');
       assert.equal(pkg.dependencies.react, '19.3.0', 'React dependency must be 19.3.0');
       assert.equal(pkg.dependencies['react-dom'], '19.3.0', 'React DOM dependency must be 19.3.0');
       assert.deepEqual(
