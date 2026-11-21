@@ -15,35 +15,42 @@
  */
 
 import type { Metadata, Viewport } from 'next';
-import { Playfair_Display, Space_Mono } from 'next/font/google';
+import { Plus_Jakarta_Sans, Newsreader, JetBrains_Mono } from 'next/font/google';
 import './globals.css';
 import StarfieldBackground from '../components/common/StarfieldBackground';
 
-const playfair = Playfair_Display({
+const jakarta = Plus_Jakarta_Sans({
   subsets: ['latin'],
-  variable: '--font-playfair',
+  variable: '--font-jakarta',
   display: 'swap',
   preload: false,
 });
 
-const spaceMono = Space_Mono({
-  weight: ['400', '700'],
+const newsreader = Newsreader({
   subsets: ['latin'],
-  variable: '--font-space-mono',
+  variable: '--font-newsreader',
+  display: 'swap',
+  preload: false,
+});
+
+const jetbrainsMono = JetBrains_Mono({
+  weight: ['400', '500', '600', '700'],
+  subsets: ['latin'],
+  variable: '--font-jetbrains-mono',
   display: 'swap',
   preload: false,
 });
 
 export const metadata: Metadata = {
-  title: 'Oneiromancy | Fantasy Draft Assistant',
-  description: 'Celestial High-Tech Fantasy Football Mobile-First Draft Room & Oracle Divination',
+  title: 'Oneiromancy · Fantasy Football Ephemeris',
+  description: 'Fantasy football lineup, matchup, waiver, and trade analysis combining Sleeper base projections with 25 astrological and esoteric point-differential prediction systems.',
   icons: {
     icon: '/icon.svg',
   },
 };
 
 export const viewport: Viewport = {
-  themeColor: '#131318',
+  themeColor: '#0f1012',
   width: 'device-width',
   initialScale: 1,
 };
@@ -54,8 +61,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${playfair.variable} ${spaceMono.variable}`}>
-      <body className="bg-[#131318] text-slate-100 font-sans antialiased min-h-screen">
+    <html lang="en" className={`${jakarta.variable} ${newsreader.variable} ${jetbrainsMono.variable}`}>
+      <body className="bg-[#0f1012] text-zinc-100 font-sans antialiased min-h-screen">
         <StarfieldBackground />
         {children}
       </body>

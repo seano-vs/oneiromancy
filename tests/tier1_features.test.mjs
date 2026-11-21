@@ -65,39 +65,38 @@ function renderWithProvider(element, initialDraftState = null) {
 
 describe('Tier 1: Feature Coverage (19 Features x >=5 Tests)', () => {
   // ============================================================================
-  // Feature 1: Celestial Visual Theme Tokens
+  // Feature 1: Matte Editorial Visual Theme Tokens
   // ============================================================================
-  describe('Feature 1: Celestial Visual Theme Tokens', () => {
+  describe('Feature 1: Matte Editorial Visual Theme Tokens', () => {
     const globalsCssPath = path.resolve('app/globals.css');
 
-    it('1.1 should define Deep Obsidian (#131318) in tailwind config and globals.css', () => {
+    it('1.1 should define Matte Charcoal (#0f1012) in tailwind config and globals.css', () => {
       const globalsCssContent = fs.readFileSync(globalsCssPath, 'utf8');
-      assert.equal(tailwindConfig?.theme?.extend?.colors?.oneiromancy?.obsidian, '#131318', 'Tailwind must configure #131318');
-      assert.ok(globalsCssContent.includes('--background: #131318'), 'globals.css :root must set --background: #131318');
-      assert.ok(globalsCssContent.includes('background-color: #131318'), 'globals.css body must set background-color: #131318');
+      assert.equal(tailwindConfig?.theme?.extend?.colors?.oneiromancy?.obsidian, '#0f1012', 'Tailwind must configure #0f1012');
+      assert.ok(globalsCssContent.includes('--background: #0f1012'), 'globals.css :root must set --background: #0f1012');
+      assert.ok(globalsCssContent.includes('background-color: var(--background)'), 'globals.css body must consume var(--background)');
     });
 
-    it('1.2 should define Nebula Purple (#6d28d9) as mystical accent in tailwind config', () => {
+    it('1.2 should define Burnished Brass (#e2b964) as primary accent in tailwind config', () => {
       const colors = tailwindConfig?.theme?.extend?.colors;
-      assert.equal(colors?.oneiromancy?.purple, '#6d28d9', 'Tailwind must define purple #6d28d9');
-      assert.equal(colors?.nebula?.DEFAULT, '#6d28d9', 'Tailwind must define nebula color palette');
+      assert.equal(colors?.oneiromancy?.brass, '#e2b964', 'Tailwind must define brass #e2b964');
+      assert.equal(colors?.oneiromancy?.gold, '#e2b964', 'Tailwind must map gold to brass #e2b964');
     });
 
-    it('1.3 should define Electric Cyan (#06b6d4) as telemetry accent in tailwind config', () => {
+    it('1.3 should define muted semantic green (#34d399) in tailwind config', () => {
       const colors = tailwindConfig?.theme?.extend?.colors;
-      assert.equal(colors?.oneiromancy?.cyan, '#06b6d4', 'Tailwind must define cyan #06b6d4');
-      assert.equal(colors?.cyan?.DEFAULT, '#06b6d4', 'Tailwind must define cyan color palette');
+      assert.equal(colors?.oneiromancy?.green, '#34d399', 'Tailwind must define green #34d399');
     });
 
-    it('1.4 should define surface (#1a1a24) and elevated (#242436) glassmorphic backgrounds in tailwind config', () => {
+    it('1.4 should define matte surface (#16181d) and elevated (#1c1f26) backgrounds in tailwind config', () => {
       const oneiromancyColors = tailwindConfig?.theme?.extend?.colors?.oneiromancy;
-      assert.equal(oneiromancyColors?.surface, '#1a1a24', 'Tailwind must configure surface #1a1a24');
-      assert.equal(oneiromancyColors?.elevated, '#242436', 'Tailwind must configure elevated #242436');
+      assert.equal(oneiromancyColors?.surface, '#16181d', 'Tailwind must configure surface #16181d');
+      assert.equal(oneiromancyColors?.elevated, '#1c1f26', 'Tailwind must configure elevated #1c1f26');
     });
 
-    it('1.5 should verify tailwind config contains complete celestial color palette without skips', () => {
+    it('1.5 should verify tailwind config contains complete matte editorial color palette without skips', () => {
       const serializedColors = JSON.stringify(tailwindConfig?.theme?.extend?.colors || {});
-      const requiredTokens = ['#131318', '#6d28d9', '#06b6d4', '#eab308', '#10b981', '#a855f7'];
+      const requiredTokens = ['#0f1012', '#16181d', '#1c1f26', '#e2b964', '#34d399', '#fda4af'];
       for (const token of requiredTokens) {
         assert.ok(serializedColors.includes(token), `Tailwind config must include token ${token}`);
       }
@@ -105,22 +104,22 @@ describe('Tier 1: Feature Coverage (19 Features x >=5 Tests)', () => {
   });
 
   // ============================================================================
-  // Feature 2: Mystical & Telemetry Typography
+  // Feature 2: Editorial & Tabular Typography
   // ============================================================================
-  describe('Feature 2: Mystical & Telemetry Typography', () => {
-    it('2.1 should specify Playfair Display CSS variable in tailwind serif stack', () => {
+  describe('Feature 2: Editorial & Tabular Typography', () => {
+    it('2.1 should specify serif CSS variable in tailwind serif stack', () => {
       const serif = tailwindConfig?.theme?.extend?.fontFamily?.serif;
       assert.ok(Array.isArray(serif), 'Tailwind must declare serif font family');
-      assert.ok(serif.includes('var(--font-playfair)'), 'Tailwind serif stack must use var(--font-playfair)');
+      assert.ok(serif.includes('var(--font-newsreader)'), 'Tailwind serif stack must use var(--font-newsreader)');
     });
 
-    it('2.2 should specify Space Mono CSS variable in tailwind mono stack', () => {
+    it('2.2 should specify mono CSS variable in tailwind mono stack', () => {
       const mono = tailwindConfig?.theme?.extend?.fontFamily?.mono;
       assert.ok(Array.isArray(mono), 'Tailwind must declare mono font family');
-      assert.ok(mono.includes('var(--font-space-mono)'), 'Tailwind mono stack must use var(--font-space-mono)');
+      assert.ok(mono.includes('var(--font-jetbrains-mono)'), 'Tailwind mono stack must use var(--font-jetbrains-mono)');
     });
 
-    it('2.3 should render serif headings across NavigationShell and screens', () => {
+    it('2.3 should render serif brand wordmark in NavigationShell', () => {
       const html = renderToStaticMarkup(React.createElement(NavigationShell, { activeTab: 'oneiromancy' }, React.createElement('div')));
       assert.ok(html.includes('font-serif'), 'NavigationShell header brand must use font-serif');
     });
@@ -132,41 +131,42 @@ describe('Tier 1: Feature Coverage (19 Features x >=5 Tests)', () => {
 
     it('2.5 should verify tailwind.config.ts font stacks have fallback system fonts', () => {
       const fontFamily = tailwindConfig?.theme?.extend?.fontFamily;
-      assert.deepEqual(fontFamily?.serif?.slice(1), ['Georgia', 'serif'], 'Serif stack must include Georgia, serif fallback');
+      assert.ok(fontFamily?.serif?.includes('Georgia') && fontFamily?.serif?.includes('serif'), 'Serif stack must include Georgia, serif fallback');
       assert.ok(fontFamily?.mono?.includes('monospace'), 'Mono stack must include monospace fallback');
     });
   });
 
   // ============================================================================
-  // Feature 3: Glassmorphism & Panel Styling
+  // Feature 3: Matte Hairline Panel Styling
   // ============================================================================
-  describe('Feature 3: Glassmorphism & Panel Styling', () => {
+  describe('Feature 3: Matte Hairline Panel Styling', () => {
     const globalsCssPath = path.resolve('app/globals.css');
 
-    it('3.1 should define .glass-panel with backdrop-filter blur(14px) and subtle opacity in globals.css', () => {
+    it('3.1 should define .glass-panel with flat matte surface and hairline border in globals.css', () => {
       const globalsCss = fs.readFileSync(globalsCssPath, 'utf8');
       assert.ok(globalsCss.includes('.glass-panel'), 'globals.css must define .glass-panel');
-      assert.ok(globalsCss.includes('backdrop-filter: blur(14px)'), '.glass-panel must configure backdrop-filter: blur(14px)');
-      assert.ok(globalsCss.includes('background: rgba(26, 26, 36, 0.72)'), '.glass-panel must configure background: rgba(26, 26, 36, 0.72)');
+      assert.ok(!globalsCss.includes('backdrop-filter: blur(14px)'), '.glass-panel must omit heavy backdrop-filter blur');
+      assert.ok(globalsCss.includes('--surface-panel: #16181d'), 'globals.css :root must define --surface-panel: #16181d');
+      assert.ok(globalsCss.includes('background: var(--surface-panel)'), '.glass-panel must consume var(--surface-panel)');
     });
 
-    it('3.2 should define .glow-cyan utility with electric cyan box shadow in globals.css', () => {
+    it('3.2 should neutralize .glow-cyan utility without neon box shadow in globals.css', () => {
       const globalsCss = fs.readFileSync(globalsCssPath, 'utf8');
       assert.ok(globalsCss.includes('.glow-cyan'), 'globals.css must define .glow-cyan');
-      assert.ok(globalsCss.includes('0 0 16px rgba(6, 182, 212, 0.25)'), '.glow-cyan must configure electric cyan glow shadow');
-      assert.ok(globalsCss.includes('border-color: rgba(6, 182, 212, 0.5)'), '.glow-cyan must configure electric cyan border');
+      assert.ok(globalsCss.includes('box-shadow: none'), 'globals.css must neutralize glow box shadows');
+      assert.ok(globalsCss.includes('border-color: var(--border-hairline)'), '.glow-cyan must fall back to hairline border');
     });
 
-    it('3.3 should define .glow-purple utility with nebula purple box shadow in globals.css', () => {
+    it('3.3 should neutralize .glow-purple utility without neon box shadow in globals.css', () => {
       const globalsCss = fs.readFileSync(globalsCssPath, 'utf8');
       assert.ok(globalsCss.includes('.glow-purple'), 'globals.css must define .glow-purple');
-      assert.ok(globalsCss.includes('0 0 16px rgba(109, 40, 217, 0.3)'), '.glow-purple must configure nebula purple glow shadow');
-      assert.ok(globalsCss.includes('border-color: rgba(109, 40, 217, 0.5)'), '.glow-purple must configure nebula purple border');
+      assert.ok(globalsCss.includes('box-shadow: none'), 'globals.css must neutralize purple glow shadow');
     });
 
     it('3.4 should specify 1px hairline border with translucent white overlay in .glass-panel and .glass-surface', () => {
       const globalsCss = fs.readFileSync(globalsCssPath, 'utf8');
-      assert.ok(globalsCss.includes('border: 1px solid rgba(255, 255, 255, 0.08)'), 'globals.css must configure translucent white hairline border');
+      assert.ok(globalsCss.includes('--border-hairline: rgba(255, 255, 255, 0.08)'), 'globals.css :root must define translucent white hairline token');
+      assert.ok(globalsCss.includes('border: 1px solid var(--border-hairline)'), 'globals.css must configure translucent white hairline border');
     });
 
     it('3.5 should verify GlassCard component maps variants (panel, surface, gradient) to globals.css classes', () => {
@@ -183,36 +183,36 @@ describe('Tier 1: Feature Coverage (19 Features x >=5 Tests)', () => {
   // Feature 4: Positional Badges & Colors
   // ============================================================================
   describe('Feature 4: Positional Badges & Colors', () => {
-    it('4.1 should assign QB badge Sleeper Red (#ef4444 / text-red-400)', () => {
+    it('4.1 should assign QB badge muted rose text on matte zinc background', () => {
       const html = renderToStaticMarkup(React.createElement(PositionalBadge, { position: 'QB' }));
-      assert.ok(html.includes('text-red-400'), 'QB badge must use text-red-400');
-      assert.ok(html.includes('bg-red-950/40'), 'QB badge must use bg-red-950/40');
+      assert.ok(html.includes('text-rose-300'), 'QB badge must use text-rose-300');
+      assert.ok(html.includes('bg-zinc-900/90'), 'QB badge must use bg-zinc-900/90');
     });
 
-    it('4.2 should assign RB badge Sleeper Teal-ish Green (#14b8a6 / text-teal-400)', () => {
+    it('4.2 should assign RB badge muted emerald text on matte zinc background', () => {
       const html = renderToStaticMarkup(React.createElement(PositionalBadge, { position: 'RB' }));
-      assert.ok(html.includes('text-teal-400'), 'RB badge must use text-teal-400');
-      assert.ok(html.includes('bg-teal-950/40'), 'RB badge must use bg-teal-950/40');
+      assert.ok(html.includes('text-emerald-300'), 'RB badge must use text-emerald-300');
+      assert.ok(html.includes('bg-zinc-900/90'), 'RB badge must use bg-zinc-900/90');
     });
 
-    it('4.3 should assign WR badge Sleeper Light Blue (#38bdf8 / text-sky-400)', () => {
+    it('4.3 should assign WR badge muted sky text on matte zinc background', () => {
       const html = renderToStaticMarkup(React.createElement(PositionalBadge, { position: 'WR' }));
-      assert.ok(html.includes('text-sky-400'), 'WR badge must use text-sky-400');
-      assert.ok(html.includes('bg-sky-950/40'), 'WR badge must use bg-sky-950/40');
+      assert.ok(html.includes('text-sky-300'), 'WR badge must use text-sky-300');
+      assert.ok(html.includes('bg-zinc-900/90'), 'WR badge must use bg-zinc-900/90');
     });
 
-    it('4.4 should assign TE badge Sleeper Orange-ish Yellow (#f59e0b / text-amber-400)', () => {
+    it('4.4 should assign TE badge muted amber text on matte zinc background', () => {
       const html = renderToStaticMarkup(React.createElement(PositionalBadge, { position: 'TE' }));
-      assert.ok(html.includes('text-amber-400'), 'TE badge must use text-amber-400');
-      assert.ok(html.includes('bg-amber-950/40'), 'TE badge must use bg-amber-950/40');
+      assert.ok(html.includes('text-amber-300'), 'TE badge must use text-amber-300');
+      assert.ok(html.includes('bg-zinc-900/90'), 'TE badge must use bg-zinc-900/90');
     });
 
-    it('4.5 should assign FLEX to rose and K/DEF to slate styles with size classes', () => {
+    it('4.5 should assign FLEX to orange-300 and K/DEF to zinc-300 styles with size classes', () => {
       const flexHtml = renderToStaticMarkup(React.createElement(PositionalBadge, { position: 'FLEX', size: 'lg' }));
       const kdefHtml = renderToStaticMarkup(React.createElement(PositionalBadge, { position: 'K_DEF', size: 'sm' }));
-      assert.ok(flexHtml.includes('text-rose-400'), 'FLEX badge must use text-rose-400');
-      assert.ok(flexHtml.includes('text-sm px-2.5 py-1'), 'FLEX lg badge must apply lg size classes');
-      assert.ok(kdefHtml.includes('text-slate-300'), 'K_DEF badge must use slate styling');
+      assert.ok(flexHtml.includes('text-orange-300'), 'FLEX badge must use text-orange-300');
+      assert.ok(flexHtml.includes('text-xs px-2.5 py-1'), 'FLEX lg badge must apply lg size classes');
+      assert.ok(kdefHtml.includes('text-zinc-300'), 'K_DEF badge must use zinc styling');
     });
   });
 
@@ -249,11 +249,10 @@ describe('Tier 1: Feature Coverage (19 Features x >=5 Tests)', () => {
       assert.ok(html.includes('role="img"'), 'Astrolabe must declare role="img"');
     });
 
-    it('5.5 should render atmospheric glow gradient and center pulsing core in Astrolabe', () => {
+    it('5.5 should render engraved brass rings and center core without neon radial glow in Astrolabe', () => {
       const html = renderToStaticMarkup(React.createElement(Astrolabe, {}));
-      assert.ok(html.includes('radial-gradient(circle,'), 'Astrolabe must render atmospheric glow radial gradient');
-      assert.ok(html.includes('class="animate-pulse"'), 'Astrolabe center eye must have animate-pulse');
-      assert.ok(html.includes('fill="#6d28d9"'), 'Astrolabe center eye must use nebula purple fill');
+      assert.ok(!html.includes('radial-gradient(circle,'), 'Astrolabe must omit neon radial glow backdrop');
+      assert.ok(html.includes('#e2b964'), 'Astrolabe must use burnished brass #e2b964 accents');
     });
   });
 
@@ -283,7 +282,7 @@ describe('Tier 1: Feature Coverage (19 Features x >=5 Tests)', () => {
       assert.ok(html.includes('sticky top-0'), 'Header must be sticky top-0');
       assert.ok(html.includes('data-testid="draft-status-indicator"'), 'Header must include draft-status-indicator test id');
       assert.ok(html.includes('animate-ping'), 'Syncing indicator must use animate-ping for pulse');
-      assert.ok(html.includes('ONEIROMANCY'), 'Header must render brand title');
+      assert.ok(html.includes('>Oneiromancy<'), 'Header must render title-case brand wordmark');
     });
 
     it('6.4 should provide fixed bottom navigation bar with safe-area padding in NavigationShell', () => {
@@ -780,9 +779,11 @@ describe('Tier 1: Feature Coverage (19 Features x >=5 Tests)', () => {
       assert.equal(sleeper.resolvePollInterval('drafting', 'hidden'), 30000);
     });
 
-    it('17.4 should verify SettingsDrawer renders accessible auto-update switch and username input', () => {
+    it('17.4 should verify SettingsDrawer omits auto-update disable switch while rendering username input', () => {
       const html = renderWithProvider(React.createElement(SettingsDrawer, { isOpen: true, onClose: () => {} }));
-      assert.ok(html.includes('role="switch"') && html.includes('aria-checked'), 'SettingsDrawer must provide accessible switch attributes');
+      assert.ok(!html.includes('role="switch"'), 'SettingsDrawer must not render an option to disable automatic score refreshing');
+      assert.ok(!html.includes('Toggle Real-Time Auto-Update'), 'SettingsDrawer must omit Toggle Real-Time Auto-Update button');
+      assert.ok(!html.includes('Auto-refresh scores'), 'SettingsDrawer must omit Auto-refresh scores toggle row');
       assert.ok(html.includes('id="username-input"'), 'SettingsDrawer must render username input');
     });
 
@@ -797,7 +798,11 @@ describe('Tier 1: Feature Coverage (19 Features x >=5 Tests)', () => {
       assert.ok(!settingsHtml.includes('Engine Calibration'), 'The fake engine calibration box was removed');
 
       const oracleHtml = renderWithProvider(React.createElement(OraclePanel, { isOpen: true, onClose: () => {} }));
-      assert.ok(oracleHtml.includes('id="oracle-lambda"'), 'The Oracle panel owns the λ slider');
+      assert.ok(oracleHtml.includes('Predictive Systems'), 'The Predictors panel owns the 25-system directory');
+      assert.ok(oracleHtml.includes('data-testid="predictor-toggle-elemental_matchup"'), 'Predictors panel renders 25-system toggles');
+      assert.ok(oracleHtml.includes('data-testid="predictor-toggle-vedic_jyotish"'), 'Predictors panel renders Vedic Jyotish toggle');
+      assert.ok(!oracleHtml.includes('data-testid="predictor-toggle-venue_environment"'), 'Mundane venue_environment toggle is omitted');
+      assert.ok(!oracleHtml.includes('data-testid="predictor-toggle-circadian_parans"'), 'Removed circadian_parans toggle is omitted');
     });
 
     it('17.5 should detect pick count delta and trigger state recalculation via detectPollerDelta', () => {
@@ -945,15 +950,15 @@ describe('Tier 1: Feature Coverage (19 Features x >=5 Tests)', () => {
   // Feature 20: Feature Expansions (Rendered DOM & Behavioral Verification)
   // ============================================================================
   describe('Feature 20: Feature Expansions', () => {
-    it('20.1 should verify Sleeper role colors in PositionalBadge and BoardControls', () => {
+    it('20.1 should verify muted role colors in PositionalBadge and clean segmented state in BoardControls', () => {
       const qbBadge = renderToStaticMarkup(React.createElement(PositionalBadge, { position: 'QB' }));
       const rbBadge = renderToStaticMarkup(React.createElement(PositionalBadge, { position: 'RB' }));
       const wrBadge = renderToStaticMarkup(React.createElement(PositionalBadge, { position: 'WR' }));
       const teBadge = renderToStaticMarkup(React.createElement(PositionalBadge, { position: 'TE' }));
-      assert.ok(qbBadge.includes('text-red-400') && qbBadge.includes('bg-red-950/40'), 'QB must be red');
-      assert.ok(rbBadge.includes('text-teal-400') && rbBadge.includes('bg-teal-950/40'), 'RB must be teal-ish green');
-      assert.ok(wrBadge.includes('text-sky-400') && wrBadge.includes('bg-sky-950/40'), 'WR must be light blue');
-      assert.ok(teBadge.includes('text-amber-400') && teBadge.includes('bg-amber-950/40'), 'TE must be orange-ish yellow');
+      assert.ok(qbBadge.includes('text-rose-300') && qbBadge.includes('bg-zinc-900/90'), 'QB must use muted rose on matte zinc');
+      assert.ok(rbBadge.includes('text-emerald-300') && rbBadge.includes('bg-zinc-900/90'), 'RB must use muted emerald on matte zinc');
+      assert.ok(wrBadge.includes('text-sky-300') && wrBadge.includes('bg-zinc-900/90'), 'WR must use muted sky on matte zinc');
+      assert.ok(teBadge.includes('text-amber-300') && teBadge.includes('bg-zinc-900/90'), 'TE must use muted amber on matte zinc');
 
       const baseControlsProps = {
         searchQuery: '',
@@ -967,16 +972,10 @@ describe('Tier 1: Feature Coverage (19 Features x >=5 Tests)', () => {
         totalVisibleCount: 24,
       };
       const qbControls = renderToStaticMarkup(React.createElement(BoardControls, { ...baseControlsProps, positionFilter: 'QB' }));
-      const rbControls = renderToStaticMarkup(React.createElement(BoardControls, { ...baseControlsProps, positionFilter: 'RB' }));
-      const wrControls = renderToStaticMarkup(React.createElement(BoardControls, { ...baseControlsProps, positionFilter: 'WR' }));
-      const teControls = renderToStaticMarkup(React.createElement(BoardControls, { ...baseControlsProps, positionFilter: 'TE' }));
-      assert.ok(qbControls.includes('border-red-400'), 'BoardControls must style active QB filter in red');
-      assert.ok(rbControls.includes('border-teal-400'), 'BoardControls must style active RB filter in teal');
-      assert.ok(wrControls.includes('border-sky-400'), 'BoardControls must style active WR filter in sky blue');
-      assert.ok(teControls.includes('border-amber-400'), 'BoardControls must style active TE filter in amber');
+      assert.ok(qbControls.includes('bg-zinc-800 text-zinc-100 border border-white/15 font-semibold'), 'BoardControls must style active position filter with crisp neutral highlight');
     });
 
-    it('20.2 should verify head-to-head player comparison renders in PlayerDetailModal with Stats, Oracle, Stars, and DIVINATION_PILLARS descriptions', () => {
+    it('20.2 should verify head-to-head player comparison renders in PlayerDetailModal with Base, Modifier, and active-only Historical Predictor Breakdown', () => {
       const p1 = mockData.mockCosmicBoard[0];
       const p2 = mockData.mockCosmicBoard[1];
       const modalHtml = renderWithProvider(
@@ -987,109 +986,142 @@ describe('Tier 1: Feature Coverage (19 Features x >=5 Tests)', () => {
           onClose: () => {},
         })
       );
-      assert.ok(modalHtml.includes('Head-to-head:'), 'PlayerDetailModal must label head-to-head mode');
-      for (const col of ['Stats', 'Oracle', 'Stars']) {
+      assert.ok(modalHtml.includes(`${p1.name} vs. ${p2.name}`), 'PlayerDetailModal must label head-to-head mode');
+      for (const col of ['Base', 'Modifier']) {
         assert.ok(modalHtml.includes(col), `Head-to-head must compare ${col}`);
       }
-      for (const pillar of scoring.DIVINATION_PILLARS) {
-        assert.ok(
-          modalHtml.includes(pillar.desc) || modalHtml.includes(pillar.desc.replace(/&/g, '&amp;')),
-          `PlayerDetailModal must render DIVINATION_PILLARS description for ${pillar.key}`
-        );
+      assert.ok(modalHtml.includes('Historical Predictor Breakdown'), 'PlayerDetailModal must render Historical Predictor Breakdown');
+      assert.ok(
+        modalHtml.includes('https://github.com/google/oneiromancy/blob/main/docs/SLEEPER_POINT_DIFF_ANALYSIS.md'),
+        'PlayerDetailModal must link to the GitHub SLEEPER_POINT_DIFF_ANALYSIS.md study'
+      );
+      for (const sys of oracleLib.PREDICTOR_SYSTEM_META) {
+        if (sys.defaultEnabled) {
+          assert.ok(
+            modalHtml.includes(`data-testid="predictor-row-${sys.id}"`),
+            `PlayerDetailModal must render default-enabled positive-edge predictor (${sys.id})`
+          );
+        } else {
+          assert.ok(
+            !modalHtml.includes(`data-testid="predictor-row-${sys.id}"`),
+            `PlayerDetailModal must hide default-disabled low/negative-edge predictor (${sys.id})`
+          );
+        }
       }
     });
 
-    it('20.3 should verify ChaosDial renders educational reference guide with planetary aspects, lambda equilibrium, worked example math, and external links', () => {
+    it('20.3 should verify ChaosDial renders 25 predictive systems, live point-differential preview, and methodology guide', () => {
       const chaosHtml = renderWithProvider(React.createElement(ChaosDial));
-      assert.ok(
-        chaosHtml.includes('Astrology &amp; Divination Field Guide (Encyclopedia)') ||
-          chaosHtml.includes('Astrology & Divination Field Guide (Encyclopedia)'),
-        'ChaosDial must include Reference Guide'
-      );
+      assert.ok(chaosHtml.includes('How Scores Work'), 'ChaosDial must include plain-English How Scores Work section');
       assert.ok(chaosHtml.includes('data-testid="encyclopedia-toggle"'), 'ChaosDial must render encyclopedia-toggle button');
-      assert.ok(chaosHtml.includes('Natal Chart Planetary Aspects'), 'ChaosDial must explain Natal Chart Planetary Aspects');
-      assert.ok(chaosHtml.includes('Mars Aspects') && chaosHtml.includes('Saturn Transits'), 'ChaosDial must detail Mars and Saturn aspects');
-      assert.ok(chaosHtml.includes('Mercury Retrogrades') && chaosHtml.includes('Jupiter Alignments'), 'ChaosDial must detail Mercury and Jupiter aspects');
-      assert.ok(chaosHtml.includes('Elemental Triplicities in Gridiron Divination'), 'ChaosDial must explain Elemental Triplicities');
-      assert.ok(chaosHtml.includes('href="https://en.wikipedia.org/wiki/Astrological_aspect"'), 'ChaosDial must link to external Wikipedia reference');
-      assert.ok(chaosHtml.includes('href="https://en.wikipedia.org/wiki/Astrology"'), 'ChaosDial must link to Wikipedia astrology reference');
-      assert.ok(chaosHtml.includes('href="https://ssd.jpl.nasa.gov/horizons/"'), 'ChaosDial must link to NASA JPL Horizons ephemeris');
-      const chasePlayer = { projected_points: 19.8, spirit_score: 92.7 };
-      const chaseStats = oracleLib.statsScore(chasePlayer);
-      assert.equal(chaseStats, 79.2, 'Unit conversion rescale (19.8 / 25 * 100) must equal 79.2 Stats');
-      assert.equal(oracleLib.starsScore(chasePlayer), 85, 'spirit_score 92.7 must yield 85 Stars');
+      const chasePlayer = { id: '7564', name: "Ja'Marr Chase", position: 'WR', team: 'CIN', projected_points: 19.8, sleeper_projected_points: 19.8 };
+      const chaseBase = oracleLib.basePoints(chasePlayer);
+      assert.equal(chaseBase, 19.8, 'basePoints returns raw Sleeper projected points (19.8)');
+      const chaseMod = oracleLib.playerModifier(chasePlayer, { currentWeek: 2 });
       assert.equal(
-        oracleLib.oracleScore(chasePlayer, 0.75),
-        83.6,
-        'oracleLib.oracleScore must blend 79.2 Stats and 85 Stars at lambda 0.75 to 83.6 Oracle'
+        oracleLib.projectedWithModifier(chasePlayer, { currentWeek: 2 }),
+        Number((chaseBase + chaseMod).toFixed(2)),
+        'projectedWithModifier equals Base + Overall Modifier'
       );
-      assert.ok(chaosHtml.includes('83.6 Oracle'), 'ChaosDial worked example must show 83.6 Oracle');
       const panelHtml = renderWithProvider(React.createElement(OraclePanel, { isOpen: true, onClose: () => {} }));
-      assert.ok(panelHtml.includes('83.6 Oracle'), 'OraclePanel worked example must show 83.6 Oracle');
+      assert.ok(panelHtml.includes('Predictive Systems'), 'OraclePanel must show Predictive Systems directory');
     });
 
-    it('20.4 should verify OneiromancyDashboard explains Squad Harmony with the 3 bonuses it actually adds', () => {
-      const html = renderWithProvider(React.createElement(OneiromancyDashboard));
-      assert.ok(html.includes('How Squad Harmony is scored'), 'OneiromancyDashboard must explain Squad Harmony');
-      assert.ok(html.includes('1. Elemental Trine'), 'OneiromancyDashboard must explain the trine bonus');
-      assert.ok(html.includes('2. QB Stacks'), 'OneiromancyDashboard must explain the stack bonus');
-      assert.ok(html.includes('3. Four-Element Balance'), 'OneiromancyDashboard must explain the balance bonus');
-      assert.ok(html.includes('added to base 50'), 'Harmony explainer must state bonuses are added to base 50');
-      assert.match(html, /Squad Harmony:\s*\d+\s*pts/, 'OneiromancyDashboard SVG footer must render Squad Harmony in pts');
-      assert.ok(!/Squad Harmony:\s*\d+%/.test(html), 'OneiromancyDashboard SVG footer must not render Squad Harmony as %');
-      assert.match(html, /Squad Harmony<\/span><span[^>]*>\d+\s*pts<\/span>/, 'OneiromancyDashboard badge must render Squad Harmony in pts');
-      assert.ok(!html.includes('Schedule Symmetry'), 'Harmony explainer must not claim byes affect Harmony');
-      assert.ok(html.includes('Squad Harmony'), 'OneiromancyDashboard must display Squad Harmony');
+    it('20.4 should verify Elemental Balance moved from OneiromancyDashboard to PlayerDetailModal for player and real NFL team', () => {
+      const rosterHtml = renderWithProvider(React.createElement(OneiromancyDashboard));
+      assert.ok(!rosterHtml.includes('Elemental Balance'), 'OneiromancyDashboard must not render fantasy-team Elemental Balance');
+      assert.ok(!rosterHtml.includes('Schedule Symmetry'), 'Dashboard must not claim byes affect Harmony');
+
+      const starter = mockData.mockMyRoster.find((s) => s.player)?.player || mockData.mockCosmicBoard[0];
+      const modalHtml = renderWithProvider(
+        React.createElement(PlayerDetailModal, { player: starter, isOpen: true, onClose: () => {} }),
+      );
+      assert.ok(modalHtml.includes('Elemental Balance'), 'PlayerDetailModal must render Elemental Balance');
+      assert.ok(modalHtml.includes('data-testid="player-team-elemental-balance"'), 'PlayerDetailModal must render player-team-elemental-balance section');
+      assert.ok(modalHtml.includes('Dominant:'), 'PlayerDetailModal must display dominant element & Wu Xing phase without 0-100 Harmony');
+      assert.ok(modalHtml.includes(`${starter.team} NFL unit`), 'PlayerDetailModal must scope Elemental Balance to the player real NFL team');
     });
 
-    it('20.5 should verify OneiromancyDashboard renders interactive SVG Team Synergy Radar Graph with 5 spokes', () => {
-      const html = renderWithProvider(React.createElement(OneiromancyDashboard));
-      assert.ok(
-        html.includes('Roster Aura &amp; Stack Constellation') ||
-        html.includes('Roster Aura & Stack Constellation'),
-        'OneiromancyDashboard must include Stack Constellation title'
+    it('20.5 should verify PlayerDetailModal renders dual 5-spoke SVG Elemental Radar Graphs (Classical Elements + Five Phases) without redundant Unit player counts', () => {
+      const starter = mockData.mockMyRoster.find((s) => s.player)?.player || mockData.mockCosmicBoard[0];
+      const modalHtml = renderWithProvider(
+        React.createElement(PlayerDetailModal, { player: starter, isOpen: true, onClose: () => {} }),
       );
-      assert.ok(
-        !html.includes('Roster Aura &amp; Synergy Constellation') &&
-        !html.includes('Roster Aura & Synergy Constellation'),
-        'OneiromancyDashboard must not include legacy Synergy Constellation title'
-      );
-      assert.ok(html.includes('data-testid="synergy-constellation-svg"'), 'OneiromancyDashboard must render synergy-constellation-svg');
-      assert.ok(html.includes('<polygon'), 'OneiromancyDashboard must render radar polygon');
-      for (const axis of ['Fire (', 'Air (', 'Water (', 'Earth (', 'Aspects (']) {
-        assert.ok(html.includes(axis), `Radar must include ${axis} axis`);
+      assert.ok(modalHtml.includes('Elemental Balance'), 'PlayerDetailModal must include Elemental Balance title');
+      assert.ok(!modalHtml.includes('Unit player counts'), 'PlayerDetailModal must omit redundant Unit player counts bar list');
+      assert.ok(modalHtml.includes('data-testid="synergy-constellation-svg"'), 'PlayerDetailModal must render synergy-constellation-svg');
+      assert.ok(modalHtml.includes('data-testid="five-phase-radar-svg"'), 'PlayerDetailModal must render five-phase-radar-svg');
+      assert.ok(modalHtml.includes('<polygon'), 'PlayerDetailModal must render radar polygons');
+      for (const axis of ['Fire (', 'Air (', 'Water (', 'Earth (', 'Stacks (']) {
+        assert.ok(modalHtml.includes(axis), `Classical radar must include ${axis} axis`);
+      }
+      for (const phaseAxis of ['Wood (', 'Fire (', 'Earth (', 'Metal (', 'Water (']) {
+        assert.ok(modalHtml.includes(phaseAxis), `Five-Phase radar must include ${phaseAxis} axis`);
       }
     });
 
-    it('20.6 should verify OneiromancyDashboard renders Player Synergy Matrix with team celestial conjunctions and trine bonuses', () => {
-      const html = renderWithProvider(React.createElement(OneiromancyDashboard));
-      assert.ok(
-        html.includes('Astral Stack Conjunction'),
-        'OneiromancyDashboard must highlight Astral Stack Conjunction'
+    it('20.6 should verify PlayerDetailModal renders Elemental Trine thresholds and active real NFL QB stacks', () => {
+      const baseState = JSON.parse(JSON.stringify(mockData.mock_oneiromancy_draft_2025));
+      const kcQb = {
+        id: 'kc-qb-test',
+        name: 'Patrick Mahomes',
+        last_name: 'Mahomes',
+        position: 'QB',
+        team: 'KC',
+        bye_week: 6,
+        jersey_number: 15,
+        depth_chart_order: 1,
+        projected_points: 24.1,
+        weekly_projected_points: 24.1,
+        spirit_score: 91,
+        harmony_score: 88,
+        draft_status: 'my_team',
+        elemental_traits: { sun_sign: 'Virgo', element: 'Earth', life_path_number: 7, tarot_card: 'The Chariot' },
+      };
+      const kcWr1 = {
+        ...kcQb,
+        id: 'kc-wr1-test',
+        name: 'Rashee Rice',
+        last_name: 'Rice',
+        position: 'WR',
+        jersey_number: 4,
+        projected_points: 17.5,
+        weekly_projected_points: 17.5,
+      };
+      const kcTe1 = {
+        ...kcQb,
+        id: 'kc-te1-test',
+        name: 'Travis Kelce',
+        last_name: 'Kelce',
+        position: 'TE',
+        jersey_number: 87,
+        projected_points: 15.2,
+        weekly_projected_points: 15.2,
+      };
+      baseState.cosmic_board = [kcQb, kcWr1, kcTe1];
+      baseState.my_roster = [];
+
+      const modalHtml = renderWithProvider(
+        React.createElement(PlayerDetailModal, { player: kcQb, isOpen: true, onClose: () => {} }),
+        baseState,
       );
-      assert.ok(
-        !html.includes('Astral Synergy Conjunction'),
-        'OneiromancyDashboard must not include legacy Astral Synergy Conjunction'
-      );
-      assert.ok(html.includes('1. Elemental Trine:'), 'OneiromancyDashboard must explain Elemental Trine bonus');
-      assert.ok(html.includes('amplify ceiling and floor'), 'OneiromancyDashboard must explain trine ceiling/floor effect');
+      assert.ok(modalHtml.includes('· Trine'), 'PlayerDetailModal must highlight active NFL team Elemental Trine');
+      assert.ok(modalHtml.includes('KC stack: Mahomes +'), 'PlayerDetailModal must display real NFL team QB + WR/TE stack');
+      assert.ok(!modalHtml.includes('Astral Synergy Conjunction'), 'PlayerDetailModal must not include legacy Astral Synergy Conjunction');
     });
 
-    it('20.7 should verify OneiromancyDashboard documents bye coverage and its three states', () => {
+    it('20.7 should verify OneiromancyDashboard renders the 18-week Bye Schedule grid', () => {
       const html = renderWithProvider(React.createElement(OneiromancyDashboard));
-      assert.ok(html.includes('How bye coverage works'), 'OneiromancyDashboard must explain bye coverage');
-      assert.ok(html.includes('Weeks 5-14'), 'Must say when byes fall');
-      assert.ok(html.includes('Weeks 15-17'), 'Must list fantasy playoffs Weeks 15-17');
-      assert.ok(html.includes('No one on bye.'), 'Must explain the OK state');
-      assert.ok(html.includes('One or two players on bye.'), 'Must explain the amber state');
-      assert.ok(html.includes('Three or more on bye'), 'Must explain the conflict state');
+      assert.ok(html.includes('Bye Schedule'), 'OneiromancyDashboard must render Bye Schedule');
+      assert.ok(html.includes('W1') && html.includes('W18'), 'Bye Schedule must render Weeks 1 through 18');
     });
 
-    it('20.8 should verify Roster leads with universe state, synergy constellation, and inline swap recommendations; League lists competitor teams', () => {
+    it('20.8 should verify Roster leads with universe state, bye schedule, and inline swap recommendations; League lists competitor teams', () => {
       const rosterHtml = renderWithProvider(React.createElement(OneiromancyDashboard));
       assert.ok(!rosterHtml.includes('Weekly Matchup &amp; Start/Sit Oracle'), 'The redundant matchup card stays removed');
       assert.ok(rosterHtml.includes('data-testid="universe-state-banner"'), 'Roster must lead with the universe state banner');
-      assert.ok(rosterHtml.includes('data-testid="synergy-constellation-svg"'), 'Roster must render the synergy constellation SVG');
+      assert.ok(!rosterHtml.includes('data-testid="synergy-constellation-svg"'), 'Roster must omit fantasy-team synergy constellation SVG');
+      assert.ok(rosterHtml.includes('data-testid="18-week-coverage-strip"'), 'Roster must render the 18-week coverage strip');
       assert.ok(rosterHtml.includes('data-testid="lineup-swap-arrow"'), 'Roster must show inline lineup swap arrows');
       assert.ok(rosterHtml.includes('data-testid="lineup-swap-banner"'), 'Roster must render lineup swap banner');
       assert.ok(rosterHtml.includes('data-testid="lineup-swap-banner-button"'), 'Roster must render lineup swap banner button');
@@ -1115,10 +1147,10 @@ describe('Tier 1: Feature Coverage (19 Features x >=5 Tests)', () => {
       assert.ok(!rosterHtml.includes('<strong></strong>'), 'Must not render empty strong tag');
       assert.ok(rosterHtml.includes('Promote to empty slot'), 'Bench swap badge must render defensive empty slot tooltip');
 
-      // Also verify normal non-empty swap renders 'leads <strong>' comparison
+      // Also verify normal non-empty swap renders 'leads <strong' comparison
       const normalState = JSON.parse(JSON.stringify(mockData.mock_oneiromancy_draft_2025));
       const normalHtml = renderWithProvider(React.createElement(OneiromancyDashboard), normalState);
-      assert.ok(normalHtml.includes('leads <strong>'), 'Normal lineup swap banner must render playerOut name in strong tags');
+      assert.ok(normalHtml.includes('leads <strong'), 'Normal lineup swap banner must render playerOut name in strong tags');
     });
   });
 
@@ -1140,13 +1172,13 @@ describe('Tier 1: Feature Coverage (19 Features x >=5 Tests)', () => {
       }
     });
 
-    it('21.2 should verify the This Week team comparison calculates dynamic win probability with a gauge', () => {
+    it('21.2 should verify MatchupsScreen team comparison displays Projected Edge and point-differential totals without percentages', () => {
       const html = renderWithProvider(React.createElement(MatchupsScreen));
-      assert.ok(html.includes('Win Prob'), 'MatchupsScreen must render win probability');
-      assert.ok(html.includes('max-w-[110px] truncate text-center block'), 'Win probability label must be width-constrained');
+      assert.ok(/Projected Edge|Final Margin/i.test(html), 'MatchupsScreen must render Projected Edge');
+      assert.ok(html.includes('Base Total') && html.includes('Combined Modifier') && html.includes('Projected Total'), 'MatchupsScreen must render 3 point-differential totals');
     });
 
-    it('21.3 should verify team tier chips follow classifySpiritScoreTier on the Celestial Leaderboard', () => {
+    it('21.3 should verify CelestialLeaderboardGraph displays Base, Modifier, and Projected fantasy point totals', () => {
       const favTier = scoring.classifySpiritScoreTier(88.0);
       const harmTier = scoring.classifySpiritScoreTier(80.0);
       const discTier = scoring.classifySpiritScoreTier(68.0);
@@ -1155,12 +1187,12 @@ describe('Tier 1: Feature Coverage (19 Features x >=5 Tests)', () => {
       assert.equal(discTier.tier, 'Discordant');
 
       const lbHtml = renderWithProvider(React.createElement(CelestialLeaderboardGraph, { competitorTeams: mockData.mockCompetitorTeams }));
-      assert.ok(lbHtml.includes('Favorable') && lbHtml.includes('Harmonic'), 'Leaderboard must render tier verdicts');
+      assert.ok(lbHtml.includes('Base') && lbHtml.includes('Modifier') && lbHtml.includes('Projected'), 'Leaderboard must display Base, Modifier, and Projected columns');
     });
 
     it('21.4 should verify League roster rows color Stars with the shared favorability tone scale', () => {
       const leagueHtml = renderWithProvider(React.createElement(LeagueScreen));
-      assert.ok(leagueHtml.includes('border-emerald-500/40') || leagueHtml.includes('border-cyan-500/35'), 'Stars must render with shared tone pill');
+      assert.ok(leagueHtml.includes('text-emerald-300') || leagueHtml.includes('text-zinc-300'), 'Stars must render with shared tabular tone color');
     });
 
     it('21.5 should verify scoring.ts provides calculateWinProbability and classifySpiritScoreTier with correct thresholds', () => {
@@ -1176,10 +1208,17 @@ describe('Tier 1: Feature Coverage (19 Features x >=5 Tests)', () => {
       assert.equal(scoring.classifySpiritScoreTier(Number.NaN).tier, 'Discordant', 'NaN score must safely degrade to Discordant');
     });
 
-    it('21.6 should verify OneiromancyDashboard unifies Team harmony with the user team harmony score', () => {
+    it('21.6 should verify OneiromancyDashboard omits fantasy Harmony while PlayerDetailModal renders dynamic player + NFL team Harmony', () => {
       const html = renderWithProvider(React.createElement(OneiromancyDashboard));
       assert.ok(!html.includes('60 / 100 HARMONY'), 'Stale hardcoded 60 / 100 HARMONY must not exist');
-      assert.ok(html.includes('Squad Harmony'), 'OneiromancyDashboard must render Squad Harmony');
+      assert.ok(!html.includes('Harmony'), 'OneiromancyDashboard must omit fantasy-team Harmony readout');
+
+      const starter = mockData.mockMyRoster.find((s) => s.player)?.player || mockData.mockCosmicBoard[0];
+      const modalHtml = renderWithProvider(
+        React.createElement(PlayerDetailModal, { player: starter, isOpen: true, onClose: () => {} }),
+      );
+      assert.ok(!modalHtml.includes('60 / 100 HARMONY'), 'PlayerDetailModal must not use hardcoded 60 / 100 HARMONY');
+      assert.ok(modalHtml.includes('Team Elemental Harmony'), 'PlayerDetailModal must render dynamic player + NFL team Harmony');
     });
   });
 
@@ -1224,9 +1263,9 @@ describe('Tier 1: Feature Coverage (19 Features x >=5 Tests)', () => {
       assert.ok(!marketHtml.includes('Player Marketplace • Screen 4'), 'PlayerMarketplace must not contain Screen 4 pill');
     });
 
-    it('22.3 should verify MatchupsScreen renders Team Celestial Telemetry without redundant Positional breakdown subtitle', () => {
+    it('22.3 should verify MatchupsScreen renders scoreboard and week selector without redundant subtitle', () => {
       const html = renderWithProvider(React.createElement(MatchupsScreen));
-      assert.ok(html.includes('Win Prob'), 'MatchupsScreen must render dynamic win probability');
+      assert.ok(/Projected Edge|Final Margin/i.test(html), 'MatchupsScreen must render Projected Edge');
       assert.ok(
         !html.includes('Active Transits &amp; Conjunctions') && !html.includes('Active Transits & Conjunctions'),
         'MatchupsScreen must remove redundant Active Transits & Conjunctions subtitle'
@@ -1234,14 +1273,10 @@ describe('Tier 1: Feature Coverage (19 Features x >=5 Tests)', () => {
       assert.ok(html.includes('Week 1'), 'MatchupsScreen must include week switcher');
     });
 
-    it('22.4 should verify MatchupsScreen renders Positional Starter Matchup with guarded stadium coordinates, roof type, and date', () => {
+    it('22.4 should verify MatchupsScreen renders Starting Lineups with stadium roof type and kickoff date', () => {
       const html = renderWithProvider(React.createElement(MatchupsScreen));
-      assert.ok(html.includes('Positional Starter Matchup'), 'MatchupsScreen must contain Positional Starter Matchup title');
-      assert.ok(
-        html.includes('Alignment &amp; Stadium Telemetry') || html.includes('Alignment & Stadium Telemetry'),
-        'MatchupsScreen must include collapsible Alignment & Stadium Telemetry'
-      );
-      assert.ok(html.includes('°N,'), 'MatchupsScreen must display formatted stadium coordinates');
+      assert.ok(html.includes('Starting Lineups'), 'MatchupsScreen must contain Starting Lineups title');
+      assert.ok(html.includes('data-testid="matchup-venue-line"'), 'MatchupsScreen must render stadium venue line');
     });
 
     it('22.5 should verify NavigationShell and app router support Matchups tab and screen navigation', () => {
@@ -1262,9 +1297,9 @@ describe('Tier 1: Feature Coverage (19 Features x >=5 Tests)', () => {
       assert.ok(leagueHtml.includes('Supernova Surge') || leagueHtml.includes('AstralOracles'), 'League must render full team names');
     });
 
-    it('23.2 should verify the user team row on the Celestial Leaderboard has purple luminous styling', () => {
+    it('23.2 should verify the user team row on the Celestial Leaderboard has warm brass highlight styling', () => {
       const lbHtml = renderWithProvider(React.createElement(CelestialLeaderboardGraph, { competitorTeams: mockData.mockCompetitorTeams }));
-      assert.ok(lbHtml.includes('bg-purple-950/40 border-purple-400 ring-2 ring-purple-500/70 shadow-lg shadow-purple-500/20'), 'User row must have purple luminous ring and shadow');
+      assert.ok(lbHtml.includes('bg-amber-500/[0.05]'), 'User row must have warm brass highlight');
       assert.ok(lbHtml.includes('data-testid="leaderboard-user-team"'), 'User row must be identifiable');
     });
 
@@ -1294,14 +1329,14 @@ describe('Tier 1: Feature Coverage (19 Features x >=5 Tests)', () => {
       assert.equal(m1.spiritScore, 82.5, 'Slot 1 spiritScore must be 82.5');
       assert.equal(m1.draftScore, 80.2, 'Slot 1 draftScore must be 80.2');
       assert.equal(m1.harmonyScore, 81.5, 'Slot 1 harmonyScore must be 81.5');
-      assert.equal(m1.verdict, '⚖️ Harmonic (Stable)');
+      assert.equal(m1.verdict, 'Harmonic');
 
       const teamSlot7 = { slot: 7, roster_id: 2, name: 'AstralOracles', picks: [] };
       const m7 = scoring.calculateTeamCelestialMetrics(teamSlot7);
       assert.equal(m7.spiritScore, 88.5, 'Slot 7 spiritScore must be 88.5');
       assert.equal(m7.draftScore, 89.2, 'Slot 7 draftScore must be 89.2');
       assert.equal(m7.harmonyScore, 98.0, 'Slot 7 harmonyScore must be 98.0');
-      assert.equal(m7.verdict, '✨ Favorable (Apex)');
+      assert.equal(m7.verdict, 'Favorable');
     });
 
     it('24.2 should verify competitor metrics are invariant when switching active user (You)', () => {
@@ -1325,10 +1360,10 @@ describe('Tier 1: Feature Coverage (19 Features x >=5 Tests)', () => {
       assert.equal(scoring.SLOT_ZODIAC_SEEDS[12].sign, 'Pisces');
     });
 
-    it('24.4 should verify team verdict badges are rendered on the Celestial Leaderboard via calculateTeamCelestialMetrics', () => {
+    it('24.4 should verify CelestialLeaderboardGraph ranks teams by Projected points without percentage verdicts', () => {
       const lbHtml = renderWithProvider(React.createElement(CelestialLeaderboardGraph, { competitorTeams: mockData.mockCompetitorTeams }));
-      assert.ok(lbHtml.includes('✨ Favorable (Apex)'), 'Leaderboard must render Favorable (Apex) verdict label');
-      assert.ok(lbHtml.includes('⚖️ Harmonic (Stable)'), 'Leaderboard must render Harmonic (Stable) verdict label');
+      assert.ok(lbHtml.includes('Projected') && lbHtml.includes('Modifier'), 'Leaderboard must render Projected and Modifier columns');
+      assert.ok(!lbHtml.includes('Harmony'), 'Leaderboard must omit percentage Harmony column');
     });
 
     it('24.5 should verify transformToDraftState does not override competitor team stats based on isUser', () => {
@@ -1347,9 +1382,9 @@ describe('Tier 1: Feature Coverage (19 Features x >=5 Tests)', () => {
   // Feature 25: Signed Player Protection & Celestial Leaderboard Graph (Comments #81 & #82)
   // ============================================================================
   describe('Feature 25: Signed Player Protection & Celestial Leaderboard Graph', () => {
-    it('25.1 should verify PlayerMarketplace renders Top Waiver Moves without redundant signed-player toggle', () => {
+    it('25.1 should verify PlayerMarketplace renders Waiver Upgrades without redundant signed-player toggle', () => {
       const marketHtml = renderWithProvider(React.createElement(PlayerMarketplace));
-      assert.ok(marketHtml.includes('Top Waiver Moves'), 'PlayerMarketplace must render Top Waiver Moves');
+      assert.ok(marketHtml.includes('Waiver Upgrades'), 'PlayerMarketplace must render Waiver Upgrades');
       assert.ok(!marketHtml.includes('data-testid="allow-signed-drop-toggle"'), 'PlayerMarketplace must not render allow-signed-drop-toggle checkbox');
       assert.ok(!marketHtml.includes('Include players without an NFL team'), 'Redundant toggle label must not be rendered');
     });
@@ -1401,9 +1436,9 @@ describe('Tier 1: Feature Coverage (19 Features x >=5 Tests)', () => {
         initialDraftState
       );
 
-      assert.ok(marketHtml.includes('Top Waiver Moves'), 'Marketplace must render Top Waiver Moves');
-      assert.ok(marketHtml.includes('Active FreeAgent'), 'Signed player addition must appear in Top Waiver Moves');
-      assert.ok(!marketHtml.includes('Phantom FreeAgent'), 'Unsigned FA player must be excluded from Top Waiver Moves');
+      assert.ok(marketHtml.includes('Waiver Upgrades'), 'Marketplace must render Waiver Upgrades');
+      assert.ok(marketHtml.includes('Active FreeAgent'), 'Signed player addition must appear in Waiver Upgrades');
+      assert.ok(!marketHtml.includes('Phantom FreeAgent'), 'Unsigned FA player must be excluded from Waiver Upgrades');
 
       const boardHtml = renderWithProvider(
         React.createElement(CosmicBoard, { initialFilter: 'waivers' }),
@@ -1414,13 +1449,12 @@ describe('Tier 1: Feature Coverage (19 Features x >=5 Tests)', () => {
       assert.ok(!boardHtml.includes('Phantom FreeAgent'), 'CosmicBoard waivers must exclude unsigned free agents');
     });
 
-    it('25.4 should verify CelestialLeaderboardGraph renders ranking matrix with metric toggles', () => {
+    it('25.4 should verify CelestialLeaderboardGraph renders ranking matrix with Projected, Base, and Modifier toggles', () => {
       const lbHtml = renderWithProvider(React.createElement(CelestialLeaderboardGraph, { competitorTeams: mockData.mockCompetitorTeams }));
       assert.ok(lbHtml.includes('data-testid="celestial-leaderboard"'), 'Leaderboard must render celestial-leaderboard test ID');
-      assert.ok(lbHtml.includes('data-testid="leaderboard-toggle-overall"'), 'Leaderboard must render overall toggle');
-      assert.ok(lbHtml.includes('data-testid="leaderboard-toggle-spirit"'), 'Leaderboard must render spirit toggle');
-      assert.ok(lbHtml.includes('data-testid="leaderboard-toggle-draft"'), 'Leaderboard must render draft toggle');
-      assert.ok(lbHtml.includes('data-testid="leaderboard-toggle-harmony"'), 'Leaderboard must render harmony toggle');
+      assert.ok(lbHtml.includes('data-testid="leaderboard-toggle-projected"'), 'Leaderboard must render projected toggle');
+      assert.ok(lbHtml.includes('data-testid="leaderboard-toggle-base"'), 'Leaderboard must render base toggle');
+      assert.ok(lbHtml.includes('data-testid="leaderboard-toggle-modifier"'), 'Leaderboard must render modifier toggle');
       assert.ok(lbHtml.includes('data-testid="leaderboard-user-team"'), 'Leaderboard must render user team test ID');
       assert.ok(lbHtml.includes('data-testid="leaderboard-row-rank-1"'), 'Leaderboard must render rank 1 test ID');
     });
@@ -1545,7 +1579,7 @@ describe('Tier 1: Feature Coverage (19 Features x >=5 Tests)', () => {
       assert.ok(imgHtml.includes('loading="lazy"'), 'UserAvatar must specify loading="lazy"');
       assert.ok(imgHtml.includes('referrerpolicy="no-referrer"') || imgHtml.includes('referrerPolicy="no-referrer"'), 'UserAvatar must specify referrerPolicy="no-referrer"');
       assert.ok(imgHtml.includes('data-testid="test-user-avatar"'), 'UserAvatar must pass testId to data-testid attribute');
-      assert.ok(imgHtml.includes('ring-purple-400/80'), 'UserAvatar isUser=true must render purple accent ring');
+      assert.ok(imgHtml.includes('ring-amber-400/50'), 'UserAvatar isUser=true must render warm brass ring');
 
       const fallbackHtml = renderToStaticMarkup(
         React.createElement(UserAvatar, {
@@ -1613,23 +1647,20 @@ describe('Tier 1: Feature Coverage (19 Features x >=5 Tests)', () => {
   // Feature 27: Comment #89 UX, Terminology & Reactive Matchup Directives
   // ============================================================================
   describe('Feature 27: Comment #89 UX, Terminology & Reactive Matchup Directives', () => {
-    it('27.1 should verify win probability labels are concise and badges are constrained to prevent text bleed', () => {
+    it('27.1 should verify matchup edge labels are concise and badges are constrained to prevent text bleed', () => {
       const res1 = scoring.calculateWinProbability(140, 100, 85, 80);
       assert.ok(res1.favorabilityLabel.length <= 15, 'Label must be concise to avoid bleed');
       assert.ok(!res1.favorabilityLabel.includes('Moderate Astral Advantage'), 'Must not use long string that bleeds');
       const res2 = scoring.calculateWinProbability(100, 140, 80, 85);
       assert.ok(res2.favorabilityLabel.length <= 15, 'Label must be concise to avoid bleed');
       const matchupsHtml = renderWithProvider(React.createElement(MatchupsScreen));
-      assert.ok(matchupsHtml.includes('max-w-[110px] truncate text-center block'), 'MatchupsScreen must constrain win prob badge width');
+      assert.ok(/Projected Edge|Final Margin/i.test(matchupsHtml), 'MatchupsScreen must render concise Projected Edge label');
     });
 
-    it('27.2 should verify matchup comparative advantage coloring and dynamic tier labels', () => {
+    it('27.2 should verify matchup comparative advantage coloring and clean point-differential metric strip', () => {
       const matchupsHtml = renderWithProvider(React.createElement(MatchupsScreen));
       assert.ok(!matchupsHtml.includes('▲ ADV'), 'MatchupsScreen must eliminate awkward ▲ ADV badge circle');
-      assert.ok(
-        matchupsHtml.includes('Apex Harmony') || matchupsHtml.includes('Harmonic Balance') || matchupsHtml.includes('Discordant Risk'),
-        'Squad harmony must compute dynamic tier labels based on value'
-      );
+      assert.ok(matchupsHtml.includes('Combined Modifier'), 'MatchupsScreen must display Combined Modifier comparison');
     });
 
     it('27.3 should verify clean team badging without YOUR TEAM, OPPONENT, or (You) labels', () => {
@@ -1654,14 +1685,17 @@ describe('Tier 1: Feature Coverage (19 Features x >=5 Tests)', () => {
       assert.ok(!matchupsHtml.includes('YOUR BENCH') && !matchupsHtml.includes('OPPONENT BENCH'), 'MatchupsScreen must not render duplicate YOUR BENCH / OPPONENT BENCH section');
 
       const rosterHtml = renderWithProvider(React.createElement(OneiromancyDashboard));
-      assert.ok(rosterHtml.includes('STARTERS ('), 'OneiromancyDashboard must have STARTERS section header');
-      assert.ok(rosterHtml.includes('BENCH ('), 'OneiromancyDashboard must have BENCH section header');
+      assert.ok(rosterHtml.includes('Starters <span'), 'OneiromancyDashboard must have Starters section header');
+      assert.ok(rosterHtml.includes('Bench <span'), 'OneiromancyDashboard must have Bench section header');
     });
 
-    it('27.5 should verify calibrated linear aspect reader scale in the 5-spoke constellation web', () => {
-      const rosterHtml = renderWithProvider(React.createElement(OneiromancyDashboard));
-      assert.ok(rosterHtml.includes('data-testid="synergy-constellation-svg"'), 'OneiromancyDashboard must render unified synergy-constellation-svg');
-      assert.ok(rosterHtml.includes('Aspects ('), 'Constellation SVG must render Aspects spoke');
+    it('27.5 should verify calibrated linear scale in the 5-spoke elemental radar inside PlayerDetailModal', () => {
+      const starter = mockData.mockMyRoster.find((s) => s.player)?.player || mockData.mockCosmicBoard[0];
+      const modalHtml = renderWithProvider(
+        React.createElement(PlayerDetailModal, { player: starter, isOpen: true, onClose: () => {} }),
+      );
+      assert.ok(modalHtml.includes('data-testid="synergy-constellation-svg"'), 'PlayerDetailModal must render unified synergy-constellation-svg');
+      assert.ok(modalHtml.includes('Stacks ('), 'Constellation SVG must render Stacks spoke');
     });
 
     it('27.6 should verify deriveWeeklyMatchup dynamically re-binds matchup, opponent, and player favorabilities', () => {
@@ -1690,7 +1724,7 @@ describe('Tier 1: Feature Coverage (19 Features x >=5 Tests)', () => {
       }
     });
 
-    it('27.8 should verify consolidated Stats / Stars / Oracle terminology across controls and screens', () => {
+    it('27.8 should verify consolidated Base / Modifier / Projected terminology across controls and screens', () => {
       const controlsHtml = renderToStaticMarkup(
         React.createElement(BoardControls, {
           searchQuery: '',
@@ -1704,26 +1738,26 @@ describe('Tier 1: Feature Coverage (19 Features x >=5 Tests)', () => {
           totalResults: 24,
         })
       );
-      for (const label of ['Oracle', 'Stats', 'Stars']) {
+      for (const label of ['Projected', 'Base', 'Modifier']) {
         assert.ok(controlsHtml.includes(label), `BoardControls must offer ${label} sorting`);
       }
       const panelHtml = renderWithProvider(React.createElement(OraclePanel, { isOpen: true, onClose: () => {} }));
-      assert.ok(panelHtml.includes('Oracle = (1 − λ) × Stats + λ × Stars'), 'The Oracle panel must state the formula');
+      assert.ok(panelHtml.includes('Base') && panelHtml.includes('Overall Modifier'), 'The Predictors panel must explain Base and Overall Modifier');
     });
 
-    it('27.9 should verify "less is more" UI decluttering with collapsible details disclosures', () => {
+    it('27.9 should verify UI decluttering without bloated prose disclosures', () => {
       const rosterHtml = renderWithProvider(React.createElement(OneiromancyDashboard));
-      assert.ok(rosterHtml.includes('How Squad Harmony is scored'), 'OneiromancyDashboard must explain Squad Harmony');
-      assert.ok(rosterHtml.includes('How bye coverage works'), 'OneiromancyDashboard must explain bye coverage');
-      const detailsCount = (rosterHtml.match(/<details/g) || []).length;
-      assert.ok(detailsCount >= 2, 'OneiromancyDashboard must wrap fine-print metaphysical explanations in collapsible details');
+      assert.ok(!rosterHtml.includes('Elemental Balance'), 'OneiromancyDashboard must omit fantasy-team Elemental Balance');
+      assert.ok(rosterHtml.includes('Bye Schedule'), 'OneiromancyDashboard must display Bye Schedule');
+
+      const starter = mockData.mockMyRoster.find((s) => s.player)?.player || mockData.mockCosmicBoard[0];
+      const modalHtml = renderWithProvider(
+        React.createElement(PlayerDetailModal, { player: starter, isOpen: true, onClose: () => {} }),
+      );
+      assert.ok(modalHtml.includes('Elemental Balance'), 'PlayerDetailModal must display Elemental Balance');
 
       const matchupsHtml = renderWithProvider(React.createElement(MatchupsScreen));
-      assert.ok(
-        matchupsHtml.includes('Alignment &amp; Stadium Telemetry') || matchupsHtml.includes('Alignment & Stadium Telemetry'),
-        'MatchupsScreen must provide collapsible summary for telemetry and metaphysics'
-      );
-      assert.ok(matchupsHtml.includes('<details class="group text-slate-300">'), 'MatchupsScreen player cards must use collapsible details for clean display');
+      assert.ok(matchupsHtml.includes('Starting Lineups'), 'MatchupsScreen must render Starting Lineups');
     });
 
     it('27.10 should verify de-cluttered UI strings and semantic three-state modal status', () => {
@@ -1764,7 +1798,7 @@ describe('Tier 1: Feature Coverage (19 Features x >=5 Tests)', () => {
       assert.ok(myModalHtml.includes('MY ROSTER'), 'PlayerDetailModal must display MY ROSTER for user player');
       assert.ok(!myModalHtml.includes('FREE AGENT'), 'PlayerDetailModal must not display FREE AGENT for rostered user player');
       assert.ok(!myModalHtml.includes('Other Rostered'), 'PlayerDetailModal must not use ambiguous Other Rostered in title');
-      assert.ok(myModalHtml.includes(`Role Comparison vs. Other ${myPlayer.position}s`), 'PlayerDetailModal must render clean Role Comparison title without ambiguous Rostered');
+      assert.ok(myModalHtml.includes(`Compare vs. Other ${myPlayer.position}s`), 'PlayerDetailModal must render clean Role Comparison title without ambiguous Rostered');
 
       // Head-to-head comparison panel orientation: user's roster player on left, candidate/opponent on right
       // Case 1: Inspect user player, compareWith free agent
@@ -1777,10 +1811,12 @@ describe('Tier 1: Feature Coverage (19 Features x >=5 Tests)', () => {
         })
       );
       assert.ok(!h2hHtml1.includes('Roster (VS)'), 'PlayerDetailModal must not render awkward Roster (VS)');
+      const stripTags = (s) => s.replace(/<[^>]+>/g, '');
       const rosterIdx1 = h2hHtml1.indexOf('>Roster<');
       const faIdx1 = h2hHtml1.indexOf('>Free Agent<');
-      const myNameIdx1 = h2hHtml1.indexOf(`${myPlayer.name} (${myPlayer.team})`);
-      const faNameIdx1 = h2hHtml1.indexOf(`${faPlayer.name} (${faPlayer.team})`);
+      const myNameIdx1 = stripTags(h2hHtml1).indexOf(`${myPlayer.name} (${myPlayer.team})`);
+      const faNameIdx1 = stripTags(h2hHtml1).indexOf(`${faPlayer.name} (${faPlayer.team})`);
+      assert.ok(h2hHtml1.includes('team_logos/nfl/'), 'Role comparison must include NFL team logo icons');
       assert.ok(rosterIdx1 !== -1 && faIdx1 !== -1 && rosterIdx1 < faIdx1, 'User roster panel must precede Free Agent panel in DOM order');
       assert.ok(myNameIdx1 !== -1 && faNameIdx1 !== -1 && myNameIdx1 < faNameIdx1, 'User player must appear before candidate in DOM order');
 
@@ -1796,8 +1832,8 @@ describe('Tier 1: Feature Coverage (19 Features x >=5 Tests)', () => {
       assert.ok(!h2hHtml2.includes('Roster (VS)'), 'PlayerDetailModal must not render awkward Roster (VS)');
       const rosterIdx2 = h2hHtml2.indexOf('>Roster<');
       const faIdx2 = h2hHtml2.indexOf('>Free Agent<');
-      const myNameIdx2 = h2hHtml2.indexOf(`${myPlayer.name} (${myPlayer.team})`);
-      const faNameIdx2 = h2hHtml2.indexOf(`${faPlayer.name} (${faPlayer.team})`);
+      const myNameIdx2 = stripTags(h2hHtml2).indexOf(`${myPlayer.name} (${myPlayer.team})`);
+      const faNameIdx2 = stripTags(h2hHtml2).indexOf(`${faPlayer.name} (${faPlayer.team})`);
       assert.ok(rosterIdx2 !== -1 && faIdx2 !== -1 && rosterIdx2 < faIdx2, 'User roster panel must anchor the left side even when inspecting a free agent');
       assert.ok(myNameIdx2 !== -1 && faNameIdx2 !== -1 && myNameIdx2 < faNameIdx2, 'User player must appear on the left before candidate in DOM order');
 
@@ -1812,8 +1848,8 @@ describe('Tier 1: Feature Coverage (19 Features x >=5 Tests)', () => {
       );
       const rosterIdx3 = h2hHtml3.indexOf('>Roster<');
       const oppIdx3 = h2hHtml3.indexOf('>Rostered (Nebula Knights)<');
-      const myNameIdx3 = h2hHtml3.indexOf(`${myPlayer.name} (${myPlayer.team})`);
-      const oppNameIdx3 = h2hHtml3.indexOf(`${oppPlayer.name} (${oppPlayer.team})`);
+      const myNameIdx3 = stripTags(h2hHtml3).indexOf(`${myPlayer.name} (${myPlayer.team})`);
+      const oppNameIdx3 = stripTags(h2hHtml3).indexOf(`${oppPlayer.name} (${oppPlayer.team})`);
       assert.ok(rosterIdx3 !== -1 && oppIdx3 !== -1 && rosterIdx3 < oppIdx3, 'User roster panel must precede Opponent panel in DOM order');
       assert.ok(myNameIdx3 !== -1 && oppNameIdx3 !== -1 && myNameIdx3 < oppNameIdx3, 'User player must appear before opponent in DOM order');
 
@@ -1836,8 +1872,8 @@ describe('Tier 1: Feature Coverage (19 Features x >=5 Tests)', () => {
       assert.ok(h2hHtml4a.includes('>Bench<'), '4a must render Bench label');
       const starterIdx4a = h2hHtml4a.indexOf(`>Starter (${starterSlot})<`);
       const benchIdx4a = h2hHtml4a.indexOf('>Bench<');
-      const starterNameIdx4a = h2hHtml4a.indexOf(`${myStarter.name} (${myStarter.team})`);
-      const benchNameIdx4a = h2hHtml4a.indexOf(`${myBench.name} (${myBench.team})`);
+      const starterNameIdx4a = stripTags(h2hHtml4a).indexOf(`${myStarter.name} (${myStarter.team})`);
+      const benchNameIdx4a = stripTags(h2hHtml4a).indexOf(`${myBench.name} (${myBench.team})`);
       assert.ok(starterIdx4a !== -1 && benchIdx4a !== -1 && starterIdx4a < benchIdx4a, 'Starter panel must precede Bench panel when inspecting bench player');
       assert.ok(starterNameIdx4a !== -1 && benchNameIdx4a !== -1 && starterNameIdx4a < benchNameIdx4a, 'Starter player must appear before bench player in DOM order when inspecting bench');
 
@@ -1854,8 +1890,8 @@ describe('Tier 1: Feature Coverage (19 Features x >=5 Tests)', () => {
       assert.ok(h2hHtml4b.includes('>Bench<'), '4b must render Bench label');
       const starterIdx4b = h2hHtml4b.indexOf(`>Starter (${starterSlot})<`);
       const benchIdx4b = h2hHtml4b.indexOf('>Bench<');
-      const starterNameIdx4b = h2hHtml4b.indexOf(`${myStarter.name} (${myStarter.team})`);
-      const benchNameIdx4b = h2hHtml4b.indexOf(`${myBench.name} (${myBench.team})`);
+      const starterNameIdx4b = stripTags(h2hHtml4b).indexOf(`${myStarter.name} (${myStarter.team})`);
+      const benchNameIdx4b = stripTags(h2hHtml4b).indexOf(`${myBench.name} (${myBench.team})`);
       assert.ok(starterIdx4b !== -1 && benchIdx4b !== -1 && starterIdx4b < benchIdx4b, 'Starter panel must precede Bench panel when inspecting starter player');
       assert.ok(starterNameIdx4b !== -1 && benchNameIdx4b !== -1 && starterNameIdx4b < benchNameIdx4b, 'Starter player must appear on the left before bench player in DOM order when inspecting starter');
 
@@ -2081,16 +2117,15 @@ describe('Tier 1: Feature Coverage (19 Features x >=5 Tests)', () => {
       assert.ok(!boardHtml.includes('Divination Spotlight Pick'), 'Divination Spotlight Pick must not duplicate top player in CosmicBoard');
     });
 
-    it('30.7 should verify leaderboard rows render team names with a separate slot label and tier badge', () => {
+    it('30.7 should verify leaderboard rows render team names cleanly with rank numbers and point totals', () => {
       const lbHtml = renderWithProvider(React.createElement(CelestialLeaderboardGraph, { competitorTeams: mockData.mockCompetitorTeams }));
       assert.ok(!/Slot \d+:\s+[A-Za-z]/.test(lbHtml), 'Rows must not render a "Slot X:" prefix');
-      assert.ok(lbHtml.includes('Slot 1') && lbHtml.includes('Slot 7'), 'Rows keep the slot as a separate label');
-      assert.ok(lbHtml.includes('Favorable') && lbHtml.includes('Harmonic'), 'Rows render the tier badge');
+      assert.ok(lbHtml.includes('data-testid="leaderboard-row-rank-1"'), 'Rows expose rank #1 cleanly');
     });
 
-    it('30.8 should verify MatchupsScreen renders unified Positional Starter Matchup without duplicate telemetry blocks or ▲ ADV circles', () => {
+    it('30.8 should verify MatchupsScreen renders unified Starting Lineups without duplicate telemetry blocks or ▲ ADV circles', () => {
       const matchupsHtml = renderWithProvider(React.createElement(MatchupsScreen));
-      assert.ok(matchupsHtml.includes('Positional Starter Matchup'), 'MatchupsScreen must render Positional Starter Matchup header');
+      assert.ok(matchupsHtml.includes('Starting Lineups'), 'MatchupsScreen must render Starting Lineups header');
       assert.ok(!matchupsHtml.includes('Comparative Advantages &amp; Vulnerabilities'), 'MatchupsScreen must not render duplicate Comparative Advantages & Vulnerabilities prose block');
       assert.ok(!matchupsHtml.includes('▲ ADV'), 'MatchupsScreen must eliminate awkward ▲ ADV badge circle from telemetry cards');
     });
@@ -2133,7 +2168,7 @@ describe('Tier 1: Feature Coverage (19 Features x >=5 Tests)', () => {
       }
 
       const matchupsHtml = renderWithProvider(React.createElement(MatchupsScreen));
-      assert.ok(matchupsHtml.includes('Positional Starter Matchup'), 'MatchupsScreen must render Positional Starter Matchup title');
+      assert.ok(matchupsHtml.includes('Starting Lineups'), 'MatchupsScreen must render Starting Lineups title');
       assert.ok(!matchupsHtml.includes('YOUR STARTERS') && !matchupsHtml.includes('OPPONENT STARTERS'), 'MatchupsScreen must not render redundant YOUR STARTERS / OPPONENT STARTERS headers');
       assert.ok(!matchupsHtml.includes('YOUR BENCH') && !matchupsHtml.includes('OPPONENT BENCH'), 'MatchupsScreen must not render a duplicate YOUR BENCH / OPPONENT BENCH section');
     });
@@ -2282,24 +2317,16 @@ describe('Tier 1: Feature Coverage (19 Features x >=5 Tests)', () => {
       assert.ok(/\bWRT\b/.test(matchupsHtml), 'Positional Starter Matchups must render WRT (Flex) slot');
       assert.ok(/\bWRTQ\b/.test(matchupsHtml), 'Positional Starter Matchups must render WRTQ (Superflex) slot');
 
-      // Hierarchical node tree verification
-      assert.ok(matchupsHtml.includes('data-testid="player-oracle-tree"'), 'Player card must render hierarchical player-oracle-tree');
-      assert.ok(matchupsHtml.includes('role="group"'), 'Hierarchical node tree must expose role="group"');
-      assert.ok(matchupsHtml.includes('aria-label="Player judgment synthesis tree for '), 'Hierarchical node tree must expose player-specific aria-label');
-      assert.ok(matchupsHtml.includes('data-testid="oracle-node"'), 'Node tree must render Oracle root node');
-      assert.ok(matchupsHtml.includes('data-testid="oracle-tree-branches"'), 'Node tree must render Stats/Stars branch connectors');
-      assert.ok(matchupsHtml.includes('data-testid="stats-node"'), 'Node tree must render Stats leaf');
-      assert.ok(matchupsHtml.includes('data-testid="stars-node"'), 'Node tree must render Stars leaf');
-
-      // Dominant Oracle glow & animated floating 5-point SVG stars verification
-      assert.ok(
-        matchupsHtml.includes('shadow-[0_0_16px_rgba(168,85,247,0.85)]') ||
-        matchupsHtml.includes('shadow-[0_0_16px_rgba(6,182,212,0.85)]'),
-        'Dominant Oracle node must receive power-up glow shadow'
-      );
+      // Tabular metrics group verification with whimsical floating stars on dominant starters
+      assert.ok(matchupsHtml.includes('data-testid="player-oracle-tree"'), 'Player card must render player-oracle-tree metrics group');
+      assert.ok(matchupsHtml.includes('role="group"'), 'Metrics group must expose role="group"');
+      assert.ok(matchupsHtml.includes('aria-label="Metrics for '), 'Metrics group must expose player-specific aria-label');
+      assert.ok(matchupsHtml.includes('data-testid="oracle-node"'), 'Metrics group must render Modifier cell');
+      assert.ok(matchupsHtml.includes('data-testid="stats-node"'), 'Metrics group must render Base cell');
+      assert.ok(!matchupsHtml.includes('data-testid="stars-node"'), 'Legacy 0-100 Stars cell must be removed');
       assert.ok(!matchupsHtml.includes('data-testid="oracle-powerup-arrows"'), 'Power-up arrows must be removed');
-      assert.ok(matchupsHtml.includes('data-testid="oracle-powerup-stars"'), 'Dominant Oracle node must render floating SVG stars overlay');
-      assert.ok(matchupsHtml.includes('<polygon points="12,2 15,9 22,9 17,14 19,21 12,17 5,21 7,14 2,9 9,9"'), 'Floating stars must render actual 5-point SVG polygon shapes');
+      assert.ok(matchupsHtml.includes('data-testid="oracle-powerup-stars"'), 'Dominant Modifier node must render floating SVG stars overlay');
+      assert.ok(matchupsHtml.includes('<polygon points="12,2 15,9 22,9 17,14 19,21 12,17 5,21 7,14 2,9 9,9"'), 'Floating stars must render 5-point SVG polygon shapes');
       assert.ok(matchupsHtml.includes('animate-powerup-star-float'), 'Floating stars must use animate-powerup-star-float');
       assert.ok(matchupsHtml.includes('motion-reduce:animate-none'), 'Floating stars must honor motion-reduce:animate-none');
 
@@ -2349,12 +2376,12 @@ describe('Tier 1: Feature Coverage (19 Features x >=5 Tests)', () => {
       assert.deepStrictEqual(slotLabels, ['QB', 'RB', 'WR', 'TE', 'K', 'DST'], 'Starter rows must map row-by-row to exact slot labels');
       const srSummaries = [...statesHtml.matchAll(/<span class="sr-only">([^<]+)<\/span>/g)].map((m) => m[1].trim());
       assert.equal(srSummaries.length, 6, 'Every positional starter row must render an accessible sr-only comparison summary');
-      assert.ok(srSummaries[0].startsWith('QB: User Fav Star Oracle') && srSummaries[0].endsWith(' - User dominant'), `QB sr-only summary mismatch: ${srSummaries[0]}`);
-      assert.ok(srSummaries[1].startsWith('RB: User Underdog Oracle') && srSummaries[1].endsWith(' - Opponent dominant'), `RB sr-only summary mismatch: ${srSummaries[1]}`);
-      assert.ok(srSummaries[2].startsWith('WR: User Even Oracle') && srSummaries[2].endsWith(' - Even'), `WR sr-only summary mismatch: ${srSummaries[2]}`);
-      assert.ok(srSummaries[3].includes('TE: Empty vs Opp Solo Oracle') && srSummaries[3].endsWith(' - Open'), `TE sr-only summary mismatch: ${srSummaries[3]}`);
-      assert.ok(srSummaries[4].startsWith('K: User Bye Star Oracle') && srSummaries[4].endsWith(' - Opponent active vs user on bye'), `K bye sr-only summary mismatch: ${srSummaries[4]}`);
-      assert.ok(srSummaries[5].startsWith('DST: User Bye DST Oracle') && srSummaries[5].endsWith(' - Both starters on bye'), `DST bye sr-only summary mismatch: ${srSummaries[5]}`);
+      assert.ok(srSummaries[0].startsWith('QB: User Fav Star ') && srSummaries[0].endsWith(' - User dominant'), `QB sr-only summary mismatch: ${srSummaries[0]}`);
+      assert.ok(srSummaries[1].startsWith('RB: User Underdog ') && srSummaries[1].endsWith(' - Opponent dominant'), `RB sr-only summary mismatch: ${srSummaries[1]}`);
+      assert.ok(srSummaries[2].startsWith('WR: User Even ') && srSummaries[2].endsWith(' - Even'), `WR sr-only summary mismatch: ${srSummaries[2]}`);
+      assert.ok(srSummaries[3].includes('TE: Empty vs Opp Solo ') && srSummaries[3].endsWith(' - Open'), `TE sr-only summary mismatch: ${srSummaries[3]}`);
+      assert.ok(srSummaries[4].startsWith('K: User Bye Star ') && srSummaries[4].endsWith(' - Opponent active vs user on bye'), `K bye sr-only summary mismatch: ${srSummaries[4]}`);
+      assert.ok(srSummaries[5].startsWith('DST: User Bye DST ') && srSummaries[5].endsWith(' - Both starters on bye'), `DST bye sr-only summary mismatch: ${srSummaries[5]}`);
 
       const getStarterCardHtml = (html, id) => {
         const marker = `data-testid="matchup-starter-card-${id}"`;
@@ -2367,20 +2394,20 @@ describe('Tier 1: Feature Coverage (19 Features x >=5 Tests)', () => {
         return nextDelim !== -1 ? rest.slice(0, 4 + nextDelim) : rest.slice(0, 2600);
       };
 
-      // Dominant cards: data-dominant="true", glowing Oracle node, floating 5-point SVG stars, zero favored badge / arrows
+      // Dominant cards: data-dominant="true", whimsical floating stars, curated starry accents
       const uFavCard = getStarterCardHtml(statesHtml, 'u_fav');
       assert.ok(uFavCard.includes('data-dominant="true"'), 'u_fav card must have data-dominant="true"');
-      assert.ok(uFavCard.includes('aria-label="Player judgment synthesis tree for User Fav Star"'), 'u_fav tree must include player name in aria-label');
-      assert.ok(uFavCard.includes('shadow-[0_0_16px_rgba(168,85,247,0.85)]'), 'u_fav Oracle node must render purple power-up glow');
-      assert.ok(uFavCard.includes('data-testid="oracle-powerup-stars"'), 'u_fav Oracle node must render floating stars');
+      assert.ok(uFavCard.includes('aria-label="Metrics for User Fav Star"'), 'u_fav metrics must include player name in aria-label');
+      assert.ok(uFavCard.includes('text-amber-200') || uFavCard.includes('border-amber-300'), 'u_fav dominant node must render warm starlight gold highlight');
+      assert.ok(uFavCard.includes('data-testid="oracle-powerup-stars"'), 'u_fav dominant node must render floating stars');
       assert.ok(!uFavCard.includes('data-testid="oracle-powerup-arrows"'), 'u_fav card must not render removed arrows');
       assert.ok(!uFavCard.includes('data-testid="player-favored-badge"'), 'u_fav card must not render removed favored badge');
 
       for (const oppFavId of ['o_fav', 'o_bye_opp']) {
         const oppFavCard = getStarterCardHtml(statesHtml, oppFavId);
         assert.ok(oppFavCard.includes('data-dominant="true"'), `${oppFavId} card must have data-dominant="true"`);
-        assert.ok(oppFavCard.includes('shadow-[0_0_16px_rgba(6,182,212,0.85)]'), `${oppFavId} Oracle node must render cyan power-up glow`);
-        assert.ok(oppFavCard.includes('data-testid="oracle-powerup-stars"'), `${oppFavId} Oracle node must render floating stars`);
+        assert.ok(oppFavCard.includes('text-sky-200'), `${oppFavId} Oracle node must render astral sky highlight`);
+        assert.ok(oppFavCard.includes('data-testid="oracle-powerup-stars"'), `${oppFavId} dominant Oracle node must render floating stars`);
         assert.ok(!oppFavCard.includes('data-testid="oracle-powerup-arrows"'), `${oppFavId} card must not render removed arrows`);
         assert.ok(!oppFavCard.includes('data-testid="player-favored-badge"'), `${oppFavId} card must not render removed favored badge`);
       }
@@ -2945,50 +2972,36 @@ describe('Tier 1: Feature Coverage (19 Features x >=5 Tests)', () => {
       assert.ok(!html.includes('player-favored-badge'), 'One-sided overflow rows must never display favored badge');
     });
 
-    it('30.20 should verify League leaderboard tier badges strictly match the displayed team rating rather than raw spirit_score alone', () => {
+    it('30.20 should verify League leaderboard ranks teams strictly by starter Base + Modifier projected totals', () => {
+      const pHigh = { id: 'p_high', name: 'High Star WR', position: 'WR', team: 'KC', projected_points: 22.5, sleeper_projected_points: 22.5 };
+      const pLow = { id: 'p_low', name: 'Low Depth WR', position: 'WR', team: 'CLE', projected_points: 8.0, sleeper_projected_points: 8.0 };
       const topTeam = {
         slot: 1,
         roster_id: 1,
-        name: 'Top Composite Team',
-        avg_spirit_score: 72.0,
-        avg_draft_score: 82.0,
-        harmony_score: 86.7,
+        name: 'Top Projected Team',
+        starters: ['p_high'],
+        players: ['p_high'],
         picks: [],
       };
       const midTeam = {
         slot: 4,
         roster_id: 4,
-        name: 'Fourth Place Team',
-        avg_spirit_score: 76.0,
-        avg_draft_score: 70.0,
-        harmony_score: 76.0,
+        name: 'Lower Projected Team',
+        starters: ['p_low'],
+        players: ['p_low'],
         picks: [],
       };
-
-      const mTop = scoring.calculateTeamCelestialMetrics(topTeam);
-      const mMid = scoring.calculateTeamCelestialMetrics(midTeam);
-
-      assert.equal(mTop.compositeScore, 79.4, 'Top team compositeScore must be 79.4');
-      assert.equal(mTop.tier, 'Harmonic', 'Team with 79.4 composite score must be Harmonic, not Discordant');
-      assert.equal(mTop.verdict, '⚖️ Harmonic (Stable)', 'Team with 79.4 composite score must display Harmonic (Stable)');
-
-      assert.equal(mMid.compositeScore, 74.2, 'Fourth team compositeScore must be 74.2');
-      assert.equal(mMid.tier, 'Discordant', 'Team with 74.2 composite score (< 75.0) must be Discordant, not Harmonic');
-      assert.equal(mMid.verdict, '⚠️ Discordant (At Risk)', 'Team with 74.2 composite score (< 75.0) must display Discordant (At Risk)');
 
       const lbHtml = renderWithProvider(
         React.createElement(CelestialLeaderboardGraph, {
           competitorTeams: [midTeam, topTeam],
-        })
+        }),
+        { ...mockData.mock_oneiromancy_draft_2025, cosmic_board: [pHigh, pLow] },
       );
-      const topCardStart = lbHtml.indexOf('Top Composite Team');
-      const midCardStart = lbHtml.indexOf('Fourth Place Team');
-      assert.ok(topCardStart !== -1 && midCardStart !== -1 && topCardStart < midCardStart, 'Leaderboard must rank 79.4 ahead of 74.2');
-      const topSlice = lbHtml.slice(topCardStart, midCardStart);
-      assert.ok(topSlice.includes('⚖️ Harmonic (Stable)') && topSlice.includes('79.4'), 'Rank #1 (79.4) must show Harmonic (Stable)');
-      assert.ok(!topSlice.includes('Discordant'), 'Rank #1 (79.4) must NOT show Discordant');
-      const midSlice = lbHtml.slice(midCardStart);
-      assert.ok(midSlice.includes('⚠️ Discordant (At Risk)') && midSlice.includes('74.2'), '74.2 row must show Discordant (At Risk)');
+      const topCardStart = lbHtml.indexOf('Top Projected Team');
+      const midCardStart = lbHtml.indexOf('Lower Projected Team');
+      assert.ok(topCardStart !== -1 && midCardStart !== -1 && topCardStart < midCardStart, 'Leaderboard must rank higher projected team ahead of lower projected team');
+      assert.ok(!lbHtml.includes('%'), 'Leaderboard HTML text must not render % ratings');
     });
   });
 });

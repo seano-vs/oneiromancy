@@ -75,128 +75,106 @@ export const BoardControls: React.FC<BoardControlsProps> = ({
 }) => {
   const positions: PositionFilterValue[] = ['ALL', 'QB', 'RB', 'WR', 'TE', 'FLEX'];
 
-  const getPositionChipStyle = (pos: PositionFilterValue, isActive: boolean) => {
-    if (!isActive) {
-      return 'bg-slate-900/80 text-slate-400 hover:text-slate-200 border border-white/10';
-    }
-    switch (pos) {
-      case 'QB':
-        return 'bg-red-500/20 text-red-300 border-red-400 shadow-[0_0_10px_rgba(239,68,68,0.4)]';
-      case 'RB':
-        return 'bg-teal-500/20 text-teal-300 border-teal-400 shadow-[0_0_10px_rgba(20,184,166,0.4)]';
-      case 'WR':
-        return 'bg-sky-500/20 text-sky-300 border-sky-400 shadow-[0_0_10px_rgba(56,189,248,0.4)]';
-      case 'TE':
-        return 'bg-amber-500/20 text-amber-300 border-amber-400 shadow-[0_0_10px_rgba(245,158,11,0.4)]';
-      case 'FLEX':
-        return 'bg-rose-500/20 text-rose-300 border-rose-400 shadow-[0_0_10px_rgba(244,63,94,0.4)]';
-      default:
-        return 'bg-cyan-500 text-slate-950 font-bold shadow-[0_0_10px_rgba(6,182,212,0.4)]';
-    }
-  };
-
   return (
-    <div className={`space-y-3 w-full min-w-0 ${className}`}>
-      {/* Mode Filter Pills (All Players | Waivers | Trades | My Roster) */}
-      {onModeFilterChange && (
-        <div
-          data-testid="board-mode-pills"
-          className="flex items-center gap-1.5 overflow-x-auto pb-0.5 scrollbar-none"
-        >
-          {MODE_PILLS.map((pill) => {
-            const active = modeFilter === pill.id;
-            const isMyTeamPill = pill.id === 'my_team';
-            return (
+    <div className={`space-y-2.5 w-full min-w-0 ${className}`}>
+      {/* Top Toolbar: Segmented Mode Switcher + Search + Sort + Free Agents */}
+      <div className="flex flex-col lg:flex-row gap-2.5 items-stretch lg:items-center justify-between">
+        {onModeFilterChange && (
+          <div
+            data-testid="board-mode-pills"
+            className="inline-flex items-center gap-0.5 p-0.5 rounded-lg bg-zinc-900 border border-white/10 overflow-x-auto scrollbar-none self-start"
+          >
+            {MODE_PILLS.map((pill) => {
+              const active = modeFilter === pill.id;
+              return (
+                <button
+                  key={pill.id}
+                  type="button"
+                  data-testid={`board-mode-${pill.id}`}
+                  onClick={() => onModeFilterChange(pill.id)}
+                  className={`px-3 py-1.5 rounded-md text-xs font-sans transition-colors whitespace-nowrap ${
+                    active
+                      ? 'bg-zinc-800 text-zinc-100 font-semibold'
+                      : 'text-zinc-400 hover:text-zinc-200 font-medium'
+                  }`}
+                >
+                  {pill.label}
+                </button>
+              );
+            })}
+          </div>
+        )}
+
+        <div className="flex flex-col sm:flex-row gap-2 items-stretch sm:items-center flex-1 lg:max-w-xl">
+          <div className="relative flex-1">
+            <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" />
+            <input
+              type="text"
+              placeholder="Search player or team"
+              aria-label="Search player or team"
+              value={searchQuery}
+              onChange={(e) => onSearchChange(e.target.value)}
+              className="w-full pl-9 pr-8 py-1.5 rounded-lg bg-[#16181d] border border-white/10 text-xs font-sans text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-amber-400/60"
+            />
+            {searchQuery && (
               <button
-                key={pill.id}
                 type="button"
-                data-testid={`board-mode-${pill.id}`}
-                onClick={() => onModeFilterChange(pill.id)}
-                className={`px-3 py-1.5 rounded-xl text-xs font-mono font-bold transition-all whitespace-nowrap border ${
-                  active
-                    ? isMyTeamPill
-                      ? 'bg-purple-950/80 border-purple-500/60 text-purple-200 shadow-[0_0_10px_rgba(168,85,247,0.3)]'
-                      : 'bg-cyan-950/80 border-cyan-500/50 text-cyan-200 shadow-[0_0_10px_rgba(6,182,212,0.25)]'
-                    : 'bg-slate-900/70 border-white/10 text-slate-400 hover:text-slate-200'
-                }`}
+                onClick={() => onSearchChange('')}
+                aria-label="Clear Search"
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-100"
               >
-                {pill.label}
+                <X className="w-3.5 h-3.5" />
               </button>
-            );
-          })}
-        </div>
-      )}
-
-      {/* Search Input, 3-Metric Sort Dropdown & Free Agents Toggle */}
-      <div className="flex flex-col sm:flex-row gap-2.5 items-stretch sm:items-center">
-        <div className="relative flex-1">
-          <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
-          <input
-            type="text"
-            placeholder="Search player or team..."
-            value={searchQuery}
-            onChange={(e) => onSearchChange(e.target.value)}
-            className="w-full pl-10 pr-9 py-2 rounded-xl bg-slate-900/90 border border-white/10 text-xs font-mono text-slate-100 placeholder-slate-500 focus:outline-none focus:border-cyan-500/60 focus:ring-1 focus:ring-cyan-500/30"
-          />
-          {searchQuery && (
-            <button
-              type="button"
-              onClick={() => onSearchChange('')}
-              aria-label="Clear Search"
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200"
-            >
-              <X className="w-3.5 h-3.5" />
-            </button>
-          )}
-        </div>
-
-        {/* Strictly 3 Canonical Metrics Sort Dropdown (Oracle, Stats, Stars) */}
-        <div className="flex items-center gap-2 min-w-0">
-          <div className="relative flex-1 min-w-0 sm:flex-none">
-            <select
-              value={
-                sortField === 'projected_points' || sortField === 'stars'
-                  ? sortField
-                  : 'oracle'
-              }
-              onChange={(e) => {
-                const field = e.target.value as BoardSortField;
-                onSortChange(field, 'desc');
-              }}
-              aria-label="Sort players by"
-              className="w-full truncate appearance-none pl-8 pr-8 py-2 rounded-xl bg-slate-900/90 border border-white/10 text-xs font-mono text-slate-200 focus:outline-none focus:border-cyan-500/60 cursor-pointer"
-            >
-              <option value="oracle">Oracle: blended score</option>
-              <option value="projected_points">Stats: projected points</option>
-              <option value="stars">Stars: this week</option>
-            </select>
-            <ArrowUpDown className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-cyan-400 pointer-events-none" />
+            )}
           </div>
 
-          {onToggleHideDrafted && modeFilter === 'all' && (
-            <button
-              type="button"
-              onClick={() => onToggleHideDrafted(!hideDrafted)}
-              className={`px-3 py-2 rounded-xl text-xs font-mono border transition-all flex items-center gap-2 whitespace-nowrap active:scale-95 ${
-                hideDrafted
-                  ? 'bg-cyan-950/80 border-cyan-500/40 text-cyan-300 shadow-[0_0_8px_rgba(6,182,212,0.3)]'
-                  : 'bg-slate-900/80 border-white/10 text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              <span
-                className={`w-2 h-2 rounded-full ${
-                  hideDrafted ? 'bg-cyan-400 animate-pulse' : 'bg-slate-600'
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="relative flex-1 min-w-0 sm:flex-none">
+              <select
+                value={
+                  sortField === 'projected_points' || sortField === 'stars'
+                    ? sortField
+                    : 'oracle'
+                }
+                onChange={(e) => {
+                  const field = e.target.value as BoardSortField;
+                  onSortChange(field, 'desc');
+                }}
+                aria-label="Sort players by"
+                className="w-full appearance-none pl-7 pr-7 py-1.5 rounded-lg bg-[#16181d] border border-white/10 text-xs font-sans text-zinc-200 focus:outline-none focus:border-amber-400/60 cursor-pointer"
+              >
+                <option value="oracle">Sort: Projected</option>
+                <option value="projected_points">Sort: Base</option>
+                <option value="stars">Sort: Modifier</option>
+              </select>
+              <ArrowUpDown className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-zinc-400 pointer-events-none" />
+            </div>
+
+            {onToggleHideDrafted && modeFilter === 'all' && (
+              <button
+                type="button"
+                onClick={() => onToggleHideDrafted(!hideDrafted)}
+                className={`px-2.5 py-1.5 rounded-lg text-xs font-sans font-medium border transition-colors flex items-center gap-1.5 whitespace-nowrap ${
+                  hideDrafted
+                    ? 'bg-zinc-800 border-amber-400/40 text-amber-200 font-semibold'
+                    : 'bg-[#16181d] border-white/10 text-zinc-400 hover:text-zinc-200'
                 }`}
-              />
-              <span>Free agents only</span>
-            </button>
-          )}
+              >
+                <span
+                  className={`w-1.5 h-1.5 rounded-full ${
+                    hideDrafted ? 'bg-amber-400' : 'bg-zinc-500'
+                  }`}
+                />
+                <span>Free agents</span>
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
-      {/* Positional Filter Chips Row */}
-      <div className="flex items-center justify-between gap-2 overflow-x-auto pb-1 scrollbar-none min-w-0 max-w-full">
-        <div className="flex items-center gap-1.5 shrink-0">
+      {/* Positional Filter Strip */}
+      <div className="flex flex-wrap items-center justify-between gap-2 pb-1.5 border-b border-white/[0.06] min-w-0 max-w-full">
+        <div className="flex flex-wrap items-center gap-1 min-w-0">
           {positions.map((pos) => {
             const isActive = positionFilter === pos;
             const count = positionCounts ? positionCounts[pos] : undefined;
@@ -206,20 +184,21 @@ export const BoardControls: React.FC<BoardControlsProps> = ({
                 key={pos}
                 type="button"
                 onClick={() => onPositionFilterChange(pos)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-mono font-medium transition-all ${getPositionChipStyle(
-                  pos,
+                className={`px-2.5 py-1 rounded-md text-xs font-mono tabular-nums transition-colors ${
                   isActive
-                )}`}
+                    ? 'bg-zinc-800 text-zinc-100 border border-white/15 font-semibold'
+                    : 'text-zinc-400 hover:text-zinc-200 border border-transparent font-medium'
+                }`}
               >
                 {pos}
-                {count !== undefined && <span className="ml-1 opacity-70">({count})</span>}
+                {count !== undefined && <span className="ml-1 text-zinc-400 font-normal">({count})</span>}
               </button>
             );
           })}
         </div>
 
         {totalVisibleCount !== undefined && (
-          <span className="text-[11px] font-mono text-slate-500 whitespace-nowrap hidden sm:inline">
+          <span className="text-xs font-mono tabular-nums text-zinc-400 whitespace-nowrap hidden sm:inline">
             {totalVisibleCount} players
           </span>
         )}

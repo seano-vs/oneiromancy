@@ -20,7 +20,7 @@ import React from 'react';
 import GlassCard from '@/components/common/GlassCard';
 import AscensionNode from './AscensionNode';
 import { CosmicPlayer, IdealDraftPick } from '@/types/oneiromancy';
-import { Sparkles, Trophy, CheckCircle2 } from 'lucide-react';
+import { Trophy } from 'lucide-react';
 
 export interface AscensionTimelineProps {
   steps?: IdealDraftPick[];
@@ -41,7 +41,7 @@ export const AscensionTimeline: React.FC<AscensionTimelineProps> = ({
 }) => {
   if (steps.length === 0) {
     return (
-      <GlassCard variant="panel" className="p-6 text-center text-slate-400 font-mono text-xs">
+      <GlassCard variant="panel" className="p-6 text-center text-zinc-400 font-mono text-xs">
         No ascension draft path calculated yet.
       </GlassCard>
     );
@@ -52,29 +52,28 @@ export const AscensionTimeline: React.FC<AscensionTimelineProps> = ({
   return (
     <GlassCard variant="panel" className={`p-4 sm:p-6 space-y-4 ${className}`}>
       {/* Title Header */}
-      <div className="flex justify-between items-center border-b border-white/10 pb-3">
+      <div className="flex justify-between items-center border-b border-white/[0.08] pb-3">
         <div>
-          <div className="flex items-center gap-1.5 text-xs font-mono text-cyan-400 font-bold uppercase tracking-wider">
-            <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
-            <span>Path of Ascension</span>
+          <div className="text-sm font-sans font-semibold text-zinc-100">
+            Draft Path
           </div>
-          <p className="text-[11px] font-sans text-slate-400">
-            15-Round Divination Trajectory & Target Milestones
+          <p className="text-xs font-sans text-zinc-400">
+            15-round trajectory &amp; target milestones
           </p>
         </div>
-        <span className="text-xs font-mono text-purple-300 bg-purple-950/60 border border-purple-500/30 px-2 py-0.5 rounded">
-          Round {currentRound} / 15
+        <span className="text-xs font-mono tabular-nums text-zinc-200 bg-zinc-900 border border-white/10 px-2.5 py-0.5 rounded-md">
+          Round {currentRound} of 15
         </span>
       </div>
 
       {/* Roster Complete Banner if all rounds completed */}
       {allCompleted && (
-        <div className="p-3 rounded-xl bg-gradient-to-r from-emerald-950/80 to-cyan-950/80 border border-emerald-500/40 text-emerald-300 flex items-center gap-3">
-          <Trophy className="w-5 h-5 text-emerald-400 shrink-0" />
-          <div className="font-mono text-xs">
-            <span className="font-bold block text-emerald-200">ASCENSION COMPLETE • ROSTER LOCKED</span>
-            <span className="text-[11px] text-slate-300">
-              All 15 sacred draft nodes achieved. Proceed to Player Marketplace for waiver transmutations.
+        <div className="p-3 rounded-lg bg-emerald-950/40 border border-emerald-500/30 text-emerald-200 flex items-center gap-3">
+          <Trophy className="w-4 h-4 text-emerald-400 shrink-0" />
+          <div className="font-sans text-xs">
+            <span className="font-semibold block text-emerald-200">Draft complete</span>
+            <span className="text-xs text-zinc-300">
+              All 15 draft rounds complete. Open Players to check waiver upgrades and trades.
             </span>
           </div>
         </div>
@@ -84,7 +83,7 @@ export const AscensionTimeline: React.FC<AscensionTimelineProps> = ({
       <div className="relative pl-0 sm:pl-2 space-y-4 pt-1">
         {/* Continuous Connecting Rail Line */}
         <div
-          className="absolute left-[15px] sm:left-[23px] top-4 bottom-4 w-0.5 bg-gradient-to-b from-emerald-500 via-cyan-400 to-purple-800"
+          className="absolute left-[15px] sm:left-[23px] top-4 bottom-4 w-px bg-white/15"
           aria-hidden="true"
         />
 

@@ -17,13 +17,27 @@
 @import "tailwindcss";
 @config "../tailwind.config.ts";
 
+@theme {
+  --font-sans: var(--font-jakarta), "Plus Jakarta Sans", system-ui, -apple-system, sans-serif;
+  --font-serif: var(--font-newsreader), Newsreader, Georgia, serif;
+  --font-mono: var(--font-jetbrains-mono), "JetBrains Mono", ui-monospace, monospace;
+}
+
 @layer base {
   *,
   ::after,
   ::before,
   ::backdrop,
   ::file-selector-button {
-    border-color: rgba(255, 255, 255, 0.1);
+    border-color: var(--border-default);
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    text-wrap: balance;
+    letter-spacing: -0.02em;
   }
 
   button:not(:disabled),
@@ -33,13 +47,62 @@
 }
 
 :root {
-  --background: #131318;
-  --foreground: #f8fafc;
+  color-scheme: dark;
+  --background: #0f1012;
+  --foreground: #f4f4f5;
+  --border-default: rgba(255, 255, 255, 0.08);
+  --border-hairline: rgba(255, 255, 255, 0.08);
+  --border-strong: rgba(255, 255, 255, 0.14);
+  --surface-panel: #16181d;
+  --surface-elevated: #1c1f26;
+  --accent-brass: #e2b964;
+  --accent-brass-muted: rgba(226, 185, 100, 0.14);
+  --sky-zenith: rgba(139, 92, 246, 0.08);
+  --checkbox-border: rgba(255, 255, 255, 0.22);
+  --checkbox-border-hover: rgba(255, 255, 255, 0.38);
+  --checkbox-bg: rgba(255, 255, 255, 0.03);
+  --checkbox-bg-hover: rgba(255, 255, 255, 0.06);
+  --checkbox-focus: rgba(226, 185, 100, 0.7);
+}
+
+/* Bespoke Dark Matte Checkboxes */
+.checkbox-matte {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 0.875rem;
+  height: 0.875rem;
+  border-radius: 3px;
+  border: 1px solid var(--checkbox-border);
+  background-color: var(--checkbox-bg);
+  display: inline-grid;
+  place-content: center;
+  transition: background-color 0.12s ease, border-color 0.12s ease;
+}
+
+.checkbox-matte:hover:not(:disabled) {
+  border-color: var(--checkbox-border-hover);
+  background-color: var(--checkbox-bg-hover);
+}
+
+.checkbox-matte:checked {
+  background-color: #e2b964;
+  border-color: #e2b964;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' fill='none' stroke='%230f1012' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2.5 6.2L5 8.7L9.5 3.5'/%3E%3C/svg%3E");
+  background-size: 10px 10px;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+.checkbox-matte:focus-visible {
+  outline: 2px solid var(--checkbox-focus);
+  outline-offset: 1px;
 }
 
 body {
-  background-color: #131318;
-  color: #f8fafc;
+  background-color: var(--background);
+  background-image: radial-gradient(ellipse 80% 45% at 50% -8%, var(--sky-zenith), transparent);
+  background-repeat: no-repeat;
+  color: var(--foreground);
   min-height: 100vh;
   overflow-x: hidden;
 }
@@ -50,75 +113,51 @@ body {
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #131318;
+  background: #0f1012;
 }
 ::-webkit-scrollbar-thumb {
-  background: #242436;
+  background: #272a33;
   border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #6d28d9;
+  background: #3b3f4c;
 }
 
-/* Glass Card Panel */
+.scrollbar-none {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+
+/* Matte Surface Panels */
 .glass-panel {
-  background: rgba(26, 26, 36, 0.72);
-  backdrop-filter: blur(14px) saturate(180%);
-  -webkit-backdrop-filter: blur(14px) saturate(180%);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.5), inset 0 1px 0 0 rgba(255, 255, 255, 0.1);
+  background: var(--surface-panel);
+  border: 1px solid var(--border-hairline);
 }
 
-/* Glass Card Surface */
 .glass-surface {
-  background: rgba(26, 26, 36, 0.85);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--surface-elevated);
+  border: 1px solid var(--border-hairline);
 }
 
-/* Radiant Neon Border Highlights */
-.glow-cyan {
-  border-color: rgba(6, 182, 212, 0.5);
-  box-shadow: 0 0 16px rgba(6, 182, 212, 0.25), inset 0 0 8px rgba(6, 182, 212, 0.1);
-}
-
-.glow-purple {
-  border-color: rgba(109, 40, 217, 0.5);
-  box-shadow: 0 0 16px rgba(109, 40, 217, 0.3), inset 0 0 8px rgba(109, 40, 217, 0.12);
-}
-
-.glow-gold {
-  border-color: rgba(234, 179, 8, 0.5);
-  box-shadow: 0 0 16px rgba(234, 179, 8, 0.25), inset 0 0 8px rgba(234, 179, 8, 0.1);
-}
-
+/* Restrained Hairline Accents (legacy glow tokens neutralized) */
+.glow-cyan,
+.glow-purple,
+.glow-gold,
 .glow-green {
-  border-color: rgba(16, 185, 129, 0.5);
-  box-shadow: 0 0 16px rgba(16, 185, 129, 0.25), inset 0 0 8px rgba(16, 185, 129, 0.1);
+  border-color: var(--border-hairline);
+  box-shadow: none;
 }
 
 .glow-gradient-card {
-  position: relative;
-  background: linear-gradient(135deg, rgba(30, 27, 75, 0.6) 0%, rgba(19, 19, 24, 0.85) 100%);
-  border: 1px solid transparent;
-  background-clip: padding-box;
+  background: var(--surface-panel);
+  border: 1px solid var(--border-hairline);
 }
 
-.glow-gradient-card::before {
-  content: '';
-  position: absolute;
-  top: -1px;
-  bottom: -1px;
-  left: -1px;
-  right: -1px;
-  background: linear-gradient(135deg, rgba(6, 182, 212, 0.4), rgba(109, 40, 217, 0.4), transparent 70%);
-  border-radius: inherit;
-  z-index: -1;
-  pointer-events: none;
-}
-
-/* Keyframes for Astrolabe and Pulses */
+/* Keyframes for Astrolabe, Star Particles, and Pulses */
 @keyframes spin-cw {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
@@ -129,10 +168,42 @@ body {
   to { transform: rotate(0deg); }
 }
 
+@keyframes powerup-star-float {
+  0% { transform: translateY(2px) scale(0.75) rotate(-8deg); opacity: 0; }
+  22% { opacity: 0.92; }
+  72% { opacity: 0.6; }
+  100% { transform: translateY(-20px) scale(1.04) rotate(12deg); opacity: 0; }
+}
+
+@keyframes star-twinkle {
+  0%, 100% { transform: scale(0.78) rotate(0deg); opacity: 0.25; }
+  50% { transform: scale(1.12) rotate(10deg); opacity: 0.92; }
+}
+
 .animate-spin-cw {
   animation: spin-cw linear infinite;
 }
 
 .animate-spin-ccw {
   animation: spin-ccw linear infinite;
+}
+
+.animate-powerup-star-float {
+  animation: powerup-star-float 2.3s ease-out infinite both;
+}
+
+.animate-star-twinkle {
+  animation: star-twinkle 2.8s ease-in-out infinite both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-spin-cw,
+  .animate-spin-ccw,
+  .animate-powerup-star-float,
+  .animate-star-twinkle,
+  .animate-pulse,
+  [data-astrolabe-ring] {
+    animation: none !important;
+    transition: none !important;
+  }
 }

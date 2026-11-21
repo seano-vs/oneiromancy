@@ -17,33 +17,35 @@
 
 'use client';
 
-import React, { useEffect, useId, useRef, useState } from 'react';
-import PositionalBadge from '@/components/common/PositionalBadge';
-import PlayerHeadshot, { TeamLogo } from '@/components/common/PlayerHeadshot';
+import { ChevronDown, ExternalLink, HelpCircle, X } from 'lucide-react';
+import React, { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 import OraclePlaceholderMarker from '@/components/common/OraclePlaceholderMarker';
-import { CosmicPlayer, RosterSlot } from '@/types/oneiromancy';
+import PlayerHeadshot, { TeamLogo } from '@/components/common/PlayerHeadshot';
+import PositionalBadge from '@/components/common/PositionalBadge';
 import { useOptionalOneiromancy } from '@/context/OneiromancyContext';
 import {
-  DEFAULT_CHAOS_LAMBDA,
-  DEFAULT_ORACLE_WEIGHTS,
-  DIVINATION_PILLARS,
-  starsVerdictLabel,
-  haversineDistance,
-  isPlayerOnByeWeek,
-  normalizeOracleWeights,
-  stripUserSuffix,
-} from '@/lib/scoring';
-import { getSeasonContext } from '@/lib/sleeper';
-import {
-  TONE_PILL,
-  favorabilityTone,
+  GITHUB_EMPIRICAL_STUDY_URL,
+  PREDICTOR_CATEGORIES,
+  buildUnitMap,
+  computePlayerTeamElementalBalance,
+  formatSignedModifier,
+  modifierTextColor,
   oraclePlaceholderInfo,
-  oracleScore,
+  playerForecast,
   resolveActiveWeek,
-  starsScore,
-  statsPoints,
 } from '@/lib/oracle';
-import { X, Sparkles, Compass, Shield, ArrowRightLeft, ChevronDown } from 'lucide-react';
+import { resolveTeamNextGame } from '@/lib/pointDiffEngine';
+import { isPlayerOnByeWeek, stripUserSuffix } from '@/lib/scoring';
+import { getSeasonContext, resolveNFLTeamUnit } from '@/lib/sleeper';
+import { CosmicPlayer, RosterSlot } from '@/types/oneiromancy';
+
+const RADAR_CX = 115;
+const RADAR_CY = 96;
+const RADAR_MAX_R = 62;
+const RADAR_SPOKE_ANGLES = [-90, -18, 54, 126, 198] as const;
+
+const EMPTY_BOARD: readonly CosmicPlayer[] = [];
+const EMPTY_ROSTER: readonly RosterSlot[] = [];
 
 type ModalHistoryEntry = {
   isOpen: boolean;
@@ -274,6 +276,7 @@ export interface PlayerDetailModalProps {
   compareWith?: CosmicPlayer | null;
   compareCandidates?: CosmicPlayer[] | null;
   activeWeek?: number;
+  transitNote?: { venue?: string; sky?: string; rationale?: string } | null;
 }
 
 export const PlayerDetailModal: React.FC<PlayerDetailModalProps> = ({
@@ -284,22 +287,20 @@ export const PlayerDetailModal: React.FC<PlayerDetailModalProps> = ({
   compareWith = null,
   compareCandidates = null,
   activeWeek: propActiveWeek,
+  transitNote = null,
 }) => {
   const rawContentId = useId();
   const contentId = `roster-role-comp-content-${rawContentId.replace(/[^a-zA-Z0-9_-]/g, '')}`;
   const [isRoleCompOpen, setIsRoleCompOpen] = useState(true);
+  const [activePredictorInfoId, setActivePredictorInfoId] = useState<string | null>(null);
   const ctx = useOptionalOneiromancy();
   const [showRoster, setShowRoster] = useState(false);
   const comparisonKey = `${player?.id ?? ''}|${compareWith?.id ?? ''}|${(compareCandidates ?? []).map((c) => c.id).join(',')}`;
   useEffect(() => {
     setShowRoster(false);
     setIsRoleCompOpen(true);
+    setActivePredictorInfoId(null);
   }, [comparisonKey, isOpen]);
-  const modalLambda = ctx?.draftState?.settings?.chaos_lambda ?? DEFAULT_CHAOS_LAMBDA;
-  const pillarWeights = normalizeOracleWeights(
-    ctx?.draftState?.settings?.oracle_weights ?? DEFAULT_ORACLE_WEIGHTS,
-  );
-  const pct = (w: number) => `${Math.round(w * 100)}%`;
 
   const onCloseRef = useRef(onClose);
   onCloseRef.current = onClose;
@@ -325,7 +326,7 @@ export const PlayerDetailModal: React.FC<PlayerDetailModalProps> = ({
   modalEntryRef.current.playerId = isOpen ? activePlayerId : null;
   modalEntryRef.current.onClose = () => onCloseRef.current();
 
-  const requestClose = () => {
+  const requestClose = useCallback(() => {
     syncClearedStalePendingBacks();
     const entry = modalEntryRef.current!;
     if (entry.pushed && canUseBrowserHistory()) {
@@ -355,7 +356,7 @@ export const PlayerDetailModal: React.FC<PlayerDetailModalProps> = ({
       triggerModalHistoryBack(closingEntryId);
     }
     onCloseRef.current();
-  };
+  }, []);
 
   useEffect(() => {
     const store = getModalHistoryStore();
@@ -479,12 +480,42 @@ export const PlayerDetailModal: React.FC<PlayerDetailModalProps> = ({
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener?.('keydown', onKeyDown);
-  }, [isOpen]);
+  }, [isOpen, requestClose]);
+
+  const activeRoster = propRoster ?? ctx?.draftState?.my_roster ?? EMPTY_ROSTER;
+  const boardPool = ctx?.draftState?.cosmic_board ?? EMPTY_BOARD;
+  const seasonCtx = getSeasonContext();
+  const activeWk = resolveActiveWeek(ctx?.draftState, propActiveWeek);
+  const seasonYear = Number(seasonCtx?.season) || 2025;
+
+  const unitByTeam = useMemo(
+    () => (isOpen && boardPool.length > 0 ? buildUnitMap(boardPool, activeRoster) : undefined),
+    [isOpen, boardPool, activeRoster],
+  );
+
+  const fallbackTeamUnits = useMemo(() => {
+    if (!isOpen || !player || boardPool.length > 0) {
+      return { teamUnit: undefined, opponentUnit: undefined };
+    }
+    const teamUnit = resolveNFLTeamUnit(player.team, boardPool, activeRoster, player);
+    const nextGameInfo = resolveTeamNextGame(player.team, activeWk, seasonYear);
+    const opponentUnit = nextGameInfo?.opponent
+      ? resolveNFLTeamUnit(nextGameInfo.opponent, boardPool, activeRoster)
+      : [];
+    return { teamUnit, opponentUnit };
+  }, [isOpen, player, boardPool, activeRoster, activeWk, seasonYear]);
+
+  const elementalTeamUnit = useMemo(() => {
+    if (!isOpen || !player) return EMPTY_BOARD;
+    if (fallbackTeamUnits.teamUnit) return fallbackTeamUnits.teamUnit;
+    const fromMap = unitByTeam?.get(String(player.team || '').trim().toUpperCase());
+    if (fromMap && fromMap.length >= 4) return fromMap;
+    return resolveNFLTeamUnit(player.team, boardPool, activeRoster, player);
+  }, [isOpen, player, fallbackTeamUnits.teamUnit, unitByTeam, boardPool, activeRoster]);
 
   if (!isOpen || !player) return null;
 
-  const activeRoster: RosterSlot[] = propRoster || ctx?.draftState?.my_roster || [];
-  const boardRostered: CosmicPlayer[] = (ctx?.draftState?.cosmic_board || []).filter(
+  const boardRostered: CosmicPlayer[] = boardPool.filter(
     (p) => p.draft_status === 'my_team',
   );
 
@@ -581,171 +612,139 @@ export const PlayerDetailModal: React.FC<PlayerDetailModalProps> = ({
       ]
     : teammates;
 
-  const seasonCtx = getSeasonContext();
-  const activeWk = resolveActiveWeek(ctx?.draftState, propActiveWeek);
-
-  const getWeeklyProj = (p: CosmicPlayer) => {
-    const n = Number(
-      p.weekly_projected_points ??
-        p.sleeper_projected_points ??
-        p.projected_points ??
-        0,
-    );
-    return Number.isFinite(n) ? n : 0;
-  };
+  const forecast = playerForecast(player, {
+    currentWeek: activeWk,
+    enabledSystems: ctx?.enabledSystems,
+    unitByTeam,
+    teamUnit: fallbackTeamUnits.teamUnit,
+    opponentUnit: fallbackTeamUnits.opponentUnit,
+    placeholder: true,
+    nextGameLookahead: true,
+  });
 
   const getPlayerDisplayMetrics = (p: CosmicPlayer) => {
     const pOnBye = isPlayerOnByeWeek(activeWk, p.bye_week, p.team, seasonCtx?.byeWeeks);
     const placeholder = oraclePlaceholderInfo(p, activeWk);
-    const stars = starsScore(p, activeWk);
-    const oracle = oracleScore(p, modalLambda, { currentWeek: activeWk });
+    const pf =
+      String(p.id) === String(player.id)
+        ? forecast
+        : playerForecast(p, {
+            currentWeek: activeWk,
+            enabledSystems: ctx?.enabledSystems,
+            unitByTeam,
+            placeholder: true,
+            nextGameLookahead: true,
+          });
     return {
       onBye: pOnBye,
       placeholder,
-      stats: statsPoints(p),
-      stars,
-      oracle,
+      base: pf.basePts,
+      modifier: pf.overallModifierPts,
+      net: pf.adjustedPts,
     };
   };
 
   let bestCandidateId: string | null = null;
   if (compareCandidates && compareCandidates.length >= 3) {
-    let maxOracle = -Infinity;
+    let maxNet = -Infinity;
     for (const cand of compareCandidates) {
-      const o = getPlayerDisplayMetrics(cand).oracle;
-      if (o > maxOracle) {
-        maxOracle = o;
+      const n = getPlayerDisplayMetrics(cand).net;
+      if (n > maxNet) {
+        maxNet = n;
         bestCandidateId = String(cand.id);
       }
     }
   }
 
   const candidateMetrics = getPlayerDisplayMetrics(player);
-  const candidateProj = candidateMetrics.stats;
-  const candidateFav = candidateMetrics.stars;
-  const candidateOracle = candidateMetrics.oracle;
+  const enabledSystems = [...forecast.systems]
+    .filter((s) => s.enabled)
+    .sort((a, b) => {
+      const diff = Math.abs(b.jointContributionPts) - Math.abs(a.jointContributionPts);
+      if (Math.abs(diff) > 0.0001) return diff;
+      return b.activeConditionCount - a.activeConditionCount;
+    });
+  const enabledPredictorCount = enabledSystems.length;
 
-  const breakdown = player.divination_breakdown || {
-    celestial: player.spirit_score ? Math.round(player.spirit_score * 0.95) : 85,
-    numeric: player.jersey_number ? (player.jersey_number % 9) + 80 : 85,
-    geomantic: 85,
-    oracular: 85,
-    harmony: player.harmony_score || 85,
-  };
+  const teamBalance = computePlayerTeamElementalBalance(player, elementalTeamUnit);
+  const activeTrineElements = (['Fire', 'Earth', 'Air', 'Water'] as const).filter(
+    (el) => teamBalance.elementalDistribution[el] >= 3 || teamBalance.arcanaDistribution[el] >= 3,
+  );
+  const zodiacPolygon = projectRadarPolygon({
+    norms: teamBalance.fourElementRadarNorms.zodiac,
+  });
+  const arcanaPolygon = projectRadarPolygon({
+    norms: teamBalance.fourElementRadarNorms.arcana,
+  });
+  const baziPolygon = projectRadarPolygon({
+    norms: teamBalance.fivePhaseRadarNorms.bazi,
+  });
+  const loShuPolygon = projectRadarPolygon({
+    norms: teamBalance.fivePhaseRadarNorms.loShu,
+  });
 
   const isAvailable = player.draft_status === 'available';
-
-  const NFL_TEAM_COORDS: Record<string, { lat: number; lon: number; venue: string }> = {
-    ARI: { lat: 33.5276, lon: -112.2626, venue: 'State Farm Stadium' },
-    ATL: { lat: 33.7554, lon: -84.4009, venue: 'Mercedes-Benz Stadium' },
-    BAL: { lat: 39.278, lon: -76.6227, venue: 'M&T Bank Stadium' },
-    BUF: { lat: 42.7738, lon: -78.787, venue: 'Highmark Stadium' },
-    CAR: { lat: 35.2258, lon: -80.8528, venue: 'Bank of America Stadium' },
-    CHI: { lat: 41.8623, lon: -87.6167, venue: 'Soldier Field' },
-    CIN: { lat: 39.0954, lon: -84.5161, venue: 'Paycor Stadium' },
-    CLE: { lat: 41.5061, lon: -81.6995, venue: 'Cleveland Browns Stadium' },
-    DAL: { lat: 32.7473, lon: -97.0945, venue: 'AT&T Stadium' },
-    DEN: { lat: 39.7439, lon: -105.0201, venue: 'Empower Field' },
-    DET: { lat: 42.34, lon: -83.0456, venue: 'Ford Field' },
-    GB: { lat: 44.5013, lon: -88.0622, venue: 'Lambeau Field' },
-    HOU: { lat: 29.6847, lon: -95.4107, venue: 'NRG Stadium' },
-    IND: { lat: 39.7601, lon: -86.1639, venue: 'Lucas Oil Stadium' },
-    JAX: { lat: 30.3239, lon: -81.6373, venue: 'EverBank Stadium' },
-    KC: { lat: 39.0489, lon: -94.4839, venue: 'GEHA Field at Arrowhead Stadium' },
-    LAC: { lat: 33.9535, lon: -118.339, venue: 'SoFi Stadium' },
-    LAR: { lat: 33.9535, lon: -118.339, venue: 'SoFi Stadium' },
-    LV: { lat: 36.0908, lon: -115.1833, venue: 'Allegiant Stadium' },
-    MIA: { lat: 25.958, lon: -80.2389, venue: 'Hard Rock Stadium' },
-    MIN: { lat: 44.9735, lon: -93.2575, venue: 'U.S. Bank Stadium' },
-    NE: { lat: 42.0909, lon: -71.2643, venue: 'Gillette Stadium' },
-    NO: { lat: 29.9511, lon: -90.0812, venue: 'Caesars Superdome' },
-    NYG: { lat: 40.8128, lon: -74.0742, venue: 'MetLife Stadium' },
-    NYJ: { lat: 40.8128, lon: -74.0742, venue: 'MetLife Stadium' },
-    PHI: { lat: 39.9008, lon: -75.1675, venue: 'Lincoln Financial Field' },
-    PIT: { lat: 40.4468, lon: -80.0158, venue: 'Acrisure Stadium' },
-    SEA: { lat: 47.5952, lon: -122.3316, venue: 'Lumen Field' },
-    SF: { lat: 37.4033, lon: -121.9694, venue: "Levi's Stadium" },
-    TB: { lat: 27.9759, lon: -82.5033, venue: 'Raymond James Stadium' },
-    TEN: { lat: 36.1665, lon: -86.7713, venue: 'Nissan Stadium' },
-    WAS: { lat: 38.9076, lon: -76.8645, venue: 'Commanders Field' },
-  };
-
-  const rawTeam = (player.team || 'KC').toUpperCase();
-  const stadiumCoords = NFL_TEAM_COORDS[rawTeam] || {
-    lat: 39.0489,
-    lon: -94.4839,
-    venue: `${player.team} Stadium`,
-  };
-
-  const pHash = Math.abs(
-    (player.name || player.id).split('').reduce((acc, char) => (acc << 5) - acc + char.charCodeAt(0), 0),
-  );
-  const birthLat = Number((25.0 + (pHash % 200) / 10).toFixed(2));
-  const birthLon = Number((-120.0 + ((pHash * 7) % 450) / 10).toFixed(2));
-  const birthplaceCoords = {
-    lat: birthLat,
-    lon: birthLon,
-    city: `Birthplace (${player.elemental_traits?.sun_sign || 'Natal'} Nexus)`,
-  };
-
-  const geodesicDist = Math.round(
-    haversineDistance(birthplaceCoords.lat, birthplaceCoords.lon, stadiumCoords.lat, stadiumCoords.lon),
-  );
-  const meridianAlignment = Number(Math.max(5.0, 20.0 - geodesicDist / 200).toFixed(1));
 
   return (
     <div
       role="dialog"
       aria-modal="true"
       aria-labelledby="player-detail-modal-title"
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/80 backdrop-blur-md animate-fadeIn"
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/75 backdrop-blur-xs"
       onClick={requestClose}
     >
       <div
         onClick={(e: { stopPropagation: () => void }) => e.stopPropagation()}
-        className="w-full max-w-2xl max-h-[90vh] flex flex-col rounded-t-2xl sm:rounded-2xl bg-[#161622] border border-purple-500/40 shadow-[0_0_30px_rgba(109,40,217,0.3)] overflow-hidden"
+        className="w-full max-w-xl max-h-[90vh] flex flex-col rounded-t-xl sm:rounded-xl bg-[#16181d] border border-white/10 shadow-2xl overflow-hidden font-sans"
       >
         {/* Modal Top Header */}
-        <div className="sticky top-0 z-10 flex-shrink-0 bg-[#161622] border-b border-white/10 px-5 sm:px-6 pt-5 pb-3 flex justify-between items-start">
-          <div className="flex items-start gap-3 min-w-0">
+        <div className="sticky top-0 z-10 flex-shrink-0 bg-[#16181d] border-b border-white/[0.08] px-5 sm:px-6 py-4 flex justify-between items-start gap-3">
+          <div className="flex items-center gap-3.5 min-w-0">
             <PlayerHeadshot key={String(player.id)} player={player} size="lg" />
             <div className="space-y-1 min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
-                <PositionalBadge position={player.position} size="md" depth={player.depth_chart_order} />
-                <span className="text-xs font-mono text-cyan-300 bg-cyan-950/80 px-2 py-0.5 rounded border border-cyan-500/30">
+                <h2
+                  id="player-detail-modal-title"
+                  className="font-sans text-xl sm:text-2xl font-semibold tracking-tight text-zinc-100"
+                >
+                  {player.name}
+                </h2>
+                {isMultiCompare && (
+                  <span className="text-xs font-sans font-medium px-2 py-0.5 rounded bg-zinc-800 text-zinc-200 border border-white/10">
+                    Comparing {compareCandidates!.length}
+                  </span>
+                )}
+              </div>
+              <div className="flex items-center gap-2 flex-wrap text-xs text-zinc-400">
+                <PositionalBadge position={player.position} size="sm" depth={player.depth_chart_order} />
+                <span className="font-mono tabular-nums text-zinc-300">
                   <TeamLogo team={player.team} className="mr-1" />
-                  {player.team} • Bye {player.bye_week || '-'} • #{player.jersey_number}
+                  {player.team} · Bye {player.bye_week || '-'} · #{player.jersey_number}
+                </span>
+                <span>·</span>
+                <span className={isMine ? 'text-amber-300 font-medium' : isAvailable ? 'text-emerald-300' : 'text-zinc-300'}>
+                  {isMine
+                    ? 'MY ROSTER'
+                    : isAvailable
+                      ? 'FREE AGENT'
+                      : player.drafted_by
+                        ? `ROSTERED (${stripUserSuffix(player.drafted_by)})`
+                        : 'ROSTERED'}
                 </span>
                 {player.injury_status && player.injury_status !== 'Healthy' && (
                   <span
-                    className={`text-xs font-mono font-bold px-2 py-0.5 rounded border ${
+                    className={`text-[10px] font-mono font-medium px-1.5 py-0.5 rounded border ${
                       player.injury_status === 'Out' || player.injury_status === 'IR'
-                        ? 'text-rose-400 bg-rose-950/80 border-rose-500/50'
-                        : 'text-amber-400 bg-amber-950/80 border-amber-500/50'
+                        ? 'text-rose-300 bg-rose-950/50 border-rose-500/30'
+                        : 'text-amber-300 bg-amber-950/50 border-amber-500/30'
                     }`}
                   >
                     {player.injury_status.toUpperCase()}
                   </span>
                 )}
                 {candidateMetrics.onBye && (
-                  <>
-                    <span className="text-xs font-mono font-bold px-2 py-0.5 rounded border text-amber-300 bg-amber-950/80 border-amber-500/50">
-                      {`BYE WK ${player.bye_week || activeWk}`}
-                    </span>
-                    <span className="text-xs font-mono text-slate-400">On Bye</span>
-                  </>
-                )}
-              </div>
-              <div className="flex items-center gap-2 flex-wrap">
-                <h2
-                  id="player-detail-modal-title"
-                  className="font-serif text-2xl sm:text-3xl font-bold text-slate-100 tracking-wide"
-                >
-                  {player.name}
-                </h2>
-                {isMultiCompare && (
-                  <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-cyan-950/80 text-cyan-300 border border-cyan-500/40">
-                    Comparing {compareCandidates!.length} Candidates
+                  <span className="text-[10px] font-mono font-medium px-1.5 py-0.5 rounded border text-amber-300 bg-amber-950/50 border-amber-500/30">
+                    {`BYE WK ${player.bye_week || activeWk}`}
                   </span>
                 )}
               </div>
@@ -755,579 +754,1085 @@ export const PlayerDetailModal: React.FC<PlayerDetailModalProps> = ({
             type="button"
             onClick={requestClose}
             aria-label="Close dossier"
-            className="p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg text-slate-400 hover:text-slate-100 hover:bg-slate-800 transition-colors"
+            className="p-2 min-w-[44px] min-h-[44px] -mr-2 flex items-center justify-center rounded-md text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 transition-colors shrink-0"
           >
-            <X className="w-5 h-5" />
+            <X className="w-4 h-4" />
           </button>
         </div>
 
         {/* Scrollable Content Body */}
-        <div className="flex-1 min-h-0 overflow-y-auto p-5 sm:p-6 space-y-4 [&::-webkit-scrollbar-track]:bg-transparent [scrollbar-width:thin] [scrollbar-color:#242436_transparent]">
-          {/* Strictly 3 Canonical Player Metrics: Stats, Oracle, Stars */}
-          <div className="grid grid-cols-3 gap-2.5 text-center font-mono">
+        <div className="flex-1 min-h-0 overflow-y-auto px-5 sm:px-6 py-5 space-y-5 [scrollbar-width:thin]">
+          {/* Base, Overall Modifier & Projected */}
           <div
-            className="p-3 rounded-xl bg-slate-950/80 border border-white/10"
-            title={candidateMetrics.placeholder.hasPlaceholder ? candidateMetrics.placeholder.statsTooltipText : undefined}
+            data-testid="modal-hero-metrics"
+            className="grid grid-cols-3 divide-x divide-white/[0.08] border-b border-white/[0.08] pb-4"
           >
-            <span className="text-[10px] text-slate-400 uppercase font-bold block">
-              Stats
-            </span>
-            <span className="text-xl font-bold text-slate-100 tabular-nums">{candidateProj.toFixed(1)} pts</span>
-            <span className="text-[9px] text-slate-500 block">
-              Projected points
-            </span>
-          </div>
-          <div
-            className="p-3 rounded-xl bg-cyan-950/40 border border-cyan-500/30"
-          >
-            <span className="text-[10px] text-cyan-400 uppercase font-bold block">
-              Oracle <span className="normal-case">(λ {modalLambda.toFixed(2)})</span>
-            </span>
-            <span className="text-xl font-bold text-cyan-300 tabular-nums">
-              {candidateOracle.toFixed(1)}
-              {candidateMetrics.placeholder.hasPlaceholder && (
-                <OraclePlaceholderMarker placeholder={candidateMetrics.placeholder} />
-              )}
-            </span>
-            <span className="text-[9px] text-purple-300 block">
-              Blended stats & stars
-            </span>
-          </div>
-          <div
-            className={`p-3 rounded-xl border ${TONE_PILL[favorabilityTone(candidateFav)]}`}
-            title={candidateMetrics.placeholder.hasPlaceholder ? candidateMetrics.placeholder.tooltipText : undefined}
-          >
-            <span className="text-[10px] uppercase font-bold block">
-              Stars
-            </span>
-            <span className="text-xl font-bold tabular-nums">{candidateFav.toFixed(0)}</span>
-            <span className="text-[9px] block font-mono truncate">
-              {starsVerdictLabel(candidateFav)}
-            </span>
-          </div>
-        </div>
-
-        {/* Elemental Traits Capsule */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 font-mono text-[11px] p-2.5 rounded-xl bg-slate-950/80 border border-white/10">
-          <div>
-            <span className="text-slate-500 block text-[9px] uppercase">Zodiac Sun</span>
-            <span className="text-slate-200 font-bold">{player.elemental_traits?.sun_sign || '-'}</span>
-          </div>
-          <div>
-            <span className="text-slate-500 block text-[9px] uppercase">Element</span>
-            <span className="text-cyan-300 font-bold">{player.elemental_traits?.element || '-'}</span>
-          </div>
-          <div>
-            <span className="text-slate-500 block text-[9px] uppercase">Life Path</span>
-            <span className="text-purple-300 font-bold">
-              {player.elemental_traits?.life_path_number ? `#${player.elemental_traits.life_path_number}` : '-'}
-            </span>
-          </div>
-          <div>
-            <span className="text-slate-500 block text-[9px] uppercase">Tarot Archetype</span>
-            <span className="text-amber-300 font-bold truncate block">{player.elemental_traits?.tarot_card || '-'}</span>
-          </div>
-        </div>
-
-        {/* 5 Divination Tiers Breakdown */}
-        <div className="space-y-2 p-3.5 rounded-xl bg-slate-950/90 border border-white/10 font-mono text-xs">
-          <span className="text-xs uppercase font-bold text-purple-300 tracking-wider flex items-center gap-1.5">
-            <Sparkles className="w-3.5 h-3.5 text-purple-400" />
-            The 5 Divination Pillars
-          </span>
-
-          <div className="space-y-2 pt-1">
-            {DIVINATION_PILLARS.map((pillar) => (
-              <div key={pillar.key} className="space-y-1">
-                <div className="flex justify-between text-[11px]">
-                  <span className="text-slate-300">{pillar.name} ({pct(pillarWeights[pillar.key])})</span>
-                  <span className="text-white font-bold">{Number(breakdown[pillar.key] ?? 0).toFixed(1)}</span>
-                </div>
-                <div className="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
-                  <div
-                    className={`h-full ${pillar.color} transition-all duration-300`}
-                    style={{ width: `${Math.min(100, Math.max(0, Number(breakdown[pillar.key] ?? 0)))}%` }}
-                  />
-                </div>
-                <span className="text-[10px] text-slate-500 block">{pillar.desc}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Astrocartography Stadium Coordinates */}
-        <div className="p-3.5 rounded-xl bg-slate-950/90 border border-white/10 font-mono text-xs space-y-2">
-          <span className="text-xs uppercase font-bold text-cyan-400 tracking-wider flex items-center gap-1.5">
-            <Compass className="w-3.5 h-3.5 text-cyan-400" />
-            Astrocartography Geodesic Coordinates
-          </span>
-          <div className="grid grid-cols-2 gap-2 text-[11px] pt-1">
-            <div className="p-2 rounded bg-slate-900/80 border border-white/5">
-              <span className="text-slate-500 text-[9px] block uppercase">Birthplace</span>
-              <span className="text-slate-200 font-bold block">{birthplaceCoords.city}</span>
-              <span className="text-slate-400 text-[10px]">{birthplaceCoords.lat}° N, {Math.abs(birthplaceCoords.lon)}° W</span>
-            </div>
-            <div className="p-2 rounded bg-slate-900/80 border border-white/5">
-              <span className="text-slate-500 text-[9px] block uppercase">Stadium Venue</span>
-              <span className="text-slate-200 font-bold block">{stadiumCoords.venue}</span>
-              <span className="text-slate-400 text-[10px]">{stadiumCoords.lat}° N, {Math.abs(stadiumCoords.lon)}° W</span>
-            </div>
-          </div>
-          <div className="flex justify-between items-center text-[11px] pt-1 text-slate-400 border-t border-white/5">
-            <span>Geodesic Distance:</span>
-            <span className="text-cyan-300 font-bold">{geodesicDist.toLocaleString()} km ({meridianAlignment > 0 ? `+${meridianAlignment}` : meridianAlignment} pts)</span>
-          </div>
-        </div>
-
-        {/* Roster Role Comparison / Multi-Candidate Comparison */}
-        <div
-          data-testid="roster-role-comparison"
-          className="space-y-2.5 p-3.5 rounded-xl bg-slate-950/90 border border-purple-500/40 font-mono text-xs"
-        >
-          <div className="flex items-center justify-between flex-wrap gap-2">
-            <button
-              type="button"
-              onClick={() => setIsRoleCompOpen((v) => !v)}
-              aria-expanded={isRoleCompOpen}
-              aria-controls={contentId}
-              className="flex items-center gap-1.5 text-xs uppercase font-bold text-purple-200 tracking-wider hover:text-purple-100 transition-colors cursor-pointer rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-400"
-            >
-              <ArrowRightLeft className="w-3.5 h-3.5 text-purple-400" />
-              <span>
-                {isMultiCompare && !showRoster
-                  ? `Comparing ${compareCandidates!.length} Selected Candidates`
-                  : headToHead
-                  ? `Head-to-head: ${player.name} vs. ${compareWith?.name}`
-                  : isMine
-                  ? `Role Comparison vs. Other ${player.position}s`
-                  : `Role Comparison (${player.position})`}
-              </span>
-              <ChevronDown
-                className={`w-3.5 h-3.5 text-purple-400 transition-transform duration-200 ${
-                  isRoleCompOpen ? 'rotate-180' : ''
-                }`}
-              />
-            </button>
-            {isMultiCompare ? (
-              <button
-                type="button"
-                onClick={() => setShowRoster((v) => !v)}
-                className="text-[10px] text-cyan-300 underline hover:text-cyan-200 cursor-pointer"
-              >
-                {showRoster
-                  ? `Back to ${compareCandidates!.length} Candidates`
-                  : `Compare with your ${player.position}s`}
-              </button>
-            ) : compareWith ? (
-              <button
-                type="button"
-                onClick={() => setShowRoster((v) => !v)}
-                className="text-[10px] text-cyan-300 underline hover:text-cyan-200 cursor-pointer"
-              >
-                {headToHead ? `Compare with all your ${player.position}s` : `Back to ${compareWith.name}`}
-              </button>
-            ) : (
-              <span className="text-[10px] text-slate-400">
-                {teammates.length} {isMine ? 'other ' : ''}
-                {player.position}
-                {teammates.length === 1 ? '' : 's'} on your roster
-              </span>
-            )}
-          </div>
-
-          <div id={contentId} className={isRoleCompOpen ? 'space-y-2 pt-1' : 'hidden space-y-2 pt-1'}>
-
-          {isMultiCompare && !showRoster ? (
             <div
-              data-testid="multi-candidate-grid"
-              className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 pt-1"
+              className="pr-3 sm:pr-4"
+              title={
+                candidateMetrics.placeholder.hasPlaceholder
+                  ? candidateMetrics.placeholder.statsTooltipText
+                  : undefined
+              }
             >
-              {compareCandidates!.map((cand, idx) => {
-                const candMetrics = getPlayerDisplayMetrics(cand);
-                const candRosterInfo = getPlayerRosterInfo(cand);
-                const roleLabel = getPlayerRoleLabel(cand, candRosterInfo.isMine, 'Candidate');
-                const isLeader = String(cand.id) === bestCandidateId;
-                return (
-                  <div
-                    key={cand.id}
-                    data-testid={`candidate-card-${cand.id}`}
-                    className={`p-2.5 rounded-lg border flex flex-col justify-between gap-2 ${
-                      isLeader
-                        ? 'bg-purple-950/30 border-purple-500/60 shadow-lg shadow-purple-950/20'
-                        : candRosterInfo.isMine
-                        ? 'bg-slate-900/90 border-purple-500/30'
-                        : 'bg-slate-900/70 border-white/10'
-                    }`}
-                  >
-                    <div>
-                      <div className="flex items-center justify-between gap-1 mb-1.5">
-                        <span className="text-[9px] font-bold text-slate-400">
-                          #{idx + 1}
-                        </span>
-                        {isLeader ? (
-                          <span className="px-1.5 py-0.5 rounded text-[8px] font-bold uppercase bg-emerald-950/80 text-emerald-300 border border-emerald-500/40">
-                            Leader
-                          </span>
-                        ) : (
-                          <span className="px-1.5 py-0.5 rounded text-[8px] font-bold uppercase bg-slate-800 text-slate-400 border border-white/5">
-                            {roleLabel}
-                          </span>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-2 mb-2">
-                        <PlayerHeadshot
-                          player={cand}
-                          size="sm"
+              <span className="text-xs font-sans text-zinc-400 block">Base</span>
+              <span className="text-xl sm:text-2xl font-mono font-semibold text-zinc-100 tabular-nums mt-0.5 inline-flex items-baseline gap-1">
+                <span>{(candidateMetrics.onBye ? 0 : forecast.basePts).toFixed(1)}</span>{' '}
+                <span className="text-xs font-normal text-zinc-400">pts</span>
+              </span>
+              <span className="text-[11px] font-sans text-zinc-400 block mt-0.5">
+                {candidateMetrics.onBye ? (
+                  `Bye Wk ${activeWk} · Next Wk ${forecast.matchup.week}${
+                    forecast.basePts > 0 ? ` (${forecast.basePts.toFixed(1)} avg)` : ''
+                  }`
+                ) : (
+                  <>
+                    {`Week ${forecast.matchup.week}`}
+                    {forecast.matchup.opponent ? (
+                      <>
+                        {` ${forecast.matchup.isHome ? 'vs' : '@'} `}
+                        <TeamLogo
+                          team={forecast.matchup.opponent}
+                          className="w-3.5 h-3.5 mr-1 align-[-2px]"
                         />
-                        <div className="min-w-0 flex-1">
-                          <span className="font-serif font-bold text-xs text-slate-100 truncate block">
-                            {cand.name}
+                        {forecast.matchup.opponent}
+                      </>
+                    ) : (
+                      ''
+                    )}
+                  </>
+                )}
+              </span>
+            </div>
+
+            <div className="px-3 sm:px-4">
+              <span className="text-xs font-sans text-zinc-400 block">Overall Modifier</span>
+              <span
+                className={`text-xl sm:text-2xl font-mono font-semibold tabular-nums mt-0.5 inline-flex items-baseline gap-1 ${modifierTextColor(
+                  forecast.overallModifierPts,
+                )}`}
+              >
+                <span>{formatSignedModifier(forecast.overallModifierPts)}</span>{' '}
+                <span className="text-xs font-normal text-zinc-400">pts</span>
+              </span>
+              <span className="text-[11px] font-sans text-zinc-400 block mt-0.5">
+                {enabledPredictorCount} of {forecast.systems.length} predictors
+              </span>
+            </div>
+
+            <div className="pl-3 sm:pl-4" data-testid="modal-hero-projected">
+              <span className="text-xs font-sans text-amber-200/90 block">Projected</span>
+              <span className="text-xl sm:text-2xl font-mono font-semibold text-amber-200 tabular-nums mt-0.5 inline-flex items-baseline gap-1">
+                <span>{forecast.adjustedPts.toFixed(1)}</span>{' '}
+                <span className="text-xs font-normal text-zinc-400">pts</span>
+                {candidateMetrics.placeholder.hasPlaceholder && (
+                  <OraclePlaceholderMarker placeholder={candidateMetrics.placeholder} />
+                )}
+              </span>
+              <span className="text-[11px] font-sans text-zinc-400 block mt-0.5">
+                Base + Modifier
+              </span>
+            </div>
+          </div>
+
+          {transitNote && (transitNote.venue || transitNote.sky || transitNote.rationale) && (
+            <div
+              data-testid="modal-matchup-transit-note"
+              className="border-b border-white/[0.08] pb-4 space-y-1 text-xs font-sans"
+            >
+              <span className="text-[11px] font-medium text-zinc-400 block">
+                Matchup Venue &amp; Transit
+              </span>
+              {(transitNote.venue || transitNote.sky) && (
+                <p className="text-zinc-200 font-mono text-[11px] tabular-nums">
+                  {[transitNote.venue, transitNote.sky].filter(Boolean).join(' · ')}
+                </p>
+              )}
+              {transitNote.rationale && (
+                <p className="text-zinc-300 leading-relaxed">{transitNote.rationale}</p>
+              )}
+            </div>
+          )}
+
+          {/* Player & Real NFL Team Multi-Predictor Elemental Balance */}
+          <section
+            data-testid="player-team-elemental-balance"
+            aria-label="Player and NFL team elemental balance"
+            className="border-b border-white/[0.08] pb-4 space-y-3.5 text-xs"
+          >
+            <div className="flex items-baseline justify-between gap-2 flex-wrap">
+              <div className="flex items-baseline gap-2 flex-wrap">
+                <h3 className="font-sans text-xs font-semibold text-zinc-200">
+                  Elemental Balance
+                </h3>
+                <span className="font-mono tabular-nums text-[11px] text-zinc-400">
+                  {teamBalance.isFreeAgent ? (
+                    'Free agent · 5 traditions'
+                  ) : (
+                    <>
+                      <TeamLogo
+                        team={teamBalance.teamCode}
+                        className="w-3.5 h-3.5 mr-1 align-[-2px]"
+                      />
+                      {`${teamBalance.teamCode} NFL unit (${teamBalance.unitPlayers.length}) · 5 traditions`}
+                    </>
+                  )}
+                </span>
+              </div>
+              <span className="font-mono tabular-nums text-[11px] text-zinc-300">
+                Dominant: {teamBalance.dominantCombinedFourElement || teamBalance.dominantElement || '-'} (Zodiac)
+                {(teamBalance.dominantCombinedFivePhase || teamBalance.dominantWuXing)
+                  ? ` · ${teamBalance.dominantCombinedFivePhase || teamBalance.dominantWuXing} (Five Phases)`
+                  : ''}
+                {teamBalance.dominantMayanDirection
+                  ? ` · ${teamBalance.dominantMayanDirection} (Mayan)`
+                  : ''}
+              </span>
+            </div>
+
+            {/* Clicked Player's Own Elements Across All 5 Predictors */}
+            <div
+              data-testid="player-multi-predictor-elements"
+              className="grid grid-cols-2 sm:grid-cols-5 gap-2.5 py-2.5 border-y border-white/[0.06]"
+            >
+              <div>
+                <div className="text-[10px] font-sans text-zinc-400">Western Zodiac</div>
+                <div className="font-mono text-xs font-semibold text-amber-200 mt-0.5">
+                  {teamBalance.playerProfile.zodiacElement || '-'}
+                </div>
+                <div className="text-[10px] font-sans text-zinc-400 break-words leading-snug">
+                  {teamBalance.playerProfile.zodiacSign || 'Unlisted'}
+                </div>
+              </div>
+              <div>
+                <div className="text-[10px] font-sans text-zinc-400">Major Arcana</div>
+                <div className="font-mono text-xs font-semibold text-sky-200 mt-0.5">
+                  {teamBalance.playerProfile.arcanaElement || '-'}
+                </div>
+                <div className="text-[10px] font-sans text-zinc-400 break-words leading-snug">
+                  {teamBalance.playerProfile.arcanaCard || 'Unlisted'}
+                </div>
+              </div>
+              <div>
+                <div className="text-[10px] font-sans text-zinc-400">BaZi Wu Xing</div>
+                <div className="font-mono text-xs font-semibold text-emerald-200 mt-0.5">
+                  {teamBalance.playerProfile.wuXingPhase || '-'}
+                </div>
+                <div className="text-[10px] font-sans text-zinc-400 break-words leading-snug">
+                  {teamBalance.playerProfile.dayStem || 'Unlisted'}
+                </div>
+              </div>
+              <div>
+                <div className="text-[10px] font-sans text-zinc-400">Lo Shu Ba Gua</div>
+                <div className="font-mono text-xs font-semibold text-cyan-200 mt-0.5">
+                  {teamBalance.playerProfile.loShuPhase || '-'}
+                </div>
+                <div className="text-[10px] font-sans text-zinc-400 break-words leading-snug">
+                  {teamBalance.playerProfile.loShuStar
+                    ? `Star ${teamBalance.playerProfile.loShuStar} · ${
+                        teamBalance.playerProfile.loShuGroup === 'EAST' ? 'East group' : 'West group'
+                      }`
+                    : 'Unlisted'}
+                </div>
+              </div>
+              <div className="col-span-2 sm:col-span-1">
+                <div className="text-[10px] font-sans text-zinc-400">Mayan Tzolk&apos;in</div>
+                <div className="font-mono text-xs font-semibold text-zinc-100 mt-0.5">
+                  {teamBalance.playerProfile.mayanDirection
+                    ? `${teamBalance.playerProfile.mayanDirection} · ${teamBalance.playerProfile.mayanColor}`
+                    : '-'}
+                </div>
+                <div className="text-[10px] font-sans text-zinc-400 break-words leading-snug">
+                  {teamBalance.playerProfile.mayanNahual || 'Unlisted'}
+                </div>
+              </div>
+            </div>
+
+            {/* Dual 5-Spoke Radar Graphs: Classical Elements (Zodiac + Arcana) & Five Phases (BaZi + Lo Shu) */}
+            <div className="flex flex-col sm:flex-row items-stretch gap-3">
+              {/* Left Radar: Western Zodiac + Major Arcana */}
+              <div className="flex-1 min-w-0 rounded-lg border border-white/[0.06] bg-[#101216] p-3 flex flex-col justify-between gap-2">
+                <div className="flex items-baseline justify-between gap-2 flex-wrap">
+                  <span className="font-sans text-[11px] font-medium text-zinc-200">
+                    Classical Elements
+                  </span>
+                  {activeTrineElements.length > 0 ? (
+                    <span className="font-mono text-[10px] text-amber-200 font-medium">
+                      {activeTrineElements.join(', ')} · Trine
+                    </span>
+                  ) : (
+                    <span className="font-mono text-[10px] text-zinc-400">
+                      Zodiac / Arcana
+                    </span>
+                  )}
+                </div>
+
+                <svg
+                  viewBox="-35 8 280 176"
+                  className="w-full max-w-[236px] h-auto mx-auto overflow-visible"
+                  data-testid="synergy-constellation-svg"
+                  role="img"
+                  aria-label={`${teamBalance.teamCode} classical elemental balance chart`}
+                >
+                  {[0.33, 0.66, 1.0].map((level, idx) => (
+                    <circle
+                      key={`grid-${idx}`}
+                      cx={RADAR_CX}
+                      cy={RADAR_CY}
+                      r={RADAR_MAX_R * level}
+                      fill="none"
+                      stroke="rgba(255,255,255,0.08)"
+                    />
+                  ))}
+                  {RADAR_SPOKE_ANGLES.map((deg, idx) => {
+                    const rad = (deg * Math.PI) / 180;
+                    return (
+                      <line
+                        key={`spoke-4el-${idx}`}
+                        x1={RADAR_CX}
+                        y1={RADAR_CY}
+                        x2={RADAR_CX + RADAR_MAX_R * Math.cos(rad)}
+                        y2={RADAR_CY + RADAR_MAX_R * Math.sin(rad)}
+                        stroke="rgba(255,255,255,0.06)"
+                      />
+                    );
+                  })}
+                  <polygon
+                    points={arcanaPolygon.polygonString}
+                    fill="rgba(56, 189, 248, 0.12)"
+                    stroke="#38bdf8"
+                    strokeWidth="1.25"
+                    strokeDasharray="3 2"
+                  />
+                  <polygon
+                    points={zodiacPolygon.polygonString}
+                    fill="rgba(226, 185, 100, 0.16)"
+                    stroke="#e2b964"
+                    strokeWidth="1.5"
+                  />
+                  {arcanaPolygon.pts.map((pt, i) => (
+                    <circle
+                      key={`arcana-vertex-${i}`}
+                      cx={pt.x}
+                      cy={pt.y}
+                      r="1.8"
+                      fill="#38bdf8"
+                    />
+                  ))}
+                  {zodiacPolygon.pts.map((pt, i) => (
+                    <circle
+                      key={`vertex-${i}`}
+                      cx={pt.x}
+                      cy={pt.y}
+                      r="2.2"
+                      fill="#e2b964"
+                    />
+                  ))}
+                  <text x="115" y="22" textAnchor="middle" fill="#d4d4d8" fontSize="10" fontFamily="monospace">
+                    Fire ({teamBalance.elementalDistribution.Fire}/{teamBalance.arcanaDistribution.Fire})
+                  </text>
+                  <text x="182" y="76" textAnchor="start" fill="#d4d4d8" fontSize="10" fontFamily="monospace">
+                    Air ({teamBalance.elementalDistribution.Air}/{teamBalance.arcanaDistribution.Air})
+                  </text>
+                  <text x="165" y="170" textAnchor="middle" fill="#d4d4d8" fontSize="10" fontFamily="monospace">
+                    Water ({teamBalance.elementalDistribution.Water}/{teamBalance.arcanaDistribution.Water})
+                  </text>
+                  <text x="65" y="170" textAnchor="middle" fill="#d4d4d8" fontSize="10" fontFamily="monospace">
+                    Earth ({teamBalance.elementalDistribution.Earth}/{teamBalance.arcanaDistribution.Earth})
+                  </text>
+                  <text x="48" y="76" textAnchor="end" fill="#d4d4d8" fontSize="10" fontFamily="monospace">
+                    Stacks ({teamBalance.activeStacks.length})
+                  </text>
+                </svg>
+
+                <div
+                  data-testid="four-element-legend"
+                  className="flex items-center justify-center gap-3.5 text-[10px] font-mono text-zinc-300 pt-0.5"
+                >
+                  <span className="inline-flex items-center gap-1.5">
+                    <span className="inline-block w-2.5 h-0.5 bg-amber-300" aria-hidden="true" />
+                    Western Zodiac
+                  </span>
+                  <span className="inline-flex items-center gap-1.5">
+                    <span className="inline-block w-2.5 h-0.5 border-t border-dashed border-sky-400" aria-hidden="true" />
+                    Major Arcana
+                  </span>
+                </div>
+              </div>
+
+              {/* Right Radar: BaZi Stem + Qi Men Lo Shu Ba Gua */}
+              <div
+                data-testid="unit-five-phases-strip"
+                className="flex-1 min-w-0 rounded-lg border border-white/[0.06] bg-[#101216] p-3 flex flex-col justify-between gap-2"
+              >
+                <div className="flex items-baseline justify-between gap-2 flex-wrap">
+                  <span className="font-sans text-[11px] font-medium text-zinc-200">
+                    Five Phases
+                  </span>
+                  <span className="font-mono tabular-nums text-[10px] text-zinc-400">
+                    East {teamBalance.loShuGroupCounts.EAST} · West {teamBalance.loShuGroupCounts.WEST}
+                  </span>
+                </div>
+
+                <svg
+                  viewBox="-35 8 280 176"
+                  className="w-full max-w-[236px] h-auto mx-auto overflow-visible"
+                  data-testid="five-phase-radar-svg"
+                  role="img"
+                  aria-label={`${teamBalance.teamCode} five phases radar chart`}
+                >
+                  {[0.33, 0.66, 1.0].map((level, idx) => (
+                    <circle
+                      key={`phase-grid-${idx}`}
+                      cx={RADAR_CX}
+                      cy={RADAR_CY}
+                      r={RADAR_MAX_R * level}
+                      fill="none"
+                      stroke="rgba(255,255,255,0.08)"
+                    />
+                  ))}
+                  {RADAR_SPOKE_ANGLES.map((deg, idx) => {
+                    const rad = (deg * Math.PI) / 180;
+                    return (
+                      <line
+                        key={`spoke-5ph-${idx}`}
+                        x1={RADAR_CX}
+                        y1={RADAR_CY}
+                        x2={RADAR_CX + RADAR_MAX_R * Math.cos(rad)}
+                        y2={RADAR_CY + RADAR_MAX_R * Math.sin(rad)}
+                        stroke="rgba(255,255,255,0.06)"
+                      />
+                    );
+                  })}
+                  <polygon
+                    points={loShuPolygon.polygonString}
+                    fill="rgba(34, 211, 238, 0.12)"
+                    stroke="#22d3ee"
+                    strokeWidth="1.25"
+                    strokeDasharray="3 2"
+                  />
+                  <polygon
+                    points={baziPolygon.polygonString}
+                    fill="rgba(52, 211, 153, 0.15)"
+                    stroke="#34d399"
+                    strokeWidth="1.5"
+                  />
+                  {loShuPolygon.pts.map((pt, i) => (
+                    <circle
+                      key={`loshu-vertex-${i}`}
+                      cx={pt.x}
+                      cy={pt.y}
+                      r="1.8"
+                      fill="#22d3ee"
+                    />
+                  ))}
+                  {baziPolygon.pts.map((pt, i) => (
+                    <circle
+                      key={`bazi-vertex-${i}`}
+                      cx={pt.x}
+                      cy={pt.y}
+                      r="2.2"
+                      fill="#34d399"
+                    />
+                  ))}
+                  <text x="115" y="22" textAnchor="middle" fill="#d4d4d8" fontSize="10" fontFamily="monospace">
+                    Wood ({teamBalance.wuXingDistribution.Wood}/{teamBalance.loShuPhaseDistribution.Wood})
+                  </text>
+                  <text x="182" y="76" textAnchor="start" fill="#d4d4d8" fontSize="10" fontFamily="monospace">
+                    Fire ({teamBalance.wuXingDistribution.Fire}/{teamBalance.loShuPhaseDistribution.Fire})
+                  </text>
+                  <text x="165" y="170" textAnchor="middle" fill="#d4d4d8" fontSize="10" fontFamily="monospace">
+                    Earth ({teamBalance.wuXingDistribution.Earth}/{teamBalance.loShuPhaseDistribution.Earth})
+                  </text>
+                  <text x="65" y="170" textAnchor="middle" fill="#d4d4d8" fontSize="10" fontFamily="monospace">
+                    Metal ({teamBalance.wuXingDistribution.Metal}/{teamBalance.loShuPhaseDistribution.Metal})
+                  </text>
+                  <text x="48" y="76" textAnchor="end" fill="#d4d4d8" fontSize="10" fontFamily="monospace">
+                    Water ({teamBalance.wuXingDistribution.Water}/{teamBalance.loShuPhaseDistribution.Water})
+                  </text>
+                </svg>
+
+                <div
+                  data-testid="five-phase-legend"
+                  className="flex items-center justify-center gap-3.5 text-[10px] font-mono text-zinc-300 pt-0.5"
+                >
+                  <span className="inline-flex items-center gap-1.5">
+                    <span className="inline-block w-2.5 h-0.5 bg-emerald-400" aria-hidden="true" />
+                    BaZi Stem
+                  </span>
+                  <span className="inline-flex items-center gap-1.5">
+                    <span className="inline-block w-2.5 h-0.5 border-t border-dashed border-cyan-400" aria-hidden="true" />
+                    Lo Shu Ba Gua
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Mayan Tzolk'in World-Directions + Real NFL Stacks & Multi-Elemental Unit Peers */}
+            <div
+              data-testid="unit-mayan-directions-strip"
+              className="pt-3 border-t border-white/[0.06] space-y-2 text-[11px]"
+            >
+              <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
+                <span className="font-sans font-medium text-zinc-300">
+                  Mayan Tzolk&apos;in Directions
+                </span>
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 font-mono tabular-nums text-[11px]">
+                  {(
+                    [
+                      ['East', 'Red'],
+                      ['North', 'White'],
+                      ['West', 'Black'],
+                      ['South', 'Yellow'],
+                    ] as const
+                  ).map(([dir, color]) => {
+                    const dCount = teamBalance.mayanDirectionDistribution[dir];
+                    const isPlayerDir = teamBalance.playerProfile.mayanDirection === dir;
+                    return (
+                      <span
+                        key={dir}
+                        className={isPlayerDir ? 'text-amber-200 font-medium' : 'text-zinc-400'}
+                      >
+                        {dir} ({color}) <span className="text-zinc-200">{dCount}</span>
+                      </span>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="text-zinc-300">
+                {!teamBalance.isFreeAgent && (
+                  <TeamLogo
+                    team={teamBalance.teamCode}
+                    className="w-3.5 h-3.5 mr-1 align-[-2px]"
+                  />
+                )}
+                {teamBalance.stackSummary}
+              </div>
+              {teamBalance.teammates.length > 0 && (
+                <p className="text-zinc-400 leading-relaxed">
+                  <span className="text-zinc-300 font-medium">
+                    <TeamLogo
+                      team={teamBalance.teamCode}
+                      className="w-3.5 h-3.5 mr-1 align-[-2px]"
+                    />
+                    {teamBalance.teamCode} peers:
+                  </span>{' '}
+                  {teamBalance.unitMemberProfiles
+                    .filter((m) => String(m.player.id) !== String(player.id))
+                    .map((m) => {
+                      const tmSurname =
+                        m.player.last_name?.trim() ||
+                        m.player.name.trim().split(/\s+/).slice(-1)[0] ||
+                        m.player.name;
+                      const tags = [m.zodiacElement, m.wuXingPhase].filter(Boolean).join('/');
+                      return `${tmSurname} (${m.player.position}${tags ? ` · ${tags}` : ''})`;
+                    })
+                    .join(' · ')}
+                </p>
+              )}
+            </div>
+          </section>
+
+          {/* Esoteric Contest Chart & Natal Signatures */}
+          <dl
+            data-testid="modal-venue-ephemeris"
+            className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs border-b border-white/[0.08] pb-4"
+          >
+            <div className="col-span-2 sm:col-span-3">
+              <dt className="text-zinc-400 font-sans text-[11px]">Next-Game Contest Chart</dt>
+              <dd className="text-zinc-100 font-sans font-medium mt-0.5 flex flex-wrap items-baseline justify-between gap-2">
+                <span>
+                  {forecast.matchup.stadiumName ?? 'TBD'}
+                  {forecast.matchup.city && forecast.matchup.state
+                    ? ` (${forecast.matchup.city}, ${forecast.matchup.state})`
+                    : ''}
+                </span>
+                <span className="font-mono tabular-nums text-[11px] text-zinc-400">
+                  {[
+                    forecast.matchup.planetaryHourRuler
+                      ? `Hour of ${forecast.matchup.planetaryHourRuler}`
+                      : null,
+                    forecast.matchup.rokuyoDay ? `Rokuyo ${forecast.matchup.rokuyoDay}` : null,
+                    forecast.matchup.geomanticJudge ?? null,
+                  ]
+                    .filter(Boolean)
+                    .join(' · ') || '-'}
+                </span>
+              </dd>
+            </div>
+            <div>
+              <dt className="text-zinc-400 font-sans text-[11px]">Western &amp; Decan</dt>
+              <dd className="text-zinc-100 font-sans font-medium mt-0.5 break-words leading-snug">
+                {[
+                  forecast.natalProfile.sunSign,
+                  forecast.natalProfile.element,
+                  forecast.natalProfile.decanRuler
+                    ? `${forecast.natalProfile.decanRuler} ruler`
+                    : null,
+                ]
+                  .filter(Boolean)
+                  .join(' · ') || '-'}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-zinc-400 font-sans text-[11px]">Vedic Moon</dt>
+              <dd className="text-zinc-100 font-sans font-medium mt-0.5 break-words leading-snug">
+                {[forecast.natalProfile.vedicNakshatra, forecast.natalProfile.vedicMoonRashi]
+                  .filter(Boolean)
+                  .join(' · ') || '-'}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-zinc-400 font-sans text-[11px]">Chinese Four Pillars</dt>
+              <dd className="text-zinc-100 font-sans font-medium mt-0.5 break-words leading-snug">
+                {forecast.natalProfile.dayMasterStem && forecast.natalProfile.dayMasterPhase
+                  ? `${forecast.natalProfile.dayMasterStem} ${forecast.natalProfile.dayMasterPhase}${
+                      forecast.natalProfile.branchAnimal
+                        ? ` · ${forecast.natalProfile.branchAnimal}`
+                        : ''
+                    }`
+                  : '-'}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-zinc-400 font-sans text-[11px]">Runes, Trees &amp; Kabbalah</dt>
+              <dd className="text-zinc-100 font-sans font-medium mt-0.5 break-words leading-snug">
+                {[
+                  forecast.natalProfile.natalRune,
+                  forecast.natalProfile.natalOgham,
+                  forecast.natalProfile.natalSephirah,
+                ]
+                  .filter(Boolean)
+                  .join(' · ') || '-'}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-zinc-400 font-sans text-[11px]">Mayan &amp; Yearly Ruler</dt>
+              <dd className="text-zinc-100 font-sans font-medium mt-0.5 break-words leading-snug">
+                {[
+                  forecast.natalProfile.mayanNahual
+                    ? `Tone ${forecast.natalProfile.mayanTone} ${forecast.natalProfile.mayanNahual}`
+                    : null,
+                  forecast.natalProfile.profectedHouse && forecast.natalProfile.timeLordPlanet
+                    ? `House ${forecast.natalProfile.profectedHouse} · ${forecast.natalProfile.timeLordPlanet}`
+                    : null,
+                ]
+                  .filter(Boolean)
+                  .join(' · ') || '-'}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-zinc-400 font-sans text-[11px]">Numerology &amp; Tarot</dt>
+              <dd className="text-zinc-100 font-sans font-medium mt-0.5 break-words leading-snug">
+                {[
+                  forecast.natalProfile.lifePath ? `Life Path ${forecast.natalProfile.lifePath}` : null,
+                  forecast.natalProfile.tarotCard,
+                  forecast.natalProfile.hexagramNumber
+                    ? `Hexagram ${forecast.natalProfile.hexagramNumber}`
+                    : null,
+                ]
+                  .filter(Boolean)
+                  .join(' · ') || '-'}
+              </dd>
+            </div>
+          </dl>
+
+          {/* Active Historical Predictor Breakdown (Disabled Predictors Hidden) */}
+          <section
+            data-testid="predictor-breakdown-section"
+            aria-label="Historical predictor breakdown"
+            className="border-b border-white/[0.08] pb-4 space-y-3.5 text-xs"
+          >
+            <div className="flex items-baseline justify-between gap-2 flex-wrap">
+              <h3 className="font-sans text-xs font-semibold text-zinc-200">
+                Historical Predictor Breakdown
+              </h3>
+              <div className="flex items-center gap-2.5 flex-wrap font-mono tabular-nums text-[11px] text-zinc-400">
+                <span>
+                  {enabledPredictorCount} active · {forecast.positionModel.position} history ({forecast.positionModel.sampleSize.toLocaleString()} games)
+                </span>
+                <a
+                  href={GITHUB_EMPIRICAL_STUDY_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  data-testid="modal-study-github-link"
+                  className="inline-flex items-center gap-1 text-zinc-300 hover:text-zinc-100 underline underline-offset-2"
+                >
+                  <span>Full study</span>
+                  <ExternalLink className="w-3 h-3 shrink-0" aria-hidden="true" />
+                </a>
+              </div>
+            </div>
+
+            {enabledPredictorCount === 0 ? (
+              <div className="rounded-lg border border-white/[0.08] bg-[#101216] px-3 py-2.5 text-zinc-400 font-sans">
+                No predictors are turned on. Enable predictors in the Predictors drawer to see how each tradition scores this matchup.
+              </div>
+            ) : (
+              <div className="space-y-3.5">
+                {PREDICTOR_CATEGORIES.map((cat) => {
+                  const activeInCat = enabledSystems.filter((s) => s.categoryId === cat.id);
+                  if (activeInCat.length === 0) return null;
+                  const catActiveSum = activeInCat.reduce(
+                    (acc, s) =>
+                      acc +
+                      (enabledPredictorCount === 1
+                        ? s.standalonePointDiff
+                        : s.jointContributionPts),
+                    0,
+                  );
+
+                  return (
+                    <div
+                      key={cat.id}
+                      data-testid={`modal-predictor-category-${cat.id}`}
+                      className="space-y-2"
+                    >
+                      <div className="flex items-baseline justify-between gap-2 px-0.5">
+                        <div className="min-w-0">
+                          <span className="font-sans text-[11px] font-semibold text-zinc-200">
+                            {cat.label}
                           </span>
-                          <div className="flex items-center gap-1.5 mt-0.5">
-                            <PositionalBadge
-                              position={cand.position}
-                              depth={cand.depth_chart_order}
-                              size="sm"
-                            />
-                            <span className="text-[10px] text-slate-400 font-mono">
-                              {cand.team || 'FA'}
+                          <span className="font-sans text-[10px] text-zinc-400 ml-1.5">
+                            ({activeInCat.length} active)
+                          </span>
+                        </div>
+                        <span
+                          className={`font-mono tabular-nums text-[11px] font-semibold shrink-0 ${modifierTextColor(catActiveSum)}`}
+                        >
+                          {formatSignedModifier(catActiveSum)} pts
+                        </span>
+                      </div>
+
+                      <div className="space-y-2">
+                        {activeInCat.map((sys) => {
+                          const displayDelta =
+                            enabledPredictorCount === 1
+                              ? sys.standalonePointDiff
+                              : sys.jointContributionPts;
+                          const absHalfWidth = Math.min(
+                            50,
+                            Math.max(displayDelta !== 0 ? 3 : 0, (Math.abs(displayDelta) / 1.0) * 50),
+                          );
+                          const isModalInfoOpen = activePredictorInfoId === sys.systemId;
+
+                          return (
+                            <div
+                              key={sys.systemId}
+                              data-testid={`predictor-row-${sys.systemId}`}
+                              className="rounded-lg border border-white/[0.08] bg-[#101216] px-3 py-2.5 space-y-1.5"
+                            >
+                              <div className="flex items-center justify-between gap-2">
+                                <div className="flex items-center gap-1.5 min-w-0 flex-wrap">
+                                  <span className="font-sans font-medium text-xs text-zinc-100">
+                                    {sys.shortName}
+                                  </span>
+                                  <span className="font-mono text-[10px] text-zinc-400">
+                                    {sys.subCategory}
+                                  </span>
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      setActivePredictorInfoId(
+                                        isModalInfoOpen ? null : sys.systemId,
+                                      )
+                                    }
+                                    aria-label={`Explain ${sys.shortName}`}
+                                    data-testid={`modal-predictor-tooltip-btn-${sys.systemId}`}
+                                    className="text-zinc-400 hover:text-zinc-200 transition-colors p-1.5 -m-1 cursor-pointer"
+                                  >
+                                    <HelpCircle className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
+                                <span
+                                  className={`font-mono tabular-nums text-xs font-semibold shrink-0 ${modifierTextColor(displayDelta)}`}
+                                >
+                                  {formatSignedModifier(displayDelta)} pts
+                                </span>
+                              </div>
+
+                              {isModalInfoOpen && (
+                                <div
+                                  data-testid={`modal-predictor-info-${sys.systemId}`}
+                                  className="p-2.5 rounded-md bg-[#16181d] border border-white/10 text-[11px] font-sans space-y-1.5 text-zinc-300"
+                                >
+                                  <p className="leading-relaxed">{sys.description}</p>
+                                  <div>
+                                    <a
+                                      href={sys.sourceUrl}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      data-testid={`modal-predictor-source-link-${sys.systemId}`}
+                                      className="inline-flex items-center gap-1 text-amber-300 hover:text-amber-200 underline underline-offset-2 font-medium"
+                                    >
+                                      <span>{sys.sourceLabel}</span>
+                                      <ExternalLink
+                                        className="w-3 h-3 shrink-0"
+                                        aria-hidden="true"
+                                      />
+                                    </a>
+                                  </div>
+                                </div>
+                              )}
+
+                              <div className="relative h-1.5 w-full rounded-full bg-zinc-900 overflow-hidden">
+                                <span
+                                  className="absolute left-1/2 top-0 bottom-0 w-px bg-white/20 z-[1]"
+                                  aria-hidden="true"
+                                />
+                                {displayDelta > 0.005 && (
+                                  <div
+                                    className="absolute top-0 bottom-0 bg-emerald-400/80 rounded-r-full"
+                                    style={{ left: '50%', width: `${absHalfWidth}%` }}
+                                  />
+                                )}
+                                {displayDelta < -0.005 && (
+                                  <div
+                                    className="absolute top-0 bottom-0 bg-rose-400/80 rounded-l-full"
+                                    style={{ right: '50%', width: `${absHalfWidth}%` }}
+                                  />
+                                )}
+                              </div>
+
+                              {sys.matchedConditions.length > 0 ? (
+                                <ul className="space-y-1 pt-0.5">
+                                  {sys.matchedConditions.map((cond) => {
+                                    const condDelta =
+                                      enabledPredictorCount === 1
+                                        ? cond.standaloneWeightPts
+                                        : cond.jointRidgeWeightPts;
+                                    return (
+                                      <li
+                                        key={cond.conditionId}
+                                        className="flex items-baseline justify-between gap-2 text-[11px]"
+                                      >
+                                        <span className="font-sans text-zinc-300 leading-snug">
+                                          {cond.label}
+                                        </span>
+                                        <span className="font-mono tabular-nums text-[10px] text-zinc-400 shrink-0">
+                                          <span className={modifierTextColor(condDelta)}>
+                                            Avg {formatSignedModifier(condDelta)} pts
+                                          </span>
+                                          {' · '}{cond.positionalSampleSize.toLocaleString()} games
+                                        </span>
+                                      </li>
+                                    );
+                                  })}
+                                </ul>
+                              ) : (
+                                <p className="text-[11px] font-sans text-zinc-400">
+                                  No special rule triggered this week · small average offset
+                                </p>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </section>
+
+          {/* Roster Role Comparison / Multi-Candidate Comparison */}
+          <div
+            data-testid="roster-role-comparison"
+            className="space-y-3 text-xs"
+          >
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => setIsRoleCompOpen((v) => !v)}
+                aria-expanded={isRoleCompOpen}
+                aria-controls={contentId}
+                className="flex items-center gap-1.5 font-sans text-xs font-semibold text-zinc-200 hover:text-zinc-100 transition-colors cursor-pointer rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400"
+              >
+                <span>
+                  {isMultiCompare && !showRoster
+                    ? `Comparing ${compareCandidates!.length} Selected Candidates`
+                    : headToHead
+                    ? `${player.name} vs. ${compareWith?.name}`
+                    : isMine
+                    ? `Compare vs. Other ${player.position}s`
+                    : `Role Comparison (${player.position})`}
+                </span>
+                <ChevronDown
+                  className={`w-3.5 h-3.5 text-zinc-400 transition-transform duration-200 ${
+                    isRoleCompOpen ? 'rotate-180' : ''
+                  }`}
+                />
+              </button>
+              {isMultiCompare ? (
+                <button
+                  type="button"
+                  onClick={() => setShowRoster((v) => !v)}
+                  className="text-xs font-sans font-medium text-amber-300 hover:text-amber-200 underline cursor-pointer"
+                >
+                  {showRoster
+                    ? `Back to ${compareCandidates!.length} candidates`
+                    : `Compare with your ${player.position}s`}
+                </button>
+              ) : compareWith ? (
+                <button
+                  type="button"
+                  onClick={() => setShowRoster((v) => !v)}
+                  className="text-xs font-sans font-medium text-amber-300 hover:text-amber-200 underline cursor-pointer"
+                >
+                  {headToHead ? `Compare with all your ${player.position}s` : `Back to ${compareWith.name}`}
+                </button>
+              ) : (
+                <span className="text-xs font-sans text-zinc-400">
+                  {teammates.length} {isMine ? 'other ' : ''}
+                  {player.position}
+                  {teammates.length === 1 ? '' : 's'} on roster
+                </span>
+              )}
+            </div>
+
+            <div id={contentId} className={isRoleCompOpen ? 'space-y-2.5' : 'hidden space-y-2.5'}>
+              {isMultiCompare && !showRoster ? (
+                <div
+                  data-testid="multi-candidate-grid"
+                  className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2"
+                >
+                  {compareCandidates!.map((cand, idx) => {
+                    const candMetrics = getPlayerDisplayMetrics(cand);
+                    const candRosterInfo = getPlayerRosterInfo(cand);
+                    const roleLabel = getPlayerRoleLabel(cand, candRosterInfo.isMine, 'Candidate');
+                    const isLeader = String(cand.id) === bestCandidateId;
+                    return (
+                      <div
+                        key={cand.id}
+                        data-testid={`candidate-card-${cand.id}`}
+                        className={`p-3 rounded-lg border flex flex-col justify-between gap-2 ${
+                          isLeader
+                            ? 'bg-amber-500/[0.06] border-amber-400/40'
+                            : 'bg-[#0f1012] border-white/[0.08]'
+                        }`}
+                      >
+                        <div>
+                          <div className="flex items-center justify-between gap-1 mb-1.5">
+                            <span className="text-[10px] font-mono tabular-nums text-zinc-400">
+                              #{idx + 1}
+                            </span>
+                            <span className={`text-[10px] font-sans font-medium ${isLeader ? 'text-amber-300' : 'text-zinc-400'}`}>
+                              {isLeader ? 'Leader' : roleLabel}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2 mb-2">
+                            <PlayerHeadshot player={cand} size="sm" />
+                            <div className="min-w-0 flex-1">
+                              <span className="font-sans font-medium text-xs text-zinc-100 break-words leading-snug block">
+                                {cand.name}
+                              </span>
+                              <div className="flex items-center gap-1.5 mt-0.5">
+                                <PositionalBadge position={cand.position} depth={cand.depth_chart_order} size="sm" />
+                                <span className="text-[10px] text-zinc-400 font-mono">
+                                  <TeamLogo team={cand.team} className="w-3.5 h-3.5 mr-1 align-[-2px]" />
+                                  {cand.team || 'FA'}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-3 gap-1 text-center text-[10px] pt-2 border-t border-white/[0.06]">
+                          <div>
+                            <span className="text-[9px] font-sans text-zinc-400 block">Base</span>
+                            <span className="font-mono tabular-nums text-zinc-200 font-medium block">
+                              {candMetrics.base.toFixed(1)}
+                              {candMetrics.placeholder.hasPlaceholder && (
+                                <OraclePlaceholderMarker placeholder={candMetrics.placeholder} kind="stats" />
+                              )}
+                            </span>
+                          </div>
+                          <div>
+                            <span className="text-[9px] font-sans text-zinc-400 block">Modifier</span>
+                            <span
+                              className={`font-mono tabular-nums font-semibold block ${modifierTextColor(
+                                candMetrics.modifier,
+                              )}`}
+                            >
+                              {formatSignedModifier(candMetrics.modifier)}
+                            </span>
+                          </div>
+                          <div>
+                            <span className="text-[9px] font-sans text-amber-200/90 block">Projected</span>
+                            <span className="font-mono tabular-nums text-amber-200 font-semibold block">
+                              {candMetrics.net.toFixed(1)}
+                              {candMetrics.placeholder.hasPlaceholder && (
+                                <OraclePlaceholderMarker placeholder={candMetrics.placeholder} />
+                              )}
                             </span>
                           </div>
                         </div>
                       </div>
-                    </div>
+                    );
+                  })}
+                </div>
+              ) : comparisonRows.length === 0 ? (
+                <div className="py-2 text-zinc-400 font-sans text-xs">
+                  {isMine
+                    ? `${player.name} is your only ${player.position}.`
+                    : `No rostered ${player.position}s on your squad. ${player.name} would fill an open ${player.position} slot.`}
+                </div>
+              ) : (
+                <div className="divide-y divide-white/[0.06] rounded-lg border border-white/[0.08] bg-[#0f1012] overflow-hidden">
+                  {comparisonRows.map(({ slotLabel, rosterPlayer }) => {
+                    const isSelf = String(rosterPlayer.id) === String(player.id);
+                    const rosterPlayerInfo = getPlayerRosterInfo(rosterPlayer);
 
-                    {/* Metrics */}
-                    <div className="grid grid-cols-3 gap-1 text-center text-[10px] pt-1.5 border-t border-white/5">
+                    const swapSides =
+                      headToHead &&
+                      ((inspectedRosterInfo.isMine && !rosterPlayerInfo.isMine) ||
+                       (inspectedRosterInfo.isMine &&
+                        rosterPlayerInfo.isMine &&
+                        inspectedRosterInfo.isStarter &&
+                        !rosterPlayerInfo.isStarter));
+
+                    const leftPlayer = swapSides ? player : rosterPlayer;
+                    const rightPlayer = swapSides ? rosterPlayer : player;
+
+                    const leftInfo = swapSides ? inspectedRosterInfo : rosterPlayerInfo;
+                    const rightInfo = swapSides ? rosterPlayerInfo : inspectedRosterInfo;
+
+                    const isLeftMine = leftInfo.isMine;
+                    const isRightMine = rightInfo.isMine;
+
+                    const leftMetrics = getPlayerDisplayMetrics(leftPlayer);
+                    const rightMetrics = getPlayerDisplayMetrics(rightPlayer);
+
+                    const baseDiff = rightMetrics.base - leftMetrics.base;
+                    const modDiff = rightMetrics.modifier - leftMetrics.modifier;
+                    const netDiff = rightMetrics.net - leftMetrics.net;
+                    const isUpgrade = netDiff > 0.2;
+
+                    const leftTitle = headToHead
+                      ? isLeftMine && isRightMine
+                        ? getIntraRosterSlotLabel(leftInfo, 'Roster')
+                        : getPlayerRoleLabel(leftPlayer, isLeftMine, 'Player')
+                      : slotLabel === 'ROSTER'
+                      ? 'Roster'
+                      : `Roster (${slotLabel})`;
+
+                    const rightTitle = headToHead
+                      ? isLeftMine && isRightMine
+                        ? getIntraRosterSlotLabel(rightInfo, 'Roster')
+                        : getPlayerRoleLabel(rightPlayer, isRightMine, 'Candidate')
+                      : isMine
+                      ? `Inspected (${player.position})`
+                      : `Candidate (${player.position})`;
+
+                    const fmtDiff = (d: number, decimals = 1) =>
+                      `${d >= 0 ? '+' : ''}${d.toFixed(decimals)}`;
+
+                    return (
                       <div
-                        className="p-1 rounded bg-slate-950/70"
-                        title={
-                          candMetrics.placeholder.hasPlaceholder
-                            ? undefined
-                            : 'Weekly stats projection'
-                        }
+                        key={`${slotLabel}-${rosterPlayer.id}`}
+                        data-testid={`role-comp-row-${rosterPlayer.id}`}
+                        className="p-3 space-y-2.5"
                       >
-                        <span className="text-[8px] text-slate-500 uppercase block">Stats</span>
-                        <span className="text-slate-200 font-bold block">
-                          {candMetrics.stats.toFixed(1)}
-                          {candMetrics.placeholder.hasPlaceholder && (
-                            <OraclePlaceholderMarker placeholder={candMetrics.placeholder} kind="stats" />
-                          )}
-                        </span>
+                        <div className="grid grid-cols-2 gap-3 divide-x divide-white/[0.06]">
+                          <div className="flex items-start justify-between gap-2 pr-1">
+                            <div className="min-w-0">
+                              <span className="text-[10px] font-sans text-zinc-400 block">{leftTitle}</span>
+                              <span className="font-sans font-medium text-xs text-zinc-100 break-words leading-snug block">
+                                {leftPlayer.name} (
+                                <TeamLogo
+                                  team={leftPlayer.team}
+                                  className="w-3.5 h-3.5 mr-1 align-[-2px]"
+                                />
+                                {leftPlayer.team})
+                              </span>
+                            </div>
+                            <span className="text-xs font-mono tabular-nums font-semibold text-zinc-200 shrink-0">
+                              {leftMetrics.net.toFixed(1)}
+                              {leftMetrics.placeholder.hasPlaceholder && (
+                                <OraclePlaceholderMarker placeholder={leftMetrics.placeholder} />
+                              )}
+                            </span>
+                          </div>
+
+                          <div className="flex items-start justify-between gap-2 pl-3">
+                            <div className="min-w-0">
+                              <span className="text-[10px] font-sans text-zinc-400 block">{rightTitle}</span>
+                              <span className="font-sans font-medium text-xs text-zinc-100 break-words leading-snug block">
+                                {rightPlayer.name} (
+                                <TeamLogo
+                                  team={rightPlayer.team}
+                                  className="w-3.5 h-3.5 mr-1 align-[-2px]"
+                                />
+                                {rightPlayer.team})
+                              </span>
+                            </div>
+                            <span className="text-xs font-mono tabular-nums font-semibold text-amber-300 shrink-0">
+                              {rightMetrics.net.toFixed(1)}
+                              {rightMetrics.placeholder.hasPlaceholder && (
+                                <OraclePlaceholderMarker placeholder={rightMetrics.placeholder} />
+                              )}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center justify-between gap-2 flex-wrap text-[11px] pt-2 border-t border-white/[0.05]">
+                          <span className="text-zinc-400">
+                            {headToHead ? 'Head-to-head' : slotLabel === 'ROSTER' ? 'Roster' : slotLabel}
+                          </span>
+                          <span className={`font-mono tabular-nums font-medium ${isUpgrade ? 'text-emerald-300' : 'text-zinc-300'}`}>
+                            {isSelf
+                              ? 'Currently inspected'
+                              : headToHead
+                              ? netDiff >= 0
+                                ? `${rightPlayer.name} by +${Math.abs(netDiff).toFixed(1)} pts`
+                                : `${leftPlayer.name} by +${Math.abs(netDiff).toFixed(1)} pts`
+                              : isMine
+                              ? netDiff >= 0
+                                ? `Ahead of ${leftPlayer.name} (${fmtDiff(netDiff)} pts)`
+                                : `Behind ${leftPlayer.name} (${fmtDiff(netDiff)} pts)`
+                              : isUpgrade
+                              ? `Upgrade (${fmtDiff(netDiff)} net pts)`
+                              : `Keep ${leftPlayer.name} (${fmtDiff(netDiff)} pts)`}
+                          </span>
+                        </div>
+
+                        <div className="grid grid-cols-3 gap-2 text-center text-[10px] pt-1.5 border-t border-white/[0.05]">
+                          <div>
+                            <span className="font-sans text-zinc-400 block">Base</span>
+                            <span className="font-mono tabular-nums text-zinc-200">
+                              {rightMetrics.base.toFixed(1)} vs {leftMetrics.base.toFixed(1)}
+                            </span>{' '}
+                            <span className={`font-mono tabular-nums font-medium ${baseDiff > 0 ? 'text-emerald-300' : baseDiff < 0 ? 'text-rose-300' : 'text-zinc-400'}`}>
+                              ({fmtDiff(baseDiff)})
+                            </span>
+                          </div>
+                          <div>
+                            <span className="font-sans text-zinc-400 block">Modifier</span>
+                            <span className="font-mono tabular-nums text-zinc-200">
+                              {formatSignedModifier(rightMetrics.modifier)} vs {formatSignedModifier(leftMetrics.modifier)}
+                            </span>{' '}
+                            <span className={`font-mono tabular-nums font-medium ${modDiff > 0 ? 'text-emerald-300' : modDiff < 0 ? 'text-rose-300' : 'text-zinc-400'}`}>
+                              ({formatSignedModifier(modDiff)})
+                            </span>
+                          </div>
+                          <div>
+                            <span className="font-sans text-amber-200/90 block">Projected</span>
+                            <span className="font-mono tabular-nums text-amber-200 font-semibold">
+                              {rightMetrics.net.toFixed(1)} vs {leftMetrics.net.toFixed(1)}
+                            </span>{' '}
+                            <span className={`font-mono tabular-nums font-medium ${netDiff > 0 ? 'text-emerald-300' : netDiff < 0 ? 'text-rose-300' : 'text-zinc-400'}`}>
+                              ({fmtDiff(netDiff)})
+                            </span>
+                          </div>
+                        </div>
                       </div>
-                      <div
-                        className="p-1 rounded bg-slate-950/70"
-                        title={
-                          candMetrics.placeholder.hasPlaceholder
-                            ? undefined
-                            : 'Oracle rating'
-                        }
-                      >
-                        <span className="text-[8px] text-slate-500 uppercase block">Oracle</span>
-                        <span className="text-purple-300 font-bold block">
-                          {candMetrics.oracle.toFixed(1)}
-                          {candMetrics.placeholder.hasPlaceholder && (
-                            <OraclePlaceholderMarker placeholder={candMetrics.placeholder} />
-                          )}
-                        </span>
-                      </div>
-                      <div
-                        className="p-1 rounded bg-slate-950/70"
-                        title="Astrological alignment (0 to 100)"
-                      >
-                        <span className="text-[8px] text-slate-500 uppercase block">Stars</span>
-                        <span className="text-cyan-300 font-bold block">
-                          {candMetrics.stars.toFixed(0)}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
+                    );
+                  })}
+                </div>
+              )}
             </div>
-          ) : comparisonRows.length === 0 ? (
-            <div className="p-3 rounded-lg bg-slate-900/60 border border-white/5 text-slate-400 text-[11px]">
-              {isMine
-                ? `${player.name} is your only ${player.position}.`
-                : `No rostered ${player.position}s found on your active squad - ${player.name} would fill an open ${player.position} role directly.`}
-            </div>
-          ) : (
-            <div className="space-y-2 pt-1">
-              {comparisonRows.map(({ slotLabel, isStarter, rosterPlayer }) => {
-                const isSelf = String(rosterPlayer.id) === String(player.id);
-                const rosterPlayerInfo = getPlayerRosterInfo(rosterPlayer);
-
-                // Assign panels: user's rostered player anchors the purple left card
-                // If both players belong to user's roster, anchor the current starter on the left
-                const swapSides =
-                  headToHead &&
-                  ((inspectedRosterInfo.isMine && !rosterPlayerInfo.isMine) ||
-                   (inspectedRosterInfo.isMine &&
-                    rosterPlayerInfo.isMine &&
-                    inspectedRosterInfo.isStarter &&
-                    !rosterPlayerInfo.isStarter));
-
-                const leftPlayer = swapSides ? player : rosterPlayer;
-                const rightPlayer = swapSides ? rosterPlayer : player;
-
-                const leftInfo = swapSides ? inspectedRosterInfo : rosterPlayerInfo;
-                const rightInfo = swapSides ? rosterPlayerInfo : inspectedRosterInfo;
-
-                const isLeftMine = leftInfo.isMine;
-                const isRightMine = rightInfo.isMine;
-
-                const leftMetrics = getPlayerDisplayMetrics(leftPlayer);
-                const rightMetrics = getPlayerDisplayMetrics(rightPlayer);
-
-                const leftProj = getWeeklyProj(leftPlayer);
-                const rightProj = getWeeklyProj(rightPlayer);
-                const leftFav = leftMetrics.stars;
-                const rightFav = rightMetrics.stars;
-                const leftOracle = leftMetrics.oracle;
-                const rightOracle = rightMetrics.oracle;
-
-                const projDiff = rightProj - leftProj;
-                const dsDiff = rightOracle - leftOracle;
-                const favDiff = rightFav - leftFav;
-                const isUpgrade = dsDiff > 0.2;
-
-                const leftTitle = headToHead
-                  ? isLeftMine && isRightMine
-                    ? getIntraRosterSlotLabel(leftInfo, 'Roster')
-                    : getPlayerRoleLabel(leftPlayer, isLeftMine, 'Player')
-                  : slotLabel === 'ROSTER'
-                  ? 'Roster'
-                  : `Roster (${slotLabel})`;
-
-                const rightTitle = headToHead
-                  ? isLeftMine && isRightMine
-                    ? getIntraRosterSlotLabel(rightInfo, 'Roster')
-                    : getPlayerRoleLabel(rightPlayer, isRightMine, 'Candidate')
-                  : isMine
-                  ? `Inspected (${player.position})`
-                  : `Candidate (${player.position})`;
-
-                const fmtDiff = (d: number, decimals = 1) =>
-                  `${d >= 0 ? '+' : ''}${d.toFixed(decimals)}`;
-
-                return (
-                  <div
-                    key={`${slotLabel}-${rosterPlayer.id}`}
-                    data-testid={`role-comp-row-${rosterPlayer.id}`}
-                    className={`p-2.5 rounded-lg border space-y-2 ${
-                      isSelf
-                        ? 'bg-cyan-950/30 border-cyan-500/40'
-                        : isUpgrade
-                        ? 'bg-emerald-950/20 border-emerald-500/30'
-                        : 'bg-slate-900/70 border-white/10'
-                    }`}
-                  >
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                      {/* Left: User Roster Player / Primary Compare Piece */}
-                      <div
-                        className={`p-2 rounded-lg border flex items-center justify-between gap-2 ${
-                          isLeftMine
-                            ? 'bg-purple-950/25 border-purple-500/60'
-                            : 'bg-slate-900/80 border-slate-700/60'
-                        }`}
-                      >
-                        <div className="min-w-0">
-                          <span
-                            className={`text-[9px] uppercase font-bold block ${
-                              isLeftMine ? 'text-purple-300' : 'text-slate-400'
-                            }`}
-                          >
-                            {leftTitle}
-                          </span>
-                          <span className="font-serif font-bold text-xs text-slate-100 truncate block">
-                            {leftPlayer.name} ({leftPlayer.team})
-                          </span>
-                        </div>
-                        <div className="text-right shrink-0">
-                          <span
-                            className={`text-xs font-bold block ${
-                              isLeftMine ? 'text-purple-200' : 'text-slate-200'
-                            }`}
-                          >
-                            {leftOracle.toFixed(1)}
-                            {leftMetrics.placeholder.hasPlaceholder && (
-                              <OraclePlaceholderMarker placeholder={leftMetrics.placeholder} />
-                            )}
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Right: Candidate / Opponent / Secondary Compare Piece */}
-                      <div
-                        className={`p-2 rounded-lg border flex items-center justify-between gap-2 ${
-                          isRightMine
-                            ? 'bg-purple-950/25 border-purple-500/60'
-                            : 'bg-slate-900/80 border-cyan-500/30'
-                        }`}
-                      >
-                        <div className="min-w-0">
-                          <span
-                            className={`text-[9px] uppercase font-bold block ${
-                              isRightMine ? 'text-purple-300' : 'text-cyan-300'
-                            }`}
-                          >
-                            {rightTitle}
-                          </span>
-                          <span className="font-serif font-bold text-xs text-slate-100 truncate block">
-                            {rightPlayer.name} ({rightPlayer.team})
-                          </span>
-                        </div>
-                        <div className="text-right shrink-0">
-                          <span
-                            className={`text-xs font-bold block ${
-                              isRightMine ? 'text-purple-200' : 'text-cyan-300'
-                            }`}
-                          >
-                            {rightOracle.toFixed(1)}
-                            {rightMetrics.placeholder.hasPlaceholder && (
-                              <OraclePlaceholderMarker placeholder={rightMetrics.placeholder} />
-                            )}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center justify-between gap-2 flex-wrap">
-                      <span
-                        className={`px-1.5 py-0.5 rounded text-[9px] font-bold uppercase border ${
-                          headToHead
-                            ? 'bg-purple-950/80 text-purple-200 border-purple-500/40'
-                            : isStarter
-                            ? 'bg-purple-950/80 text-purple-200 border-purple-500/40'
-                            : 'bg-slate-800 text-slate-300 border-white/10'
-                        }`}
-                      >
-                        {headToHead ? 'Head-to-Head' : slotLabel === 'ROSTER' ? 'Roster' : slotLabel}
-                      </span>
-                      <span
-                        className={`text-[9px] font-bold px-2 py-0.5 rounded border ${
-                          isSelf
-                            ? 'bg-cyan-950/80 text-cyan-300 border-cyan-500/40'
-                            : isUpgrade
-                            ? 'bg-emerald-950/80 text-emerald-300 border-emerald-500/40'
-                            : 'bg-slate-800 text-slate-400 border-white/10'
-                        }`}
-                      >
-                        {isSelf
-                          ? 'CURRENTLY INSPECTED'
-                          : headToHead
-                          ? dsDiff >= 0
-                            ? `${rightPlayer.name} by ${Math.abs(dsDiff).toFixed(1)} Oracle`
-                            : `${leftPlayer.name} by ${Math.abs(dsDiff).toFixed(1)} Oracle`
-                          : isMine
-                          ? dsDiff >= 0
-                            ? `AHEAD OF ${leftPlayer.name} (${fmtDiff(dsDiff)} Oracle)`
-                            : `BEHIND ${leftPlayer.name} (${fmtDiff(dsDiff)} Oracle)`
-                          : isUpgrade
-                          ? `UPGRADE (${fmtDiff(dsDiff)} Oracle, ${fmtDiff(projDiff)} pts)`
-                          : `KEEP ${leftPlayer.name} (${fmtDiff(dsDiff)} Oracle)`}
-                      </span>
-                    </div>
-
-                    {/* Strictly 3 Canonical Player Judgment Metrics Comparison & Delta Grid */}
-                    <div className="grid grid-cols-3 gap-1.5 text-center text-[10px] pt-1 border-t border-white/5">
-                      <div
-                        className="p-1.5 rounded bg-slate-950/70"
-                        title={
-                          leftMetrics.placeholder.hasPlaceholder || rightMetrics.placeholder.hasPlaceholder
-                            ? `Baseline projected points comparison (${[
-                                leftMetrics.placeholder.hasPlaceholder ? `${leftPlayer.name}: 0.0 pts actual` : null,
-                                rightMetrics.placeholder.hasPlaceholder ? `${rightPlayer.name}: 0.0 pts actual` : null,
-                              ].filter(Boolean).join(', ')})`
-                            : 'Baseline projected points comparison'
-                        }
-                      >
-                        <span className="text-[8px] text-slate-500 uppercase block">
-                          Stats
-                        </span>
-                        <span className="text-slate-200 font-bold">
-                          {rightProj.toFixed(1)} vs {leftProj.toFixed(1)}
-                        </span>
-                        <span className={`block font-bold ${projDiff > 0 ? 'text-emerald-400' : projDiff < 0 ? 'text-rose-400' : 'text-slate-400'}`}>
-                          {fmtDiff(projDiff)}
-                        </span>
-                      </div>
-
-                      <div
-                        className="p-1.5 rounded bg-slate-950/70"
-                        title={
-                          leftMetrics.placeholder.hasPlaceholder || rightMetrics.placeholder.hasPlaceholder
-                            ? `Combined Oracle score comparison (uses average projection placeholder for ${[
-                                leftMetrics.placeholder.hasPlaceholder ? leftPlayer.name : null,
-                                rightMetrics.placeholder.hasPlaceholder ? rightPlayer.name : null,
-                              ].filter(Boolean).join(', ')})`
-                            : 'Combined Oracle score comparison'
-                        }
-                      >
-                        <span className="text-[8px] text-slate-500 uppercase block">
-                          Oracle
-                        </span>
-                        <span className="text-slate-200 font-bold">
-                          {rightOracle.toFixed(1)} vs {leftOracle.toFixed(1)}
-                        </span>
-                        <span className={`block font-bold ${dsDiff > 0 ? 'text-emerald-400' : dsDiff < 0 ? 'text-rose-400' : 'text-slate-400'}`}>
-                          {fmtDiff(dsDiff)}
-                        </span>
-                      </div>
-
-                      <div
-                        className="p-1.5 rounded bg-slate-950/70"
-                        title="Astrological alignment comparison (0 to 100)"
-                      >
-                        <span className="text-[8px] text-slate-500 uppercase block">
-                          Stars
-                        </span>
-                        <span className="text-slate-200 font-bold">
-                          {rightFav.toFixed(0)} vs {leftFav.toFixed(0)}
-                        </span>
-                        <span className={`block font-bold ${favDiff > 0 ? 'text-emerald-400' : favDiff < 0 ? 'text-rose-400' : 'text-slate-400'}`}>
-                          {fmtDiff(favDiff, 0)}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
           </div>
-        </div>
-
-        <div className="pt-2">
-          <div className="w-full py-2.5 px-3 rounded-xl bg-slate-950 border border-white/10 font-mono text-xs text-center flex items-center justify-center gap-2">
-            <Shield
-              className={`w-3.5 h-3.5 ${
-                isMine
-                  ? 'text-purple-300'
-                  : isAvailable
-                    ? 'text-cyan-400'
-                    : 'text-slate-400'
-              }`}
-            />
-            <strong
-              className={
-                isMine
-                  ? 'text-purple-300'
-                  : isAvailable
-                    ? 'text-cyan-400'
-                    : 'text-slate-400'
-              }
-            >
-              {isMine
-                ? 'MY ROSTER'
-                : isAvailable
-                  ? 'FREE AGENT'
-                  : player.drafted_by
-                    ? `ROSTERED (${player.drafted_by})`
-                    : 'ROSTERED'}
-            </strong>
-          </div>
-        </div>
         </div>
       </div>
     </div>
@@ -1335,3 +1840,27 @@ export const PlayerDetailModal: React.FC<PlayerDetailModalProps> = ({
 };
 
 export default PlayerDetailModal;
+
+interface ProjectRadarPolygonOptions {
+  readonly norms: readonly number[];
+  readonly cx?: number;
+  readonly cy?: number;
+  readonly maxR?: number;
+  readonly angles?: readonly number[];
+}
+
+function projectRadarPolygon({
+  norms,
+  cx = RADAR_CX,
+  cy = RADAR_CY,
+  maxR = RADAR_MAX_R,
+  angles = RADAR_SPOKE_ANGLES,
+}: ProjectRadarPolygonOptions): { pts: Array<{ x: number; y: number }>; polygonString: string } {
+  const pts = norms.map((norm, i) => {
+    const rad = ((angles[i] ?? 0) * Math.PI) / 180;
+    const r = norm * maxR;
+    return { x: cx + r * Math.cos(rad), y: cy + r * Math.sin(rad) };
+  });
+  const polygonString = pts.map((p) => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
+  return { pts, polygonString };
+}

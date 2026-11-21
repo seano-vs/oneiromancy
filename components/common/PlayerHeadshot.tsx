@@ -21,7 +21,9 @@ import React, { useState } from 'react';
 /** NFL team logo from Sleeper's CDN, by team code (e.g. "DET"). */
 export function teamLogoUrl(team?: string | null): string | null {
   const code = String(team ?? '').trim().toLowerCase();
-  return code && code !== 'fa' && code !== 'nfl' ? `https://sleepercdn.com/images/team_logos/nfl/${code}.png` : null;
+  return code && !['fa', 'nfl', 'bye', 'opp', 'tbd', '-'].includes(code)
+    ? `https://sleepercdn.com/images/team_logos/nfl/${code}.png`
+    : null;
 }
 
 /** Player headshot from Sleeper's CDN, by Sleeper player id. */
@@ -32,12 +34,12 @@ export function headshotUrl(id?: string | number | null): string | null {
 
 const SIZES = {
   sm: 'w-7 h-7',
-  md: 'w-10 h-10',
-  trade: 'w-10 h-10 sm:w-11 sm:h-11',
-  row: 'w-12 h-12 sm:w-16 sm:h-16',
-  roster: 'w-10 h-10 sm:w-[72px] sm:h-[72px]',
-  matchup: 'w-12 h-12 sm:w-20 sm:h-20 lg:w-16 lg:h-16',
-  lg: 'w-16 h-16',
+  md: 'w-9 h-9',
+  trade: 'w-9 h-9',
+  row: 'w-9 h-9 sm:w-10 sm:h-10',
+  roster: 'w-9 h-9',
+  matchup: 'w-9 h-9 sm:w-10 sm:h-10',
+  lg: 'w-14 h-14',
 } as const;
 
 /**
@@ -55,7 +57,7 @@ export const PlayerHeadshot: React.FC<{
   ].filter((u): u is string => Boolean(u));
   const [index, setIndex] = useState(0);
   const src = sources[index];
-  const box = `${SIZES[size]} shrink-0 rounded-full bg-slate-800 border border-white/10 overflow-hidden`;
+  const box = `${SIZES[size]} shrink-0 rounded-full bg-zinc-800 border border-white/10 overflow-hidden`;
 
   if (!src) {
     const initials = player.name
@@ -65,13 +67,13 @@ export const PlayerHeadshot: React.FC<{
       .slice(0, 2)
       .toUpperCase();
     const initialsSize =
-      size === 'matchup' || size === 'roster' || size === 'row' || size === 'lg'
-        ? 'text-sm sm:text-base font-bold'
-        : size === 'trade'
-          ? 'text-xs font-semibold'
+      size === 'lg'
+        ? 'text-sm font-semibold'
+        : size === 'matchup' || size === 'roster' || size === 'row' || size === 'trade'
+          ? 'text-xs font-medium'
           : 'text-[10px]';
     return (
-      <span aria-hidden="true" className={`${box} flex items-center justify-center ${initialsSize} font-mono text-slate-400 ${className}`}>
+      <span aria-hidden="true" className={`${box} flex items-center justify-center ${initialsSize} font-mono text-zinc-400 ${className}`}>
         {initials}
       </span>
     );

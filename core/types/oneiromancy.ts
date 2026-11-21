@@ -71,6 +71,7 @@ export interface CosmicPlayer {
   last_name: string;
   position: NFLPosition;
   team: string; // 2 or 3-letter NFL code
+  birth_date?: string | null;
   jersey_number: number;
   bye_week: number;
   adp: number; // Average draft position
@@ -99,6 +100,8 @@ export interface CosmicPlayer {
   status?: string;
   injury_status?: string | null;
   depth_chart_order?: number | null;
+  search_rank?: number | null;
+  is_my_team?: boolean;
   fantasy_positions?: string[];
   catalysts?: string[];
   risks?: string[];
@@ -563,6 +566,7 @@ export interface OneiromancySettings {
   chaos_lambda: number; // 0.0 to 1.0 (default 0.75)
   lambda_chaos?: number;
   oracle_weights: OracleWeights;
+  enabled_systems?: string[];
   theme: 'deep_obsidian';
   offline_mode_active: boolean;
   mode?: 'live' | 'mock';
@@ -739,6 +743,7 @@ export interface SleeperPlayerRecord {
   height: string | null;
   weight: string | null;
   injury_status: string | null;
+  depth_chart_position?: string | null;
   depth_chart_order?: number | null;
   fantasy_positions?: string[];
   search_full_name?: string;
@@ -746,6 +751,8 @@ export interface SleeperPlayerRecord {
   age?: number | null;
   bye_week?: number | null;
   baseline_projected_points?: number;
+  average_projected_points?: number;
+  season_projected_points?: number;
 }
 
 export interface SleeperNFLState {

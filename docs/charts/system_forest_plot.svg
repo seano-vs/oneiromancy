@@ -1,0 +1,173 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 980 778" width="980" height="778" font-family="ui-sans-serif, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif">
+<rect x="0" y="0" width="980" height="778" rx="12" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5"/>
+<text x="28" y="36" font-size="18" font-weight="700" fill="#0f172a">Sleeper Point-Differential Forest Plot Across 25 Predictive Systems (2018–2026)</text>
+<text x="28" y="58" font-size="12.5" fill="#475569">Target: Actual − Projected Sleeper PPR Points (Position-Adjusted, N = 36,163 Player-Games) • Whiskers = 95% Cluster-Robust (CR1) CI • Solid Dot = EB Shrunk Δ</text>
+<text x="28" y="88" font-size="11.5" font-weight="700" fill="#334155">SYSTEM &amp; CONDITION</text>
+<text x="617.5" y="88" text-anchor="middle" font-size="11.5" font-weight="700" fill="#334155">SLEEPER POINT DIFF Δ (PTS / GAME)</text>
+<text x="954" y="88" text-anchor="end" font-size="11.5" font-weight="700" fill="#334155">EB Δ (n, t_cl)</text>
+<line x1="24" y1="96" x2="956" y2="96" stroke="#e2e8f0" stroke-width="1"/>
+<line x1="436.3" y1="98" x2="436.3" y2="722" stroke="#e2e8f0" stroke-width="1" stroke-dasharray="3,3"/>
+<text x="436.3" y="740" text-anchor="middle" font-size="11" fill="#475569" font-weight="400">-1.00</text>
+<line x1="526.9" y1="98" x2="526.9" y2="722" stroke="#e2e8f0" stroke-width="1" stroke-dasharray="3,3"/>
+<text x="526.9" y="740" text-anchor="middle" font-size="11" fill="#475569" font-weight="400">-0.50</text>
+<line x1="617.5" y1="98" x2="617.5" y2="722" stroke="#334155" stroke-width="1.6" />
+<text x="617.5" y="740" text-anchor="middle" font-size="11" fill="#475569" font-weight="700">0.00</text>
+<line x1="708.1" y1="98" x2="708.1" y2="722" stroke="#e2e8f0" stroke-width="1" stroke-dasharray="3,3"/>
+<text x="708.1" y="740" text-anchor="middle" font-size="11" fill="#475569" font-weight="400">+0.50</text>
+<line x1="798.8" y1="98" x2="798.8" y2="722" stroke="#e2e8f0" stroke-width="1" stroke-dasharray="3,3"/>
+<text x="798.8" y="740" text-anchor="middle" font-size="11" fill="#475569" font-weight="400">+1.00</text>
+<text x="28" y="118.0" font-size="11.5" font-weight="600" fill="#0f172a">Natal Sun or Mars Conjunct Malefic Fixed Star Algol  <tspan fill="#0d9488" font-weight="700">†</tspan></text>
+<text x="28" y="132.0" font-size="9.5" fill="#64748b">FIXED STARS PARANS</text>
+<line x1="637.5" y1="121.0" x2="780.3" y2="121.0" stroke="#0d9488" stroke-width="2" opacity="0.75"/>
+<line x1="637.5" y1="117.0" x2="637.5" y2="125.0" stroke="#0d9488" stroke-width="1.5"/>
+<line x1="780.3" y1="117.0" x2="780.3" y2="125.0" stroke="#0d9488" stroke-width="1.5"/>
+<circle cx="708.9" cy="121.0" r="4" fill="#5eead4" stroke="#0d9488" stroke-width="1.2"/>
+<circle cx="694.3" cy="121.0" r="5.2" fill="#0d9488" stroke="#ffffff" stroke-width="1.2"/>
+<text x="954" y="125.0" text-anchor="end" font-size="11" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-weight="600" fill="#0d9488">+0.42 <tspan fill="#64748b" font-weight="400" font-size="10">(1,309, t=+2.5)</tspan></text>
+<rect x="20" y="138.0" width="940" height="34" rx="4" fill="#f8fafc"/>
+<text x="28" y="152.0" font-size="11.5" font-weight="600" fill="#0f172a">Water Offense vs. Fire Offense <tspan fill="#0d9488" font-weight="700">†</tspan></text>
+<text x="28" y="166.0" font-size="9.5" fill="#64748b">ELEMENTAL MATCHUP</text>
+<line x1="625.4" y1="155.0" x2="746.9" y2="155.0" stroke="#0d9488" stroke-width="2" opacity="0.75"/>
+<line x1="625.4" y1="151.0" x2="625.4" y2="159.0" stroke="#0d9488" stroke-width="1.5"/>
+<line x1="746.9" y1="151.0" x2="746.9" y2="159.0" stroke="#0d9488" stroke-width="1.5"/>
+<circle cx="686.2" cy="155.0" r="4" fill="#5eead4" stroke="#0d9488" stroke-width="1.2"/>
+<circle cx="679.9" cy="155.0" r="5.2" fill="#0d9488" stroke="#ffffff" stroke-width="1.2"/>
+<text x="954" y="159.0" text-anchor="end" font-size="11" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-weight="600" fill="#0d9488">+0.34 <tspan fill="#64748b" font-weight="400" font-size="10">(2,482, t=+2.2)</tspan></text>
+<text x="28" y="186.0" font-size="11.5" font-weight="600" fill="#0f172a">Harmony Deficit (Bad Harmony vs. Good Harmony) <tspan fill="#0d9488" font-weight="700">†</tspan></text>
+<text x="28" y="200.0" font-size="9.5" fill="#64748b">TEAM SYNERGY</text>
+<line x1="639.8" y1="189.0" x2="711.8" y2="189.0" stroke="#0d9488" stroke-width="2" opacity="0.75"/>
+<line x1="639.8" y1="185.0" x2="639.8" y2="193.0" stroke="#0d9488" stroke-width="1.5"/>
+<line x1="711.8" y1="185.0" x2="711.8" y2="193.0" stroke="#0d9488" stroke-width="1.5"/>
+<circle cx="675.8" cy="189.0" r="4" fill="#5eead4" stroke="#0d9488" stroke-width="1.2"/>
+<circle cx="674.0" cy="189.0" r="5.2" fill="#0d9488" stroke="#ffffff" stroke-width="1.2"/>
+<text x="954" y="193.0" text-anchor="end" font-size="11" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-weight="600" fill="#0d9488">+0.31 <tspan fill="#64748b" font-weight="400" font-size="10">(7,906, t=+3.2)</tspan></text>
+<rect x="20" y="206.0" width="940" height="34" rx="4" fill="#f8fafc"/>
+<text x="28" y="220.0" font-size="11.5" font-weight="600" fill="#0f172a">Game-Day 5° Shem HaMephorash Quinary in Exact 0°/60° <tspan fill="#0d9488" font-weight="700">†</tspan></text>
+<text x="28" y="234.0" font-size="9.5" fill="#64748b">KABBALAH GEMATRIA</text>
+<line x1="626.1" y1="223.0" x2="734.0" y2="223.0" stroke="#0d9488" stroke-width="2" opacity="0.75"/>
+<line x1="626.1" y1="219.0" x2="626.1" y2="227.0" stroke="#0d9488" stroke-width="1.5"/>
+<line x1="734.0" y1="219.0" x2="734.0" y2="227.0" stroke="#0d9488" stroke-width="1.5"/>
+<circle cx="680.0" cy="223.0" r="4" fill="#5eead4" stroke="#0d9488" stroke-width="1.2"/>
+<circle cx="673.7" cy="223.0" r="5.2" fill="#0d9488" stroke="#ffffff" stroke-width="1.2"/>
+<text x="954" y="227.0" text-anchor="end" font-size="11" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-weight="600" fill="#0d9488">+0.31 <tspan fill="#64748b" font-weight="400" font-size="10">(2,216, t=+2.3)</tspan></text>
+<text x="28" y="254.0" font-size="11.5" font-weight="600" fill="#0f172a">Exact Life Path to Game-Date Root Match <tspan fill="#0d9488" font-weight="700">†</tspan></text>
+<text x="28" y="268.0" font-size="9.5" fill="#64748b">NUMEROLOGY</text>
+<line x1="629.4" y1="257.0" x2="714.8" y2="257.0" stroke="#0d9488" stroke-width="2" opacity="0.75"/>
+<line x1="629.4" y1="253.0" x2="629.4" y2="261.0" stroke="#0d9488" stroke-width="1.5"/>
+<line x1="714.8" y1="253.0" x2="714.8" y2="261.0" stroke="#0d9488" stroke-width="1.5"/>
+<circle cx="672.1" cy="257.0" r="4" fill="#5eead4" stroke="#0d9488" stroke-width="1.2"/>
+<circle cx="668.5" cy="257.0" r="5.2" fill="#0d9488" stroke="#ffffff" stroke-width="1.2"/>
+<text x="954" y="261.0" text-anchor="end" font-size="11" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-weight="600" fill="#0d9488">+0.28 <tspan fill="#64748b" font-weight="400" font-size="10">(3,495, t=+2.5)</tspan></text>
+<rect x="20" y="274.0" width="940" height="34" rx="4" fill="#f8fafc"/>
+<text x="28" y="288.0" font-size="11.5" font-weight="600" fill="#0f172a">Natal Sun in Martial Egyptian 10° Decan (Chaldean Fa </text>
+<text x="28" y="302.0" font-size="9.5" fill="#64748b">EGYPTIAN DECANS MODALITY</text>
+<line x1="617.0" y1="291.0" x2="703.5" y2="291.0" stroke="#0d9488" stroke-width="2" opacity="0.75"/>
+<line x1="617.0" y1="287.0" x2="617.0" y2="295.0" stroke="#0d9488" stroke-width="1.5"/>
+<line x1="703.5" y1="287.0" x2="703.5" y2="295.0" stroke="#0d9488" stroke-width="1.5"/>
+<circle cx="660.3" cy="291.0" r="4" fill="#5eead4" stroke="#0d9488" stroke-width="1.2"/>
+<circle cx="658.3" cy="291.0" r="5.2" fill="#0d9488" stroke="#ffffff" stroke-width="1.2"/>
+<text x="954" y="295.0" text-anchor="end" font-size="11" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-weight="600" fill="#0d9488">+0.23 <tspan fill="#64748b" font-weight="400" font-size="10">(5,213, t=+1.9)</tspan></text>
+<text x="28" y="322.0" font-size="11.5" font-weight="600" fill="#0f172a">Rokuyō Senbu (先負) Afternoon/Evening Victory Game Day </text>
+<text x="28" y="336.0" font-size="9.5" fill="#64748b">ROKUYO TENCHUSATSU</text>
+<line x1="608.8" y1="325.0" x2="707.4" y2="325.0" stroke="#0d9488" stroke-width="2" opacity="0.75"/>
+<line x1="608.8" y1="321.0" x2="608.8" y2="329.0" stroke="#0d9488" stroke-width="1.5"/>
+<line x1="707.4" y1="321.0" x2="707.4" y2="329.0" stroke="#0d9488" stroke-width="1.5"/>
+<circle cx="658.1" cy="325.0" r="4" fill="#5eead4" stroke="#0d9488" stroke-width="1.2"/>
+<circle cx="656.3" cy="325.0" r="5.2" fill="#0d9488" stroke="#ffffff" stroke-width="1.2"/>
+<text x="954" y="329.0" text-anchor="end" font-size="11" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-weight="600" fill="#0d9488">+0.21 <tspan fill="#64748b" font-weight="400" font-size="10">(5,254, t=+1.6)</tspan></text>
+<rect x="20" y="342.0" width="940" height="34" rx="4" fill="#f8fafc"/>
+<text x="28" y="356.0" font-size="11.5" font-weight="600" fill="#0f172a">Game-Day Solar 10° Decan in Exact 120° Trine (±12 De </text>
+<text x="28" y="370.0" font-size="9.5" fill="#64748b">EGYPTIAN DECANS MODALITY</text>
+<line x1="598.2" y1="359.0" x2="723.3" y2="359.0" stroke="#0d9488" stroke-width="2" opacity="0.75"/>
+<line x1="598.2" y1="355.0" x2="598.2" y2="363.0" stroke="#0d9488" stroke-width="1.5"/>
+<line x1="723.3" y1="355.0" x2="723.3" y2="363.0" stroke="#0d9488" stroke-width="1.5"/>
+<circle cx="660.7" cy="359.0" r="4" fill="#5eead4" stroke="#0d9488" stroke-width="1.2"/>
+<circle cx="655.3" cy="359.0" r="5.2" fill="#0d9488" stroke="#ffffff" stroke-width="1.2"/>
+<text x="954" y="363.0" text-anchor="end" font-size="11" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-weight="600" fill="#0d9488">+0.21 <tspan fill="#64748b" font-weight="400" font-size="10">(1,727, t=+1.4)</tspan></text>
+<text x="28" y="390.0" font-size="11.5" font-weight="600" fill="#0f172a">Water Offense vs. Earth Offense </text>
+<text x="28" y="404.0" font-size="9.5" fill="#64748b">ELEMENTAL MATCHUP</text>
+<line x1="589.6" y1="393.0" x2="728.0" y2="393.0" stroke="#0d9488" stroke-width="2" opacity="0.75"/>
+<line x1="589.6" y1="389.0" x2="589.6" y2="397.0" stroke="#0d9488" stroke-width="1.5"/>
+<line x1="728.0" y1="389.0" x2="728.0" y2="397.0" stroke="#0d9488" stroke-width="1.5"/>
+<circle cx="658.8" cy="393.0" r="4" fill="#5eead4" stroke="#0d9488" stroke-width="1.2"/>
+<circle cx="653.9" cy="393.0" r="5.2" fill="#0d9488" stroke="#ffffff" stroke-width="1.2"/>
+<text x="954" y="397.0" text-anchor="end" font-size="11" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-weight="600" fill="#0d9488">+0.20 <tspan fill="#64748b" font-weight="400" font-size="10">(1,847, t=+1.2)</tspan></text>
+<rect x="20" y="410.0" width="940" height="34" rx="4" fill="#f8fafc"/>
+<text x="28" y="424.0" font-size="11.5" font-weight="600" fill="#0f172a">Harmony Dominance (Good Harmony vs. Bad Harmony) <tspan fill="#e11d48" font-weight="700">†</tspan></text>
+<text x="28" y="438.0" font-size="9.5" fill="#64748b">TEAM SYNERGY</text>
+<line x1="537.9" y1="427.0" x2="608.2" y2="427.0" stroke="#e11d48" stroke-width="2" opacity="0.75"/>
+<line x1="537.9" y1="423.0" x2="537.9" y2="431.0" stroke="#e11d48" stroke-width="1.5"/>
+<line x1="608.2" y1="423.0" x2="608.2" y2="431.0" stroke="#e11d48" stroke-width="1.5"/>
+<circle cx="573.1" cy="427.0" r="4" fill="#fda4af" stroke="#e11d48" stroke-width="1.2"/>
+<circle cx="574.4" cy="427.0" r="5.2" fill="#e11d48" stroke="#ffffff" stroke-width="1.2"/>
+<text x="954" y="431.0" text-anchor="end" font-size="11" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-weight="600" fill="#e11d48">-0.24 <tspan fill="#64748b" font-weight="400" font-size="10">(8,014, t=-2.5)</tspan></text>
+<text x="28" y="458.0" font-size="11.5" font-weight="600" fill="#0f172a">Apparent Geocentric Mercury Retrograde (Quarterbacks </text>
+<text x="28" y="472.0" font-size="9.5" fill="#64748b">HELLENISTIC PLANETARY</text>
+<line x1="454.9" y1="461.0" x2="663.3" y2="461.0" stroke="#e11d48" stroke-width="2" opacity="0.75"/>
+<line x1="454.9" y1="457.0" x2="454.9" y2="465.0" stroke="#e11d48" stroke-width="1.5"/>
+<line x1="663.3" y1="457.0" x2="663.3" y2="465.0" stroke="#e11d48" stroke-width="1.5"/>
+<circle cx="559.1" cy="461.0" r="4" fill="#fda4af" stroke="#e11d48" stroke-width="1.2"/>
+<circle cx="572.6" cy="461.0" r="5.2" fill="#e11d48" stroke="#ffffff" stroke-width="1.2"/>
+<text x="954" y="465.0" text-anchor="end" font-size="11" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-weight="600" fill="#e11d48">-0.25 <tspan fill="#64748b" font-weight="400" font-size="10">(832, t=-1.1)</tspan></text>
+<rect x="20" y="478.0" width="940" height="34" rx="4" fill="#f8fafc"/>
+<text x="28" y="492.0" font-size="11.5" font-weight="600" fill="#0f172a">Approaching / Exact Saturn Return (Age 27–32, 0° ± 1 <tspan fill="#e11d48" font-weight="700">†</tspan></text>
+<text x="28" y="506.0" font-size="9.5" fill="#64748b">HELLENISTIC PLANETARY</text>
+<line x1="532.4" y1="495.0" x2="604.1" y2="495.0" stroke="#e11d48" stroke-width="2" opacity="0.75"/>
+<line x1="532.4" y1="491.0" x2="532.4" y2="499.0" stroke="#e11d48" stroke-width="1.5"/>
+<line x1="604.1" y1="491.0" x2="604.1" y2="499.0" stroke="#e11d48" stroke-width="1.5"/>
+<circle cx="568.3" cy="495.0" r="4" fill="#fda4af" stroke="#e11d48" stroke-width="1.2"/>
+<circle cx="570.4" cy="495.0" r="5.2" fill="#e11d48" stroke="#ffffff" stroke-width="1.2"/>
+<text x="954" y="499.0" text-anchor="end" font-size="11" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-weight="600" fill="#e11d48">-0.26 <tspan fill="#64748b" font-weight="400" font-size="10">(5,593, t=-2.7)</tspan></text>
+<text x="28" y="526.0" font-size="11.5" font-weight="600" fill="#0f172a">Keplerian Lunar Perigee Window (Closest Approach) <tspan fill="#e11d48" font-weight="700">†</tspan></text>
+<text x="28" y="540.0" font-size="9.5" fill="#64748b">SOLAR LUNAR TRANSITS</text>
+<line x1="522.3" y1="529.0" x2="611.5" y2="529.0" stroke="#e11d48" stroke-width="2" opacity="0.75"/>
+<line x1="522.3" y1="525.0" x2="522.3" y2="533.0" stroke="#e11d48" stroke-width="1.5"/>
+<line x1="611.5" y1="525.0" x2="611.5" y2="533.0" stroke="#e11d48" stroke-width="1.5"/>
+<circle cx="566.9" cy="529.0" r="4" fill="#fda4af" stroke="#e11d48" stroke-width="1.2"/>
+<circle cx="569.3" cy="529.0" r="5.2" fill="#e11d48" stroke="#ffffff" stroke-width="1.2"/>
+<text x="954" y="533.0" text-anchor="end" font-size="11" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-weight="600" fill="#e11d48">-0.27 <tspan fill="#64748b" font-weight="400" font-size="10">(4,947, t=-2.2)</tspan></text>
+<rect x="20" y="546.0" width="940" height="34" rx="4" fill="#f8fafc"/>
+<text x="28" y="560.0" font-size="11.5" font-weight="600" fill="#0f172a">Kshipra Swift Athletic Lunar Mansion (Ashwini, Pushy <tspan fill="#e11d48" font-weight="700">†</tspan></text>
+<text x="28" y="574.0" font-size="9.5" fill="#64748b">VEDIC JYOTISH</text>
+<line x1="513.6" y1="563.0" x2="613.4" y2="563.0" stroke="#e11d48" stroke-width="2" opacity="0.75"/>
+<line x1="513.6" y1="559.0" x2="513.6" y2="567.0" stroke="#e11d48" stroke-width="1.5"/>
+<line x1="613.4" y1="559.0" x2="613.4" y2="567.0" stroke="#e11d48" stroke-width="1.5"/>
+<circle cx="563.5" cy="563.0" r="4" fill="#fda4af" stroke="#e11d48" stroke-width="1.2"/>
+<circle cx="567.0" cy="563.0" r="5.2" fill="#e11d48" stroke="#ffffff" stroke-width="1.2"/>
+<text x="954" y="567.0" text-anchor="end" font-size="11" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-weight="600" fill="#e11d48">-0.28 <tspan fill="#64748b" font-weight="400" font-size="10">(3,613, t=-2.1)</tspan></text>
+<text x="28" y="594.0" font-size="11.5" font-weight="600" fill="#0f172a">Water Offense vs. Water Offense </text>
+<text x="28" y="608.0" font-size="9.5" fill="#64748b">ELEMENTAL MATCHUP</text>
+<line x1="474.3" y1="597.0" x2="634.0" y2="597.0" stroke="#e11d48" stroke-width="2" opacity="0.75"/>
+<line x1="474.3" y1="593.0" x2="474.3" y2="601.0" stroke="#e11d48" stroke-width="1.5"/>
+<line x1="634.0" y1="593.0" x2="634.0" y2="601.0" stroke="#e11d48" stroke-width="1.5"/>
+<circle cx="554.2" cy="597.0" r="4" fill="#fda4af" stroke="#e11d48" stroke-width="1.2"/>
+<circle cx="562.9" cy="597.0" r="5.2" fill="#e11d48" stroke="#ffffff" stroke-width="1.2"/>
+<text x="954" y="601.0" text-anchor="end" font-size="11" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-weight="600" fill="#e11d48">-0.30 <tspan fill="#64748b" font-weight="400" font-size="10">(1,565, t=-1.6)</tspan></text>
+<rect x="20" y="614.0" width="940" height="34" rx="4" fill="#f8fafc"/>
+<text x="28" y="628.0" font-size="11.5" font-weight="600" fill="#0f172a">Full Moon Window (165°–195° Synodic Phase) </text>
+<text x="28" y="642.0" font-size="9.5" fill="#64748b">SOLAR LUNAR TRANSITS</text>
+<line x1="484.0" y1="631.0" x2="632.3" y2="631.0" stroke="#e11d48" stroke-width="2" opacity="0.75"/>
+<line x1="484.0" y1="627.0" x2="484.0" y2="635.0" stroke="#e11d48" stroke-width="1.5"/>
+<line x1="632.3" y1="627.0" x2="632.3" y2="635.0" stroke="#e11d48" stroke-width="1.5"/>
+<circle cx="558.2" cy="631.0" r="4" fill="#fda4af" stroke="#e11d48" stroke-width="1.2"/>
+<circle cx="562.3" cy="631.0" r="5.2" fill="#e11d48" stroke="#ffffff" stroke-width="1.2"/>
+<text x="954" y="635.0" text-anchor="end" font-size="11" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-weight="600" fill="#e11d48">-0.30 <tspan fill="#64748b" font-weight="400" font-size="10">(3,385, t=-1.6)</tspan></text>
+<text x="28" y="662.0" font-size="11.5" font-weight="600" fill="#0f172a">Game-Day Moon Conjunct Malefic Fixed Star Algol or S </text>
+<text x="28" y="676.0" font-size="9.5" fill="#64748b">FIXED STARS PARANS</text>
+<line x1="410.5" y1="665.0" x2="630.2" y2="665.0" stroke="#e11d48" stroke-width="2" opacity="0.75"/>
+<line x1="410.5" y1="661.0" x2="410.5" y2="669.0" stroke="#e11d48" stroke-width="1.5"/>
+<line x1="630.2" y1="661.0" x2="630.2" y2="669.0" stroke="#e11d48" stroke-width="1.5"/>
+<circle cx="520.4" cy="665.0" r="4" fill="#fda4af" stroke="#e11d48" stroke-width="1.2"/>
+<circle cx="542.4" cy="665.0" r="5.2" fill="#e11d48" stroke="#ffffff" stroke-width="1.2"/>
+<text x="954" y="669.0" text-anchor="end" font-size="11" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-weight="600" fill="#e11d48">-0.41 <tspan fill="#64748b" font-weight="400" font-size="10">(854, t=-1.7)</tspan></text>
+<rect x="20" y="682.0" width="940" height="34" rx="4" fill="#f8fafc"/>
+<text x="28" y="696.0" font-size="11.5" font-weight="600" fill="#0f172a">Supermoon Syzygy (Full Moon + Perigee) <tspan fill="#e11d48" font-weight="700">†</tspan></text>
+<text x="28" y="710.0" font-size="9.5" fill="#64748b">SOLAR LUNAR TRANSITS</text>
+<line x1="400.0" y1="699.0" x2="557.1" y2="699.0" stroke="#e11d48" stroke-width="2" opacity="0.75"/>
+<line x1="400.0" y1="695.0" x2="400.0" y2="703.0" stroke="#e11d48" stroke-width="1.5"/>
+<line x1="557.1" y1="695.0" x2="557.1" y2="703.0" stroke="#e11d48" stroke-width="1.5"/>
+<circle cx="400.0" cy="699.0" r="4" fill="#fda4af" stroke="#e11d48" stroke-width="1.2"/>
+<circle cx="536.5" cy="699.0" r="5.2" fill="#e11d48" stroke="#ffffff" stroke-width="1.2"/>
+<text x="954" y="703.0" text-anchor="end" font-size="11" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-weight="600" fill="#e11d48">-0.45 <tspan fill="#64748b" font-weight="400" font-size="10">(69, t=-2.3)</tspan></text>
+<text x="28" y="764" font-size="11" fill="#64748b">Significance: ★★ BH-FDR q &lt; 0.05 • ★ BH-FDR q &lt; 0.10 • † Cluster-Robust p &lt; 0.05 (unadjusted) • Axis clipped to [−1.20, +1.20] pts for rare small-n tails.</text>
+</svg>

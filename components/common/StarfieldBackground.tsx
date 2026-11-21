@@ -134,24 +134,24 @@ interface Star {
 
 const STARFIELD_CONFIG = {
   minStars: 55,
-  maxStars: 175,
-  pxPerStar: 13000,
-  minRadius: 0.6,
-  maxRadius: 2.2,
-  minAlpha: 0.18,
-  maxAlpha: 0.90,
-  twinkleProbability: 0.40,
-  twinkleMinSpeedRadPerMs: Math.PI / 2000, // 4.0s period
-  twinkleMaxSpeedRadPerMs: Math.PI / 1000, // 2.0s period
-  tiltOffsetPx: 24,
+  maxStars: 165,
+  pxPerStar: 13500,
+  minRadius: 0.55,
+  maxRadius: 2.0,
+  minAlpha: 0.16,
+  maxAlpha: 0.82,
+  twinkleProbability: 0.42,
+  twinkleMinSpeedRadPerMs: Math.PI / 2400, // 4.8s period
+  twinkleMaxSpeedRadPerMs: Math.PI / 1150, // 2.3s period
+  tiltOffsetPx: 22,
   tiltDampingFactor: 0.08,
-  accelHorizontalSpeed: 1.8,
-  scrollParallaxFactor: 0.25,
+  accelHorizontalSpeed: 1.5,
+  scrollParallaxFactor: 0.22,
   scrollDampingFactor: 0.18,
   layers: {
-    background: { depth: 0.3, minRadius: 0.6, maxRadius: 1.0, minAlpha: 0.22, maxAlpha: 0.40 },
-    midground: { depth: 0.6, minRadius: 1.0, maxRadius: 1.6, minAlpha: 0.38, maxAlpha: 0.60 },
-    foreground: { depth: 1.0, minRadius: 1.4, maxRadius: 2.2, minAlpha: 0.60, maxAlpha: 0.85 },
+    background: { depth: 0.3, minRadius: 0.55, maxRadius: 0.9, minAlpha: 0.18, maxAlpha: 0.36 },
+    midground: { depth: 0.6, minRadius: 0.95, maxRadius: 1.35, minAlpha: 0.34, maxAlpha: 0.56 },
+    foreground: { depth: 1.0, minRadius: 1.4, maxRadius: 2.0, minAlpha: 0.54, maxAlpha: 0.82 },
   },
 } as const;
 
@@ -176,7 +176,7 @@ function createStar(width: number, height: number): Star {
   const layer =
     rDepth < 0.55
       ? STARFIELD_CONFIG.layers.background
-      : rDepth < 0.80
+      : rDepth < 0.82
         ? STARFIELD_CONFIG.layers.midground
         : STARFIELD_CONFIG.layers.foreground;
   const depth = layer.depth;
@@ -185,11 +185,13 @@ function createStar(width: number, height: number): Star {
   const baseAlpha = layer.minAlpha + Math.random() * (layer.maxAlpha - layer.minAlpha);
   const rColor = Math.random();
   const palette =
-    rColor < 0.70
-      ? '241, 245, 249' // 70% soft silver
-      : rColor < 0.88
-        ? '165, 243, 252' // 18% cosmic cyan
-        : '216, 180, 254'; // 12% subtle violet
+    rColor < 0.64
+      ? '244, 244, 248' // 64% moonlit silver-ivory
+      : rColor < 0.80
+        ? '245, 214, 142' // 16% champagne starlight gold
+        : rColor < 0.92
+          ? '165, 224, 252' // 12% astral ice-blue
+          : '196, 181, 253'; // 8% soft twilight iris
   const twinkleRange = STARFIELD_CONFIG.twinkleMaxSpeedRadPerMs - STARFIELD_CONFIG.twinkleMinSpeedRadPerMs;
   return {
     x: Math.random() * width,
@@ -197,8 +199,8 @@ function createStar(width: number, height: number): Star {
     radius,
     baseAlpha,
     depth,
-    vx: (0.08 + 0.12 * Math.random()) * depth,
-    vy: (0.03 + 0.06 * Math.random()) * depth,
+    vx: (0.065 + 0.10 * Math.random()) * depth,
+    vy: (0.025 + 0.05 * Math.random()) * depth,
     color: palette,
     twinkleSpeed:
       Math.random() < STARFIELD_CONFIG.twinkleProbability
@@ -378,8 +380,8 @@ export function initStarfield(canvas: HTMLCanvasElement): () => void {
       );
 
       if (s.depth === 1.0) {
-        ctx.shadowBlur = 6;
-        ctx.shadowColor = `rgba(${s.color}, 0.65)`;
+        ctx.shadowBlur = 5;
+        ctx.shadowColor = `rgba(${s.color}, 0.55)`;
       } else {
         ctx.shadowBlur = 0;
       }

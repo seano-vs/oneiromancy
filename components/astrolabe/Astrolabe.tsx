@@ -17,6 +17,7 @@
 'use client';
 
 import React from 'react';
+import { ALL_PREDICTOR_SYSTEM_IDS } from '@/lib/oracle';
 import { DEFAULT_CHAOS_LAMBDA } from '@/lib/scoring';
 
 export interface AstrolabeProps {
@@ -44,8 +45,6 @@ export const Astrolabe: React.FC<AstrolabeProps> = ({
   const middleDuration = Math.max(2.5, 40 / mult);
   const innerDuration = Math.max(1.5, 20 / mult);
 
-  const currentLambda = lambda ?? DEFAULT_CHAOS_LAMBDA;
-
   return (
     <div
       className={`relative flex items-center justify-center select-none ${className}`}
@@ -54,14 +53,6 @@ export const Astrolabe: React.FC<AstrolabeProps> = ({
       role="img"
       aria-label={`Celestial Astrolabe with speed multiplier ${mult.toFixed(2)}`}
     >
-      {/* Outer Atmospheric Glow */}
-      <div
-        className="absolute inset-0 rounded-full blur-xl pointer-events-none transition-opacity duration-300"
-        style={{
-          background: `radial-gradient(circle, rgba(6,182,212,${0.15 + 0.25 * currentLambda}) 0%, rgba(109,40,217,${0.2 + 0.3 * currentLambda}) 70%, transparent 100%)`,
-        }}
-      />
-
       <svg
         viewBox="0 0 300 300"
         width={size}
@@ -74,13 +65,14 @@ export const Astrolabe: React.FC<AstrolabeProps> = ({
           cy="150"
           r="146"
           fill="none"
-          stroke="rgba(6,182,212,0.18)"
+          stroke="rgba(226,185,100,0.16)"
           strokeWidth="1"
           strokeDasharray="2, 6"
         />
 
-        {/* Ring 1: Outer Zodiac & Celestial Degree Ticks (Rotates Clockwise) */}
+        {/* Ring 1: Outer Zodiac & Celestial Degree Ticks */}
         <g
+          data-astrolabe-ring=""
           className="origin-center"
           style={{
             animation: `spin-cw ${outerDuration}s linear infinite`,
@@ -92,19 +84,18 @@ export const Astrolabe: React.FC<AstrolabeProps> = ({
             cy="150"
             r="138"
             fill="none"
-            stroke="rgba(6,182,212,0.5)"
-            strokeWidth="1.5"
+            stroke="rgba(226,185,100,0.45)"
+            strokeWidth="1.25"
           />
           <circle
             cx="150"
             cy="150"
             r="130"
             fill="none"
-            stroke="rgba(255,255,255,0.15)"
+            stroke="rgba(255,255,255,0.12)"
             strokeWidth="1"
             strokeDasharray="3, 5"
           />
-          {/* 24 Celestial Degree Ticks & Cardinal Nodes */}
           {Array.from({ length: 24 }).map((_, i) => (
             <line
               key={`tick-${i}`}
@@ -112,20 +103,16 @@ export const Astrolabe: React.FC<AstrolabeProps> = ({
               y1="12"
               x2="150"
               y2={i % 6 === 0 ? '22' : i % 2 === 0 ? '19' : '16'}
-              stroke={i % 6 === 0 ? '#06b6d4' : i % 2 === 0 ? 'rgba(6,182,212,0.7)' : 'rgba(255,255,255,0.3)'}
-              strokeWidth={i % 6 === 0 ? '2.5' : i % 2 === 0 ? '1.5' : '1'}
+              stroke={i % 6 === 0 ? '#e2b964' : i % 2 === 0 ? 'rgba(226,185,100,0.55)' : 'rgba(255,255,255,0.22)'}
+              strokeWidth={i % 6 === 0 ? '2' : i % 2 === 0 ? '1.25' : '1'}
               transform={`rotate(${i * 15} 150 150)`}
             />
           ))}
-          {/* Zodiac Glyphs at Cardinal Positions */}
-          <text x="150" y="27" textAnchor="middle" fill="#06b6d4" fontSize="10" fontFamily="sans-serif">♈</text>
-          <text x="273" y="153" textAnchor="middle" fill="#06b6d4" fontSize="10" fontFamily="sans-serif">♋</text>
-          <text x="150" y="278" textAnchor="middle" fill="#06b6d4" fontSize="10" fontFamily="sans-serif">♎</text>
-          <text x="27" y="153" textAnchor="middle" fill="#06b6d4" fontSize="10" fontFamily="sans-serif">♑</text>
         </g>
 
-        {/* Ring 2: Middle Divination & Aspect Chords (Rotates Counter-Clockwise) */}
+        {/* Ring 2: Middle Aspect Chords */}
         <g
+          data-astrolabe-ring=""
           className="origin-center"
           style={{
             animation: `spin-ccw ${middleDuration}s linear infinite`,
@@ -137,39 +124,29 @@ export const Astrolabe: React.FC<AstrolabeProps> = ({
             cy="150"
             r="104"
             fill="none"
-            stroke="rgba(109,40,217,0.6)"
-            strokeWidth="1.5"
-          />
-          <circle
-            cx="150"
-            cy="150"
-            r="96"
-            fill="none"
-            stroke="rgba(168,85,247,0.25)"
+            stroke="rgba(167,139,250,0.28)"
             strokeWidth="1"
-            strokeDasharray="4, 4"
           />
-          {/* Trine Aspect Chords (120-degree triangles) */}
           <polygon
             points="150,46 240,202 60,202"
             fill="none"
-            stroke="rgba(109,40,217,0.4)"
-            strokeWidth="1.5"
+            stroke="rgba(226,185,100,0.34)"
+            strokeWidth="1"
           />
           <polygon
             points="150,254 60,98 240,98"
             fill="none"
-            stroke="rgba(6,182,212,0.3)"
-            strokeWidth="1.5"
+            stroke="rgba(125,211,252,0.26)"
+            strokeWidth="1"
           />
-          {/* Planetary nodes */}
-          <circle cx="150" cy="46" r="3.5" fill="#6d28d9" stroke="#fff" strokeWidth="0.8" />
-          <circle cx="240" cy="202" r="3.5" fill="#06b6d4" stroke="#fff" strokeWidth="0.8" />
-          <circle cx="60" cy="202" r="3.5" fill="#eab308" stroke="#fff" strokeWidth="0.8" />
+          <circle cx="150" cy="46" r="3" fill="#e2b964" />
+          <circle cx="240" cy="202" r="2.5" fill="#c4b5fd" />
+          <circle cx="60" cy="202" r="2.5" fill="#7dd3fc" />
         </g>
 
-        {/* Ring 3: Inner Sacred Geometry Ring (Rotates Clockwise) */}
+        {/* Ring 3: Inner Brass Ring */}
         <g
+          data-astrolabe-ring=""
           className="origin-center"
           style={{
             animation: `spin-cw ${innerDuration}s linear infinite`,
@@ -181,67 +158,38 @@ export const Astrolabe: React.FC<AstrolabeProps> = ({
             cy="150"
             r="70"
             fill="none"
-            stroke="rgba(234,179,8,0.5)"
-            strokeWidth="1.5"
-          />
-          <circle
-            cx="150"
-            cy="150"
-            r="62"
-            fill="none"
-            stroke="rgba(255,255,255,0.2)"
+            stroke="rgba(226,185,100,0.4)"
             strokeWidth="1"
-            strokeDasharray="2, 3"
           />
-          {/* Hexagram geometry */}
           <polygon
             points="150,80 210,185 90,185"
             fill="none"
-            stroke="rgba(234,179,8,0.3)"
-            strokeWidth="1"
-          />
-          <polygon
-            points="150,220 90,115 210,115"
-            fill="none"
-            stroke="rgba(16,185,129,0.3)"
+            stroke="rgba(226,185,100,0.22)"
             strokeWidth="1"
           />
         </g>
 
-        {/* Center Eye: Chaos Telemetry Core */}
+        {/* Center Core */}
         <circle
           cx="150"
           cy="150"
-          r="32"
-          fill="#131318"
-          stroke="#06b6d4"
-          strokeWidth="2"
-        />
-        <circle
-          cx="150"
-          cy="150"
-          r="26"
-          fill="rgba(6,182,212,0.12)"
-          stroke="rgba(109,40,217,0.4)"
-          strokeWidth="1"
-        />
-        <circle
-          cx="150"
-          cy="150"
-          r="8"
-          fill="#6d28d9"
-          className="animate-pulse"
+          r="30"
+          fill="#0f1012"
+          stroke="rgba(226,185,100,0.5)"
+          strokeWidth="1.5"
         />
       </svg>
 
-      {/* Floating Center Telemetry Readout */}
+      {/* Center Readout */}
       {showCenterReadout && (
         <div className="absolute flex flex-col items-center justify-center pointer-events-none text-center">
-          <span className="text-[9px] font-mono text-cyan-400 font-bold uppercase tracking-wider">
-            {speedMultiplier !== undefined ? 'SPEED' : 'λ FACTOR'}
+          <span className="text-[9px] font-mono text-zinc-400 font-medium uppercase tracking-wider">
+            {speedMultiplier !== undefined ? 'SPEED' : 'SYS'}
           </span>
-          <span className="text-xs font-mono text-white font-bold tracking-tight">
-            {speedMultiplier !== undefined ? `${mult.toFixed(1)}x` : currentLambda.toFixed(2)}
+          <span className="text-xs font-mono tabular-nums text-amber-200 font-semibold tracking-tight">
+            {speedMultiplier !== undefined
+              ? `${mult.toFixed(1)}x`
+              : String(ALL_PREDICTOR_SYSTEM_IDS.length)}
           </span>
         </div>
       )}

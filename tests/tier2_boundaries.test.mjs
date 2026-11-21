@@ -39,9 +39,9 @@ describe('Tier 2: Boundary & Corner Cases (19 Features x 5 Boundary Tests = 95 T
   describe('Boundary 1: Theme Tokens Boundaries', () => {
     const globalsCssPath = path.resolve('app/globals.css');
 
-    it('1.1 should verify Deep Obsidian (#131318) contrast ratio against #ffffff exceeds WCAG AAA (>=7.0:1)', () => {
+    it('1.1 should verify Matte Charcoal (#0f1012) contrast ratio against #ffffff exceeds WCAG AAA (>=7.0:1)', () => {
       const hex = tailwindConfig?.theme?.extend?.colors?.oneiromancy?.obsidian;
-      assert.equal(hex, '#131318', 'Tailwind config must specify obsidian hex token #131318');
+      assert.equal(hex, '#0f1012', 'Tailwind config must specify matte charcoal obsidian hex token #0f1012');
 
       // Compute exact relative luminance per W3C WCAG 2.1 specification
       const r = parseInt(hex.slice(1, 3), 16) / 255;
@@ -64,56 +64,57 @@ describe('Tier 2: Boundary & Corner Cases (19 Features x 5 Boundary Tests = 95 T
       }
     });
 
-    it('1.3 should verify glassmorphic panel opacity boundaries in globals.css reside in [0.60, 0.90]', () => {
+    it('1.3 should verify hairline border opacity boundaries in globals.css reside in [0.03, 0.40]', () => {
       const globalsCssContent = fs.readFileSync(globalsCssPath, 'utf8');
-      const alphaMatches = [...globalsCssContent.matchAll(/rgba\(26,\s*26,\s*36,\s*([\d.]+)\)/g)].map((m) => parseFloat(m[1]));
-      assert.ok(alphaMatches.length >= 2, 'globals.css must define glass opacity alphas');
+      const alphaMatches = [...globalsCssContent.matchAll(/rgba\(255,\s*255,\s*255,\s*([\d.]+)\)/g)].map((m) => parseFloat(m[1]));
+      assert.ok(alphaMatches.length >= 2, 'globals.css must define hairline border alphas');
       for (const alpha of alphaMatches) {
-        assert.ok(alpha >= 0.60 && alpha <= 0.90, `Opacity ${alpha} must reside within [0.60, 0.90] for readable glassmorphism`);
+        assert.ok(alpha >= 0.03 && alpha <= 0.40, `Border/surface opacity ${alpha} must reside within [0.03, 0.40] for restrained hairlines`);
       }
     });
 
     it('1.4 should verify all core oneiromancy color keys are defined in tailwind config', () => {
       const oneiromancyColors = tailwindConfig?.theme?.extend?.colors?.oneiromancy || {};
-      const requiredKeys = ['obsidian', 'surface', 'elevated', 'purple', 'cyan', 'gold', 'green', 'wr'];
+      const requiredKeys = ['obsidian', 'surface', 'elevated', 'brass', 'gold', 'green'];
       for (const key of requiredKeys) {
         assert.ok(typeof oneiromancyColors[key] === 'string', `Tailwind oneiromancy colors must define ${key}`);
       }
     });
 
-    it('1.5 should verify neon glow shadow blur radius boundary does not exceed 24px in globals.css', () => {
+    it('1.5 should verify neon glow shadows are neutralized in globals.css', () => {
       const globalsCssContent = fs.readFileSync(globalsCssPath, 'utf8');
-      const glowMatches = [...globalsCssContent.matchAll(/box-shadow:[^;]*0\s+0\s+(\d+)px/g)].map((m) => parseInt(m[1], 10));
-      assert.ok(glowMatches.length >= 4, 'globals.css must define glow utilities with pixel blur radii');
-      for (const radius of glowMatches) {
-        assert.ok(radius >= 8 && radius <= 24, `Glow radius ${radius}px must be between 8px and 24px`);
-      }
+      assert.ok(globalsCssContent.includes('box-shadow: none'), 'globals.css must neutralize legacy glow shadows');
+      const glowMatches = [...globalsCssContent.matchAll(/box-shadow:[^;]*0\s+0\s+(\d+)px/g)];
+      assert.equal(glowMatches.length, 0, 'globals.css must not emit neon box-shadow blur radii');
     });
   });
 
   // ============================================================================
-  // Boundary 2: Mystical & Telemetry Typography Boundaries (Rendered DOM Inspection)
+  // Boundary 2: Editorial & Tabular Typography Boundaries (Rendered DOM Inspection)
   // ============================================================================
   describe('Boundary 2: Typography Boundaries', () => {
     it('2.1 should ensure font stacks in tailwind.config.ts terminate in generic system serif and monospace fallbacks', () => {
       const fontFamily = tailwindConfig?.theme?.extend?.fontFamily || {};
-      assert.deepEqual(fontFamily.serif, ['var(--font-playfair)', 'Georgia', 'serif'], 'Serif stack must terminate in serif');
-      assert.deepEqual(fontFamily.mono, ['var(--font-space-mono)', 'monospace'], 'Mono stack must terminate in monospace');
-      assert.deepEqual(fontFamily.sans, ['Inter', 'system-ui', 'sans-serif'], 'Sans stack must terminate in sans-serif');
+      assert.deepEqual(fontFamily.serif, ['var(--font-newsreader)', 'Newsreader', 'Georgia', 'serif'], 'Serif stack must terminate in serif');
+      assert.deepEqual(fontFamily.mono, ['var(--font-jetbrains-mono)', 'JetBrains Mono', 'ui-monospace', 'monospace'], 'Mono stack must terminate in monospace');
+      assert.deepEqual(fontFamily.sans, ['var(--font-jakarta)', 'Plus Jakarta Sans', 'system-ui', 'sans-serif'], 'Sans stack must terminate in sans-serif');
     });
 
     it('2.2 should verify telemetry readout formatting in Astrolabe.tsx handles precision without NaN', () => {
       for (const lambda of [0.0, 0.35, 0.75, 1.0]) {
         const html = renderToStaticMarkup(React.createElement(Astrolabe, { lambda, showLabels: true }));
         assert.ok(!html.includes('NaN'), `Astrolabe at lambda=${lambda} must not render NaN`);
-        assert.ok(html.includes(lambda.toFixed(2)), `Astrolabe must format lambda=${lambda.toFixed(2)} to 2 decimal places`);
+        assert.ok(!html.includes('%'), `Astrolabe must not render percentage readouts`);
+        assert.ok(html.includes('>25<'), 'Astrolabe center readout must display 25 pure esoteric predictive systems');
       }
+      const speedHtml = renderToStaticMarkup(React.createElement(Astrolabe, { speedMultiplier: 2.5 }));
+      assert.ok(speedHtml.includes('2.5x'), 'Astrolabe must format explicit speedMultiplier to 1 decimal place');
     });
 
     it('2.3 should verify PositionalBadge safely handles missing or unknown positions with fallback', () => {
       const html = renderToStaticMarkup(React.createElement(PositionalBadge, { position: 'UNKNOWN' }));
-      assert.ok(html.includes('text-slate-300'), 'Fallback style must use slate text');
-      assert.ok(html.includes('bg-slate-900/60'), 'Fallback style must use slate background');
+      assert.ok(html.includes('text-zinc-300'), 'Fallback style must use zinc text');
+      assert.ok(html.includes('bg-zinc-900/90'), 'Fallback style must use matte zinc background');
       assert.ok(html.includes('UNKNOWN'), 'Fallback badge must render the normalized position label');
     });
 
@@ -132,29 +133,27 @@ describe('Tier 2: Boundary & Corner Cases (19 Features x 5 Boundary Tests = 95 T
       );
       assert.ok(html.includes('data-testid="draft-status-indicator"'), 'NavigationShell must render draft-status-indicator');
       assert.ok(html.includes('>LIVE<'), 'NavigationShell default statusText must be LIVE');
-      assert.ok(html.includes('bg-emerald-500'), 'NavigationShell default statusType live must use bg-emerald-500');
+      assert.ok(html.includes('bg-emerald-400'), 'NavigationShell default statusType live must use bg-emerald-400');
     });
   });
 
   // ============================================================================
-  // Boundary 3: Glassmorphism & Panel Styling Boundaries (Rendered DOM Inspection)
+  // Boundary 3: Matte Surface Panel Styling Boundaries (Rendered DOM Inspection)
   // ============================================================================
-  describe('Boundary 3: Glassmorphism Boundaries', () => {
+  describe('Boundary 3: Surface Panel Boundaries', () => {
     const globalsCssPath = path.resolve('app/globals.css');
 
-    it('3.1 should verify backdrop blur values in globals.css reside in safe GPU range [8px, 20px]', () => {
+    it('3.1 should verify surface panels avoid GPU-heavy backdrop blur in globals.css', () => {
       const globalsCssContent = fs.readFileSync(globalsCssPath, 'utf8');
-      const blurMatches = [...globalsCssContent.matchAll(/blur\((\d+)px\)/g)].map((m) => parseInt(m[1], 10));
-      assert.ok(blurMatches.length >= 2, 'globals.css must specify blur values');
-      for (const blur of blurMatches) {
-        assert.ok(blur >= 8 && blur <= 20, `Backdrop blur ${blur}px must be between 8px and 20px to prevent mobile GPU stalls`);
-      }
+      const blurMatches = [...globalsCssContent.matchAll(/backdrop-filter:\s*blur\((\d+)px\)/g)];
+      assert.equal(blurMatches.length, 0, 'globals.css surface panels must use flat matte fills without backdrop-filter blur');
     });
 
-    it('3.2 should verify .glow-gradient-card::before disables pointer events and has negative z-index', () => {
+    it('3.2 should verify .glow-gradient-card uses flat matte surface and hairline border', () => {
       const globalsCssContent = fs.readFileSync(globalsCssPath, 'utf8');
-      assert.ok(globalsCssContent.includes('pointer-events: none'), 'Gradient overlay must specify pointer-events: none');
-      assert.ok(globalsCssContent.includes('z-index: -1'), 'Gradient overlay must specify z-index: -1');
+      assert.ok(globalsCssContent.includes('.glow-gradient-card'), 'globals.css must define .glow-gradient-card');
+      assert.ok(globalsCssContent.includes('var(--surface-panel)'), 'Card surface must reference --surface-panel');
+      assert.ok(globalsCssContent.includes('var(--border-hairline)'), 'Card border must reference --border-hairline');
     });
 
     it('3.3 should verify GlassCard variant prop defaults to panel and maps surface and gradient', () => {
@@ -166,12 +165,12 @@ describe('Tier 2: Boundary & Corner Cases (19 Features x 5 Boundary Tests = 95 T
       assert.ok(gradientHtml.includes('glow-gradient-card'), 'GlassCard variant="gradient" must apply glow-gradient-card');
     });
 
-    it('3.4 should verify GlassCard interactive prop adds cursor-pointer and active scale', () => {
+    it('3.4 should verify GlassCard interactive prop adds cursor-pointer and hover border', () => {
       const nonInteractiveHtml = renderToStaticMarkup(React.createElement(GlassCard, null, 'Static'));
       const interactiveHtml = renderToStaticMarkup(React.createElement(GlassCard, { interactive: true }, 'Interactive'));
       assert.ok(!nonInteractiveHtml.includes('cursor-pointer'), 'GlassCard must default interactive to false');
       assert.ok(interactiveHtml.includes('cursor-pointer'), 'GlassCard interactive must add cursor-pointer');
-      assert.ok(interactiveHtml.includes('active:scale-[0.99]'), 'GlassCard interactive must add active:scale-[0.99]');
+      assert.ok(interactiveHtml.includes('hover:border-white/15'), 'GlassCard interactive must add restrained hover border');
     });
 
     it('3.5 should verify GlassCard glowColor prop maps cyan, purple, gold, and green utilities', () => {
@@ -188,15 +187,15 @@ describe('Tier 2: Boundary & Corner Cases (19 Features x 5 Boundary Tests = 95 T
   // Boundary 4: Positional Badges Boundaries (Rendered DOM Inspection)
   // ============================================================================
   describe('Boundary 4: Positional Badges Boundaries', () => {
-    it('4.1 should verify PositionalBadge falls back to slate styling for unrecognized positions', () => {
+    it('4.1 should verify PositionalBadge falls back to zinc styling for unrecognized positions', () => {
       const html = renderToStaticMarkup(React.createElement(PositionalBadge, { position: 'PUNTER' }));
-      assert.ok(html.includes('text-slate-300'), 'Fallback must use text-slate-300');
-      assert.ok(html.includes('border-slate-700'), 'Fallback must use border-slate-700');
+      assert.ok(html.includes('text-zinc-300'), 'Fallback must use text-zinc-300');
+      assert.ok(html.includes('border-white/10'), 'Fallback must use hairline border-white/10');
     });
 
     it('4.2 should verify PositionalBadge normalizes position code with toUpperCase()', () => {
       const positions = ['qb', 'Rb', 'wr', 'TE', 'flex'];
-      const expectedColors = ['text-red-400', 'text-teal-400', 'text-sky-400', 'text-amber-400', 'text-rose-400'];
+      const expectedColors = ['text-rose-300', 'text-emerald-300', 'text-sky-300', 'text-amber-300', 'text-orange-300'];
       positions.forEach((pos, idx) => {
         const html = renderToStaticMarkup(React.createElement(PositionalBadge, { position: pos }));
         assert.ok(html.includes(`>${pos.toUpperCase()}<`), `PositionalBadge must render uppercase ${pos.toUpperCase()}`);
@@ -209,7 +208,7 @@ describe('Tier 2: Boundary & Corner Cases (19 Features x 5 Boundary Tests = 95 T
       for (const expected of expectedKeys) {
         const html = renderToStaticMarkup(React.createElement(PositionalBadge, { position: expected }));
         assert.ok(html.includes('inline-flex'), `PositionalBadge must render badge container for ${expected}`);
-        assert.ok(!html.includes('border-slate-700') || expected === 'K' || expected === 'DEF' || expected === 'K_DEF', `Position ${expected} must be recognized`);
+        assert.ok(!html.includes('text-zinc-300') || expected === 'K' || expected === 'DEF' || expected === 'K_DEF', `Position ${expected} must be recognized`);
       }
     });
 
@@ -217,16 +216,16 @@ describe('Tier 2: Boundary & Corner Cases (19 Features x 5 Boundary Tests = 95 T
       const smHtml = renderToStaticMarkup(React.createElement(PositionalBadge, { position: 'QB', size: 'sm' }));
       const mdHtml = renderToStaticMarkup(React.createElement(PositionalBadge, { position: 'QB', size: 'md' }));
       const lgHtml = renderToStaticMarkup(React.createElement(PositionalBadge, { position: 'QB', size: 'lg' }));
-      assert.ok(smHtml.includes('text-[10px] px-1.5 py-0.2 rounded font-semibold'), 'sm size must render compact classes');
-      assert.ok(mdHtml.includes('text-xs px-2 py-0.5 rounded-md font-semibold'), 'md size must render standard classes');
-      assert.ok(lgHtml.includes('text-sm px-2.5 py-1 rounded-md font-bold'), 'lg size must render large classes');
+      assert.ok(smHtml.includes('text-[10px] px-1.5 py-0.5 rounded font-medium'), 'sm size must render compact classes');
+      assert.ok(mdHtml.includes('text-xs px-2 py-0.5 rounded font-medium'), 'md size must render standard classes');
+      assert.ok(lgHtml.includes('text-xs px-2.5 py-1 rounded font-semibold'), 'lg size must render large classes');
     });
 
-    it('4.5 should verify showGlow prop toggles glow shadow class conditionally', () => {
-      const glowHtml = renderToStaticMarkup(React.createElement(PositionalBadge, { position: 'QB', showGlow: true }));
-      const noGlowHtml = renderToStaticMarkup(React.createElement(PositionalBadge, { position: 'QB', showGlow: false }));
-      assert.ok(glowHtml.includes('shadow-['), 'showGlow=true must include glow shadow class');
-      assert.ok(!noGlowHtml.includes('shadow-['), 'showGlow=false must omit glow shadow class');
+    it('4.5 should verify PositionalBadge omits outer neon glow shadows across positions', () => {
+      const qbHtml = renderToStaticMarkup(React.createElement(PositionalBadge, { position: 'QB' }));
+      const wrHtml = renderToStaticMarkup(React.createElement(PositionalBadge, { position: 'WR' }));
+      assert.ok(!qbHtml.includes('shadow-['), 'QB badge must omit neon outer glow shadow');
+      assert.ok(!wrHtml.includes('shadow-['), 'WR badge must omit neon outer glow shadow');
     });
 
     it('4.6 should verify badge with position QB and depth 2 outputs superscript depth 2 and accessible label', () => {
@@ -358,12 +357,12 @@ describe('Tier 2: Boundary & Corner Cases (19 Features x 5 Boundary Tests = 95 T
       const html = renderToStaticMarkup(
         React.createElement(NavigationShell, { activeTab: 'matchups' }, React.createElement('div', null, 'Body'))
       );
-      assert.ok(html.includes('text-cyan-400'), 'Active tab must apply text-cyan-400');
-      assert.ok(html.includes('bg-cyan-400 rounded-full shadow-[0_0_8px_#06b6d4]'), 'Active tab must render glowing cyan bar');
+      assert.ok(html.includes('border-amber-400'), 'Active desktop tab must apply warm brass border-amber-400');
+      assert.ok(html.includes('text-amber-300'), 'Active mobile tab must apply warm brass text-amber-300');
       assert.ok(html.includes('aria-current="page"'), 'Active tab must set aria-current="page"');
     });
 
-    it('6.3 should verify statusType color and glow mappings in NavigationShell.tsx', () => {
+    it('6.3 should verify statusType color mappings in NavigationShell.tsx', () => {
       const liveHtml = renderToStaticMarkup(
         React.createElement(NavigationShell, { statusType: 'live' }, React.createElement('div'))
       );
@@ -373,10 +372,10 @@ describe('Tier 2: Boundary & Corner Cases (19 Features x 5 Boundary Tests = 95 T
       const offlineHtml = renderToStaticMarkup(
         React.createElement(NavigationShell, { statusType: 'offline' }, React.createElement('div'))
       );
-      assert.ok(liveHtml.includes('bg-emerald-500'), 'live status must map to bg-emerald-500');
-      assert.ok(liveHtml.includes('shadow-[0_0_8px_rgba(16,185,129,0.8)]'), 'live status glow must use emerald rgba');
-      assert.ok(syncingHtml.includes('bg-amber-500'), 'syncing status must map to bg-amber-500');
-      assert.ok(offlineHtml.includes('bg-slate-500'), 'offline status must use bg-slate-500');
+      assert.ok(liveHtml.includes('bg-emerald-400'), 'live status must map to bg-emerald-400');
+      assert.ok(!liveHtml.includes('shadow-[0_0_8px'), 'live status must avoid neon outer shadow');
+      assert.ok(syncingHtml.includes('bg-amber-400'), 'syncing status must map to bg-amber-400');
+      assert.ok(offlineHtml.includes('bg-zinc-500'), 'offline status must use bg-zinc-500');
     });
 
     it('6.4 should verify isTabActive resolves legacy tab aliases to canonical 4-tab IDs', () => {

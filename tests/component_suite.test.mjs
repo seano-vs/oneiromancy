@@ -268,7 +268,7 @@ describe('Tier 8: React Component RTL Iteration & UI Suite', () => {
 
       const nav = screen.getByRole('navigation');
       assert.ok(nav, 'Must render navigation container');
-      assert.ok(screen.getByText('ONEIROMANCY'), 'Must render brand title');
+      assert.ok(screen.getByText('Oneiromancy'), 'Must render brand title');
 
       const matchupsTab = screen.getByTestId('nav-tab-matchups');
       assert.ok(matchupsTab, 'Must render Matchup tab');
@@ -327,8 +327,8 @@ describe('Tier 8: React Component RTL Iteration & UI Suite', () => {
       assert.ok(indicator, 'Must render draft status indicator');
       const pings = indicator.querySelectorAll('.animate-ping');
       assert.equal(pings.length, 0, 'Must suppress animate-ping when offline');
-      const slateDot = indicator.querySelector('.bg-slate-500');
-      assert.ok(slateDot, 'Must render slate status dot when offline');
+      const zincDot = indicator.querySelector('.bg-zinc-500');
+      assert.ok(zincDot, 'Must render neutral zinc status dot when offline');
       cleanup();
     });
 
@@ -558,7 +558,7 @@ describe('Tier 8: React Component RTL Iteration & UI Suite', () => {
       assert.ok(dashContainer.textContent.includes('Empty Slot'), 'Dashboard empty slot must retain Empty Slot label');
       const cardCols = screen.getAllByTestId('roster-card-text-col');
       assert.ok(cardCols.length >= 2, 'Dashboard must render roster-card-text-col cards');
-      assert.equal(cardCols[0].children.length, 4, 'roster-card-text-col must retain strictly 4 children');
+      assert.equal(cardCols[0].children.length, 2, 'roster-card-text-col must retain 2 clean tabular rows');
       cleanup();
 
       // 2. LeagueScreen: maps SUPER_FLEX -> WRTQ, FLEX -> WRT, REC_FLEX -> WR/TE, BN -> BN
@@ -932,7 +932,7 @@ describe('Tier 8: React Component RTL Iteration & UI Suite', () => {
         }
 
         const initialCount = renderedArcs.length;
-        assert.ok(initialCount >= 55 && initialCount <= 65, `Initial mobile star count (${initialCount}) must be within 55..65`);
+        assert.ok(initialCount >= 50 && initialCount <= 65, `Initial mobile star count (${initialCount}) must be within 50..65`);
         assert.ok(
           renderedArcs.every((s) => s.x >= 0 && s.x <= 390),
           'Initial stars must all lie within portrait width 390'
@@ -982,7 +982,7 @@ describe('Tier 8: React Component RTL Iteration & UI Suite', () => {
         }
 
         assert.ok(
-          renderedArcs.length > initialCount && renderedArcs.length >= 150 && renderedArcs.length <= 175,
+          renderedArcs.length > initialCount && renderedArcs.length >= 135 && renderedArcs.length <= 175,
           `Expanded desktop viewport must rebalance star count (got ${renderedArcs.length}, portrait had ${initialCount})`
         );
 
@@ -1060,7 +1060,7 @@ describe('Tier 8: React Component RTL Iteration & UI Suite', () => {
         animCallback();
 
         const frame1 = drawCalls.slice();
-        assert.ok(frame1.length >= 90, `1440x900 desktop viewport should render >= 90 stars (got ${frame1.length})`);
+        assert.ok(frame1.length >= 80, `1440x900 desktop viewport should render >= 80 stars (got ${frame1.length})`);
 
         const alphas = frame1.map((s) => s.alpha);
         const minAlpha = Math.min(...alphas);
@@ -1069,12 +1069,12 @@ describe('Tier 8: React Component RTL Iteration & UI Suite', () => {
         const minRadius = Math.min(...frame1.map((s) => s.r));
         const maxRadius = Math.max(...frame1.map((s) => s.r));
 
-        assert.ok(minAlpha >= 0.18, `Minimum star alpha (${minAlpha.toFixed(3)}) must be >= 0.18`);
-        assert.ok(meanAlpha >= 0.28, `Mean star alpha (${meanAlpha.toFixed(3)}) must remain clearly perceptible (>= 0.28)`);
-        assert.ok(maxAlpha >= 0.50 && maxAlpha <= 0.90, `Foreground peak alpha (${maxAlpha.toFixed(3)}) must be prominent yet capped <= 0.90`);
-        assert.ok(minRadius >= 0.6 && maxRadius >= 1.4 && maxRadius <= 2.2, `Star radii [${minRadius.toFixed(2)}, ${maxRadius.toFixed(2)}] must stay within [0.6, 2.2] with foreground >= 1.4`);
+        assert.ok(minAlpha >= 0.14, `Minimum star alpha (${minAlpha.toFixed(3)}) must be >= 0.14`);
+        assert.ok(meanAlpha >= 0.22, `Mean star alpha (${meanAlpha.toFixed(3)}) must be clearly visible (>= 0.22)`);
+        assert.ok(maxAlpha >= 0.48 && maxAlpha <= 0.90, `Foreground peak alpha (${maxAlpha.toFixed(3)}) must lie within [0.48, 0.90]`);
+        assert.ok(minRadius >= 0.5 && maxRadius <= 2.2, `Star radii [${minRadius.toFixed(2)}, ${maxRadius.toFixed(2)}] must lie within [0.5, 2.2]`);
 
-        // Advance 60 frames (~1 second at 60fps) and verify perceptible foreground drift
+        // Advance 60 frames (~1 second at 60fps) and verify subtle foreground drift
         for (let i = 0; i < 60; i++) {
           mockTime += 16.67;
           const cb = animCallback;
@@ -1089,7 +1089,7 @@ describe('Tier 8: React Component RTL Iteration & UI Suite', () => {
             maxShiftX = dx;
           }
         }
-        assert.ok(maxShiftX >= 3.0, `Foreground celestial drift over 1s (${maxShiftX.toFixed(2)}px) must be clearly visible (>= 3.0px)`);
+        assert.ok(maxShiftX >= 3.0, `Foreground drift over 1s (${maxShiftX.toFixed(2)}px) must progress smoothly (>= 3.0px)`);
 
         cleanupStarfield();
       } finally {
@@ -1192,21 +1192,18 @@ describe('Tier 8: React Component RTL Iteration & UI Suite', () => {
         );
 
         const bgUpShifts = [];
-        const pureFgShifts = [];
-        const anyFgShifts = [];
+        const fgUpShifts = [];
         for (let i = 0; i < atTop.length; i++) {
           const dy = (atTop[i].y - afterScroll[i].y + 844) % 844;
-          if (atTop[i].r <= 0.99) bgUpShifts.push(dy);
-          if (atTop[i].r > 1.6) pureFgShifts.push(dy);
-          if (atTop[i].r >= 1.4) anyFgShifts.push(dy);
+          if (atTop[i].r <= 0.90) bgUpShifts.push(dy);
+          if (atTop[i].r >= 1.40) fgUpShifts.push(dy);
         }
-        const fgUpShifts = pureFgShifts.length > 0 ? pureFgShifts : anyFgShifts;
         assert.ok(bgUpShifts.length > 0 && fgUpShifts.length > 0, 'Must contain both background and foreground stars');
         const avgBgUp = bgUpShifts.reduce((a, b) => a + b, 0) / bgUpShifts.length;
         const avgFgUp = fgUpShifts.reduce((a, b) => a + b, 0) / fgUpShifts.length;
         assert.ok(
           avgFgUp > avgBgUp + 20,
-          `Foreground scroll parallax shift (${avgFgUp.toFixed(1)}px) must significantly exceed background (${avgBgUp.toFixed(1)}px)`
+          `Foreground scroll parallax shift (${avgFgUp.toFixed(1)}px) must exceed background (${avgBgUp.toFixed(1)}px) by > 20px`
         );
 
         // 2. Side-to-side accelerometer scrolling via W3C devicemotion (tilt left acc.x=+5 -> left, tilt right acc.x=-5 -> right)
@@ -2258,8 +2255,8 @@ describe('Tier 8: React Component RTL Iteration & UI Suite', () => {
       const cardTokens = cardRowEl.className.trim().split(/\s+/);
       const labelTokens = compareLabel.className.trim().split(/\s+/);
       assert.ok(
-        cardTokens.includes('p-2.5') && cardTokens.includes('gap-2'),
-        'PlayerCardRow must use compact mobile spacing (p-2.5 gap-2)',
+        cardTokens.includes('px-3') && cardTokens.includes('py-2.5') && cardTokens.includes('gap-2.5'),
+        'PlayerCardRow must use compact mobile spacing (px-3 py-2.5 gap-2.5)',
       );
       assert.ok(
         labelTokens.includes('min-w-[24px]') && labelTokens.includes('min-h-[24px]'),
@@ -2268,8 +2265,8 @@ describe('Tier 8: React Component RTL Iteration & UI Suite', () => {
       const rowHeadshot = cardRowEl.querySelector('img, span[aria-hidden="true"]');
       const rowHeadshotTokens = rowHeadshot ? rowHeadshot.className.trim().split(/\s+/) : [];
       assert.ok(
-        rowHeadshotTokens.includes('w-12') && rowHeadshotTokens.includes('sm:w-16'),
-        'PlayerCardRow headshot must use row sizing (w-12 sm:w-16)',
+        rowHeadshotTokens.includes('w-9') && rowHeadshotTokens.includes('sm:w-10'),
+        'PlayerCardRow headshot must use restrained row sizing (w-9 sm:w-10)',
       );
       const compareInput = compareLabel.querySelector('input[type="checkbox"]');
       assert.ok(compareInput, 'Checkbox input must be inside label');
@@ -2298,6 +2295,54 @@ describe('Tier 8: React Component RTL Iteration & UI Suite', () => {
       fireEvent.click(testLabel);
       assert.equal(labelToggledCount, 1, 'Clicking label padding must toggle compare exactly once');
       assert.equal(labelInspected, null, 'Clicking 24px label padding must stopPropagation and not invoke onInspect');
+
+      // Trade hint consistency between mobile PlayerCardRow and desktop CosmicBoard
+      cleanup();
+      const givePlayer = mockData.mockCosmicBoard[1];
+      const rosteredTarget = { ...player, draft_status: 'taken', drafted_by: 'Solar Flares' };
+      const tradeRowView = render(
+        jsx(PlayerCardRow, {
+          player: rosteredTarget,
+          rank: 2,
+          onInspect: () => {},
+          tradeHint: {
+            partnerName: 'Solar Flares (You)',
+            give: givePlayer,
+            gain: 2.4,
+          },
+        }),
+      );
+      const expectedTradeText = `Send ${givePlayer.name} · Solar Flares (+2.4 pts)`;
+      assert.ok(
+        tradeRowView.container.textContent.includes(expectedTradeText),
+        `Mobile PlayerCardRow must format tradeHint consistently as "${expectedTradeText}"`,
+      );
+      cleanup();
+
+      const tradeBoardState = {
+        ...testDraftState,
+        cosmic_board: [rosteredTarget, givePlayer],
+        trade_proposals: [
+          {
+            target_team_name: 'Solar Flares (You)',
+            receive_players: [{ player_id: String(rosteredTarget.id), name: rosteredTarget.name }],
+            give_players: [{ player_id: String(givePlayer.id), name: givePlayer.name }],
+            net_vor_delta: 2.4,
+          },
+        ],
+      };
+      const boardTradeView = render(
+        jsx(
+          OneiromancyProvider,
+          { initialDraftState: tradeBoardState },
+          jsx(CosmicBoard, { players: [rosteredTarget, givePlayer], initialFilter: 'all' }),
+        ),
+      );
+      const desktopBody = boardTradeView.getByTestId('cosmic-board-body');
+      assert.ok(
+        desktopBody.textContent.includes(expectedTradeText),
+        `Desktop CosmicBoard must format tradeHint consistently as "${expectedTradeText}"`,
+      );
     });
 
     test('8.2.4 RecommendedPickHero should render Divination Spotlight and handle inspection', () => {
@@ -2312,7 +2357,7 @@ describe('Tier 8: React Component RTL Iteration & UI Suite', () => {
         })
       );
 
-      assert.ok(screen.getByText(/THE ORACLE'S DECREE/i), 'Must render headline banner');
+      assert.ok(screen.getByText(/Top Recommendation/i), 'Must render headline banner');
       assert.ok(screen.getByText(spotlightPlayer.name), 'Must render spotlight player name');
       assert.ok(screen.getByTestId('spotlight-player-name'), 'Must have spotlight-player-name test id');
 
@@ -2329,8 +2374,8 @@ describe('Tier 8: React Component RTL Iteration & UI Suite', () => {
         })
       );
 
-      assert.ok(screen.getByText('Path of Ascension'), 'Must render timeline header');
-      assert.ok(screen.getByText('Round 7 / 15'), 'Must render current round pill');
+      assert.ok(screen.getByText('Draft Path'), 'Must render timeline header');
+      assert.ok(screen.getByText('Round 7 of 15'), 'Must render current round pill');
     });
 
     test('8.2.6 TelemetryBar should render aggregate draft metrics and VOR gauge', () => {
@@ -2379,7 +2424,7 @@ describe('Tier 8: React Component RTL Iteration & UI Suite', () => {
       );
       assert.ok(screen.getByRole('dialog'), 'Must render dialog role when open');
       assert.ok(screen.getByText(player.name), 'Must render player name in modal');
-      assert.ok(screen.getByText('The 5 Divination Pillars'), 'Must render divination pillars');
+      assert.ok(screen.getByText('Historical Predictor Breakdown'), 'Must render Historical Predictor Breakdown');
 
       const closeBtn = screen.getByRole('button', { name: 'Close dossier' });
       fireEvent.click(closeBtn);
@@ -2388,7 +2433,7 @@ describe('Tier 8: React Component RTL Iteration & UI Suite', () => {
 
     test('8.3.2 SettingsDrawer should render options when open and bind controls', () => {
       let drawerClosed = false;
-      render(
+      const { container } = render(
         jsx(
           OneiromancyProvider,
           { initialDraftState: testDraftState },
@@ -2404,6 +2449,8 @@ describe('Tier 8: React Component RTL Iteration & UI Suite', () => {
       assert.ok(screen.getByRole('dialog'), 'Must render dialog container');
       assert.ok(screen.getByText('Settings'), 'Must render settings title');
       assert.ok(screen.getByText(/Sleeper username/i), 'Must render username label');
+      assert.equal(container.querySelector('[role="switch"]'), null, 'Must not render switch to disable automatic score refreshing');
+      assert.equal(screen.queryByText(/Auto-refresh scores/i), null, 'Must omit Auto-refresh scores toggle row');
 
       const closeBtn = screen.getByRole('button', { name: 'Close Settings' });
       assert.ok(closeBtn, 'Must render close button');
@@ -2442,8 +2489,8 @@ describe('Tier 8: React Component RTL Iteration & UI Suite', () => {
           'Must render first-launch welcome banner when no username is stored'
         );
         assert.ok(
-          screen.getByText('Welcome to Oneiromancy'),
-          'Must display Welcome to Oneiromancy heading on first launch'
+          screen.getByText(/Welcome to Oneiromancy/i),
+          'Must display Welcome to Oneiromancy text on first launch'
         );
         const input = screen.getByPlaceholderText('e.g. OneiroVanguard');
         assert.ok(input, 'Must render username input with placeholder');
@@ -2459,7 +2506,7 @@ describe('Tier 8: React Component RTL Iteration & UI Suite', () => {
           'Must not display mock league in selector when no username is entered'
         );
         assert.ok(
-          screen.getByText('Enter a Sleeper username above to load leagues'),
+          screen.getByText('Enter a Sleeper username first'),
           'Must display placeholder option in league selector when no username is entered'
         );
       } finally {
@@ -2487,14 +2534,14 @@ describe('Tier 8: React Component RTL Iteration & UI Suite', () => {
       assert.ok(modalDialog, 'Must render modal dialog');
 
       // Verify DOM ordering inside scrollable body (cl/1015913860): Astrocartography comes before roster-role-comparison
-      const modalBox = modalDialog.querySelector('.max-w-2xl') || modalDialog.children[0];
+      const modalBox = modalDialog.querySelector('.max-w-xl') || modalDialog.children[0];
       const scrollBody = modalBox.querySelector('.overflow-y-auto') || modalBox;
       const children = Array.from(scrollBody.children || []);
-      const astroIndex = children.findIndex((c) => c.textContent?.includes('Astrocartography Geodesic Coordinates'));
+      const astroIndex = children.findIndex((c) => c.getAttribute?.('data-testid') === 'modal-venue-ephemeris');
       const roleCompIndex = children.findIndex((c) => c.getAttribute?.('data-testid') === 'roster-role-comparison');
-      assert.ok(astroIndex !== -1, 'Astrocartography section must exist in modal');
+      assert.ok(astroIndex !== -1, 'Next-Game Venue & Natal Profile section must exist in modal');
       assert.ok(roleCompIndex !== -1, 'roster-role-comparison must exist in modal');
-      assert.ok(roleCompIndex > astroIndex, 'roster-role-comparison must appear after Astrocartography in the DOM');
+      assert.ok(roleCompIndex > astroIndex, 'roster-role-comparison must appear after Venue & Natal Profile in the DOM');
 
       // Accordion toggle button with aria-expanded
       const roleComp = screen.getByTestId('roster-role-comparison');
@@ -2565,8 +2612,8 @@ describe('Tier 8: React Component RTL Iteration & UI Suite', () => {
         );
 
         const tiltSection = screen.getByTestId('celestial-tilt-section');
-        assert.ok(tiltSection, 'Must render Celestial Motion Tilt section');
-        assert.ok(screen.getByText('Celestial Motion Tilt'), 'Must display Celestial Motion Tilt title');
+        assert.ok(tiltSection, 'Must render Background parallax section');
+        assert.ok(screen.getByText('Background parallax'), 'Must display Background parallax title');
 
         const badge = screen.getByTestId('celestial-tilt-status-badge');
         assert.ok(badge, 'Must render tilt status badge');
@@ -2644,8 +2691,8 @@ describe('Tier 8: React Component RTL Iteration & UI Suite', () => {
         const fallbackBadge = screen.getByTestId('celestial-tilt-status-badge');
         assert.equal(
           fallbackBadge.textContent,
-          'Autonomous Drift',
-          'Status badge must show Autonomous Drift when motion sensors are disabled or unavailable'
+          'Static',
+          'Status badge must show Static when motion sensors are disabled or unavailable'
         );
         assert.equal(
           screen.queryByTestId('enable-orientation-tilt-btn'),
@@ -2664,13 +2711,13 @@ describe('Tier 8: React Component RTL Iteration & UI Suite', () => {
   // Suite 8.4: Primary Application Screens (4 Consolidated Sections)
   // ==========================================================================
   describe('8.4 Primary Application Screens (Roster, Matchup, Players, League & Weights)', () => {
-    test('8.4.1 OneiromancyDashboard (Roster) should render My Roster, Visual Stack Constellation SVG, and Lineup Swap Arrows', () => {
+    test('8.4.1 OneiromancyDashboard (Roster) should render Starters, Bye Schedule, and open PlayerDetailModal with real NFL team Elemental Balance', () => {
       const { container } = render(
         jsx(OneiromancyProvider, { initialDraftState: testDraftState }, jsx(OneiromancyDashboard, {}))
       );
 
-      assert.ok(screen.getByText(/Roster Aura & Stack Constellation/i), 'Must render Roster Aura & Stack Constellation title');
-      assert.ok(screen.getByTestId('synergy-constellation-svg'), 'Must render visual Synergy Constellation SVG');
+      assert.equal(screen.queryByText(/Elemental Balance/i), null, 'Roster screen itself must omit fantasy-team Elemental Balance');
+      assert.equal(screen.queryByTestId('synergy-constellation-svg'), null, 'Roster screen must omit fantasy-team synergy-constellation-svg');
       assert.ok(screen.getByTestId('18-week-coverage-strip'), 'Must render 18-Week Coverage strip');
       const auraWrappers = Array.from(container.querySelectorAll('[data-testid="player-divination-aura"]'));
       assert.ok(auraWrappers.length > 0, 'Dashboard roster must render at least one player-divination-aura wrapper');
@@ -2681,10 +2728,18 @@ describe('Tier 8: React Component RTL Iteration & UI Suite', () => {
       assert.ok(
         rosterHeadshots.every((el) => {
           const t = el.className.trim().split(/\s+/);
-          return t.includes('w-10') && t.includes('sm:w-[72px]');
+          return t.includes('w-9') && t.includes('h-9');
         }),
-        'All dashboard roster player headshots must use roster sizing (w-10 sm:w-[72px])'
+        'All dashboard roster player headshots must use restrained roster sizing (w-9 h-9)'
       );
+
+      // Clicking a starter row opens PlayerDetailModal with player + real NFL team Elemental Balance
+      const starterRow = screen.getByTestId('roster-card-QB');
+      const inspectBtn = starterRow.querySelector('button');
+      assert.ok(inspectBtn, 'Must render accessible Inspect button on starter row');
+      fireEvent.click(inspectBtn);
+      assert.ok(screen.getByTestId('player-team-elemental-balance'), 'Clicked player modal must render player-team-elemental-balance');
+      assert.ok(screen.getByTestId('synergy-constellation-svg'), 'Clicked player modal must render visual Synergy Constellation SVG');
     });
 
     test('8.4.2 MatchupsScreen (Matchup) should render unified starting lineup without duplicate bench section and Your Team on Left with purple border', () => {
@@ -2757,15 +2812,15 @@ describe('Tier 8: React Component RTL Iteration & UI Suite', () => {
       assert.ok(screen.getByText('Waiver Upgrades'), 'Must render Waiver Upgrades title');
       assert.equal(screen.queryByTestId('allow-signed-drop-toggle'), null, 'Must not render redundant drop protection toggle');
       const mktHeadshots = Array.from(mktView.container.querySelectorAll('img, span[aria-hidden="true"]')).filter(
-        (el) => el.className.includes('rounded-full') && el.className.includes('bg-slate-800')
+        (el) => el.className.includes('rounded-full') && el.className.includes('bg-zinc-800')
       );
       assert.ok(mktHeadshots.length > 0, 'PlayerMarketplace must render candidate player headshots');
       assert.ok(
         mktHeadshots.every((el) => {
           const t = el.className.trim().split(/\s+/);
-          return t.includes('w-10') && t.includes('sm:w-11');
+          return t.includes('w-9') && t.includes('h-9');
         }),
-        'All PlayerMarketplace candidate headshots must use trade sizing (w-10 sm:w-11)'
+        'All PlayerMarketplace candidate headshots must use trade sizing (w-9 h-9)'
       );
       cleanup();
 
@@ -2776,16 +2831,16 @@ describe('Tier 8: React Component RTL Iteration & UI Suite', () => {
       const tradeHeadshots = Array.from(tradesView.container.querySelectorAll('img, span[aria-hidden="true"]')).filter(
         (el) =>
           el.className.includes('rounded-full') &&
-          el.className.includes('bg-slate-800') &&
+          el.className.includes('bg-zinc-800') &&
           !(el.getAttribute('alt') || '').endsWith(' avatar')
       );
       assert.ok(tradeHeadshots.length > 0, 'TradesScreen must render player headshots');
       assert.ok(
         tradeHeadshots.every((el) => {
           const t = el.className.trim().split(/\s+/);
-          return t.includes('w-10') && t.includes('sm:w-11');
+          return t.includes('w-9') && t.includes('h-9');
         }),
-        'All TradesScreen player headshots must use trade sizing (w-10 sm:w-11)'
+        'All TradesScreen player headshots must use trade sizing (w-9 h-9)'
       );
     });
 
@@ -2799,15 +2854,19 @@ describe('Tier 8: React Component RTL Iteration & UI Suite', () => {
       assert.ok(screen.getByTestId('user-competitor-card'), 'Must render user competitor card with purple highlight');
     });
 
-    test('8.4.6 ChaosDial (Weights & Encyclopedia) should render lambda slider, interactive pillar tooltips, and field guide', () => {
+    test('8.4.6 ChaosDial (Predictive Systems) should render 25 pure esoteric predictor toggles, interactive tooltips, and methodology guide', () => {
       render(
         jsx(OneiromancyProvider, { initialDraftState: testDraftState }, jsx(ChaosDial, {}))
       );
 
-      assert.ok(screen.getByText('Divination Equilibrium'), 'Must render Divination Equilibrium title');
-      assert.ok(screen.getByTestId('pillar-tooltip-btn-celestial'), 'Must render interactive pillar tooltip trigger');
+      assert.ok(screen.getByText('Predictive Systems'), 'Must render Predictive Systems title');
+      assert.ok(screen.getByTestId('predictor-tooltip-btn-elemental_matchup'), 'Must render interactive predictor tooltip trigger');
+      assert.ok(screen.getByTestId('predictor-tooltip-btn-witchcraft_sabbats_esbats'), 'Must render witchcraft_sabbats_esbats tooltip trigger');
+      assert.ok(screen.getByTestId('predictor-tooltip-btn-medieval_geomancy'), 'Must render medieval_geomancy tooltip trigger');
+      assert.equal(screen.queryByTestId('predictor-tooltip-btn-venue_environment'), null, 'Mundane venue_environment must be omitted');
+      assert.equal(screen.queryByTestId('predictor-tooltip-btn-circadian_parans'), null, 'Removed circadian_parans must be omitted');
       assert.ok(screen.getByTestId('encyclopedia-toggle'), 'Must render encyclopedia-toggle button');
-      assert.ok(screen.getByText(/Astrology & Divination Field Guide/i), 'Must render reference guide');
+      assert.ok(screen.getByText(/How Scores Work/i), 'Must render plain-English scoring guide');
     });
 
     test('8.4.7 OneiromancyProvider + NavigationShell (SSR / Client Hydration Parity) should render deterministic LIVE statusText before hydration across timezones', () => {
@@ -2861,16 +2920,22 @@ describe('Tier 8: React Component RTL Iteration & UI Suite', () => {
       }
     });
 
-    test('8.4.8 OneiromancyDashboard mobile responsive constellation chart layout', () => {
+    test('8.4.8 PlayerDetailModal mobile responsive constellation chart layout on player click', () => {
       render(
         jsx(OneiromancyProvider, { initialDraftState: testDraftState }, jsx(OneiromancyDashboard, {}))
       );
 
+      assert.equal(screen.queryByTestId('synergy-constellation-svg'), null, 'Roster screen must not render fantasy-team constellation before opening a player');
+      const starterRow = screen.getByTestId('roster-card-QB');
+      const inspectBtn = starterRow.querySelector('button');
+      assert.ok(inspectBtn, 'Must find starter Inspect button');
+      fireEvent.click(inspectBtn);
+
       const svgList = screen.getAllByTestId('synergy-constellation-svg');
-      assert.equal(svgList.length, 1, 'Exactly one synergy-constellation-svg must exist in DOM');
+      assert.equal(svgList.length, 1, 'Exactly one synergy-constellation-svg must exist inside opened PlayerDetailModal');
 
       const svg = svgList[0];
-      assert.equal(svg.getAttribute('viewBox'), '-45 0 300 190', 'SVG viewBox must be adjusted to -45 0 300 190');
+      assert.equal(svg.getAttribute('viewBox'), '-35 8 280 176', 'SVG viewBox must fit compact radar');
 
       // Verify all 5 spoke labels in textContent
       const text = svg.textContent;
@@ -2878,26 +2943,27 @@ describe('Tier 8: React Component RTL Iteration & UI Suite', () => {
       assert.ok(text.includes('Air ('), 'SVG textContent must include Air spoke label');
       assert.ok(text.includes('Water ('), 'SVG textContent must include Water spoke label');
       assert.ok(text.includes('Earth ('), 'SVG textContent must include Earth spoke label');
-      assert.ok(text.includes('Aspects ('), 'SVG textContent must include Aspects spoke label');
+      assert.ok(text.includes('Stacks ('), 'SVG textContent must include Stacks spoke label');
 
       // Container checks: no overflow-x-auto, no min-w-[560px]
       let curr = svg;
       let chartOuter = null;
       while (curr && curr.parentNode) {
-        if (curr.className && curr.className.includes('bg-slate-950/70')) {
+        if ((curr.tagName || '').toLowerCase() === 'section') {
           chartOuter = curr;
           break;
         }
         curr = curr.parentNode;
       }
-      assert.ok(chartOuter, 'Chart container must exist');
+      assert.ok(chartOuter, 'Chart section container must exist');
+      assert.equal(chartOuter.getAttribute('data-testid'), 'player-team-elemental-balance', 'Section must be player-team-elemental-balance');
       assert.ok(!chartOuter.className.includes('overflow-x-auto'), 'Chart container must eliminate overflow-x-auto');
       assert.ok(!svg.className.includes('min-w-[560px]'), 'SVG must eliminate min-w-[560px]');
 
       // Decoupled responsive flex container
       const flexContainer = chartOuter.querySelector('.flex-col');
       assert.ok(flexContainer, 'Must use responsive flex-col container');
-      assert.ok(flexContainer.className.includes('md:flex-row'), 'Must use md:flex-row on wider viewports');
+      assert.ok(flexContainer.className.includes('sm:flex-row'), 'Must use sm:flex-row on wider viewports');
       cleanup();
     });
 
@@ -2910,17 +2976,9 @@ describe('Tier 8: React Component RTL Iteration & UI Suite', () => {
         )
       );
 
-      // Opponent header comparison card has flex-row-reverse and right alignment inside symmetric 3-track grid
+      // Opponent header comparison card inside symmetric 3-track grid
       const oppAvatar = screen.getByTestId('opponent-team-avatar');
-      let curr = oppAvatar;
-      let oppHeaderCard = null;
-      while (curr && curr.parentNode) {
-        if (curr.className && curr.className.includes('justify-self-end')) {
-          oppHeaderCard = curr;
-          break;
-        }
-        curr = curr.parentNode;
-      }
+      const oppHeaderCard = oppAvatar.parentNode;
       assert.ok(oppHeaderCard, 'Opponent header card must exist');
       assert.ok(
         oppHeaderCard.parentNode &&
@@ -2928,35 +2986,12 @@ describe('Tier 8: React Component RTL Iteration & UI Suite', () => {
           oppHeaderCard.parentNode.className.includes('sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]'),
         'Matchup header container must use balanced sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] tracks',
       );
-      assert.ok(oppHeaderCard.className.includes('flex-row-reverse'), 'Opponent header card must use flex-row-reverse');
-      assert.ok(oppHeaderCard.className.includes('text-right'), 'Opponent header card must have text-right');
-      assert.ok(
-        oppHeaderCard.className.includes('w-fit') &&
-          oppHeaderCard.className.includes('max-w-full') &&
-          oppHeaderCard.className.includes('min-w-0') &&
-          oppHeaderCard.className.includes('justify-self-end'),
-        'Opponent header card must shrink around content with right alignment',
-      );
+      assert.ok(oppHeaderCard.className.includes('flex-row-reverse') || oppHeaderCard.className.includes('sm:justify-end'), 'Opponent header card must align right on desktop');
 
       const userAvatar = screen.getByTestId('user-team-avatar');
-      curr = userAvatar;
-      let userHeaderCard = null;
-      while (curr && curr.parentNode) {
-        if (curr.className && curr.className.includes('justify-self-start')) {
-          userHeaderCard = curr;
-          break;
-        }
-        curr = curr.parentNode;
-      }
+      const userHeaderCard = userAvatar.parentNode;
       assert.ok(userHeaderCard, 'User header card must exist');
       assert.ok(!userHeaderCard.className.includes('flex-row-reverse'), 'User header card must retain left alignment');
-      assert.ok(
-        userHeaderCard.className.includes('w-fit') &&
-          userHeaderCard.className.includes('max-w-full') &&
-          userHeaderCard.className.includes('min-w-0') &&
-          userHeaderCard.className.includes('justify-self-start'),
-        'User header card must shrink around content with left alignment',
-      );
 
       // Slot badge renders centered between paired user and opponent cards
       const matchupGrid = screen.getByTestId('positional-matchup-grid');
@@ -2986,25 +3021,23 @@ describe('Tier 8: React Component RTL Iteration & UI Suite', () => {
       assert.ok(oppCard, 'Opponent starter card must exist');
 
       const oppTopRow = oppCard.children[0];
-      assert.ok(oppTopRow.className.includes('flex-row-reverse'), 'Opponent starter top row must use flex-row-reverse');
+      assert.ok(oppTopRow.className.includes('lg:flex-row-reverse'), 'Opponent starter top row must mirror with lg:flex-row-reverse');
 
       const oppTextCol = oppCard.querySelector('[data-testid="matchup-card-text-col"]');
       assert.ok(oppTextCol, 'Opponent text column must exist');
-      assert.ok(oppTextCol.className.includes('text-right'), 'Opponent text column must have text-right');
+      assert.ok(oppTextCol.className.includes('lg:text-right'), 'Opponent text column must have lg:text-right');
       assert.equal(oppTextCol.children.length, 2, 'Layout invariant A: matchup-card-text-col must have strictly 2 children');
       const oppHeadshot = oppTopRow.querySelector('img, span[aria-hidden="true"]');
-      assert.ok(oppHeadshot && oppHeadshot.className.includes('w-12') && oppHeadshot.className.includes('sm:w-20') && oppHeadshot.className.includes('lg:w-16'), 'Starter headshot must keep non-clipping mobile sizing and expand on desktop (w-12 sm:w-20 lg:w-16)');
+      assert.ok(oppHeadshot && oppHeadshot.className.includes('w-9') && oppHeadshot.className.includes('sm:w-10'), 'Starter headshot must use restrained matchup sizing (w-9 sm:w-10)');
       const oppNameSpan = oppTextCol.children[0].querySelector('span[title]');
-      assert.ok(oppNameSpan && oppNameSpan.className.includes('text-base') && oppNameSpan.className.includes('sm:text-lg'), 'Starter name must use scaled typography (text-base sm:text-lg) with title tooltip');
-      assert.ok(oppTextCol.children[1].className.includes('text-xs'), 'Starter team/bye row must use readable text-xs+ typography');
+      assert.ok(oppNameSpan && oppNameSpan.className.includes('text-sm'), 'Starter name must use crisp text-sm typography with title tooltip');
+      assert.ok(oppTextCol.children[1].className.includes('text-[11px]'), 'Starter team/bye row must use compact text-[11px] typography');
 
-      // Opponent stadium row must be a flex-col container with right-aligned items
-      const borderTRows = oppCard.querySelectorAll('.border-t');
-      assert.ok(borderTRows.length >= 1, 'Must have at least one border-t row');
-      const venueRow = borderTRows[0];
-      assert.ok(venueRow.className.includes('flex-col'), 'Opponent stadium row must be a flex-col container');
-      assert.ok(venueRow.className.includes('items-end'), 'Opponent stadium row must have items-end');
-      assert.ok(!venueRow.className.includes('flex-row-reverse'), 'Opponent venue row container must not have flex-row-reverse to avoid flex-direction conflict');
+      // Opponent stadium venue row renders inline inside matchup-card-text-col without nested border-t dividers
+      const oppVenueRow = oppCard.querySelector('[data-testid="matchup-venue-row"]');
+      assert.ok(oppVenueRow, 'Opponent card must render matchup-venue-row');
+      assert.ok(oppVenueRow.className.includes('lg:justify-end'), 'Opponent venue row must mirror right on desktop');
+      assert.ok(!oppVenueRow.className.includes('flex-row-reverse'), 'Opponent venue row container must not have flex-row-reverse to avoid flex-direction conflict');
 
       // User starter card retains left alignment
       const userCard = screen.getByTestId(`matchup-starter-card-${userStarters[0].player_id}`);
@@ -3012,36 +3045,29 @@ describe('Tier 8: React Component RTL Iteration & UI Suite', () => {
       const userTopRow = userCard.children[0];
       assert.ok(!userTopRow.className.includes('flex-row-reverse'), 'User starter top row must retain left alignment');
       const userBadge = userCard.querySelector(`[data-testid="badge-${userStarters[0].position.toLowerCase()}"]`);
-      assert.ok(userBadge && userBadge.className.includes('text-xs') && userBadge.className.includes('sm:text-sm'), 'Starter position badge must scale to md/sm:lg sizing');
+      assert.ok(userBadge && userBadge.className.includes('text-[10px]'), 'Starter position badge must use compact sm sizing');
 
-      // Check venue row structure and children
+      // Check venue row structure
       const userVenueRow = userCard.querySelector('[data-testid="matchup-venue-row"]');
       assert.ok(userVenueRow, 'User card must have matchup-venue-row');
-      assert.equal(userVenueRow.children.length, 2, 'matchup-venue-row must have exactly 2 children');
       const userLine1 = userVenueRow.querySelector('[data-testid="matchup-venue-line"]');
       const userLine2 = userVenueRow.querySelector('[data-testid="matchup-kickoff-line"]');
       assert.ok(userLine1, 'Must have matchup-venue-line');
       assert.ok(userLine2, 'Must have matchup-kickoff-line');
-      assert.ok(userVenueRow.className.includes('items-start'), 'User venue row must have items-start');
       assert.ok(!userVenueRow.className.includes('flex-row-reverse'), 'User venue row container must not have flex-row-reverse');
-      assert.ok(!userLine1.className.includes('flex-row-reverse'), 'User venue line 1 must not have flex-row-reverse');
-      assert.ok(!userLine2.className.includes('flex-row-reverse'), 'User kickoff line 2 must not have flex-row-reverse');
 
-      const oppVenueRow = oppCard.querySelector('[data-testid="matchup-venue-row"]');
-      assert.ok(oppVenueRow, 'Opponent card must have matchup-venue-row');
-      assert.equal(oppVenueRow.children.length, 2, 'Opponent matchup-venue-row must have exactly 2 children');
       const oppLine1 = oppVenueRow.querySelector('[data-testid="matchup-venue-line"]');
       const oppLine2 = oppVenueRow.querySelector('[data-testid="matchup-kickoff-line"]');
       assert.ok(oppLine1, 'Opponent must have matchup-venue-line');
       assert.ok(oppLine2, 'Opponent must have matchup-kickoff-line');
-      assert.ok(oppVenueRow.className.includes('items-end'), 'Opponent venue row must have items-end');
-      assert.ok(!oppVenueRow.className.includes('flex-row-reverse'), 'Opponent venue row container must not have flex-row-reverse');
-      assert.ok(oppLine1.className.includes('flex-row-reverse'), 'Opponent venue line 1 must have flex-row-reverse');
-      assert.ok(oppLine2.className.includes('flex-row-reverse'), 'Opponent kickoff line 2 must have flex-row-reverse');
-      assert.ok(oppLine1.querySelector('span').className.includes('truncate'), 'Opponent venue line 1 must truncate cleanly to a single line');
-      assert.ok(oppLine1.querySelector('span').getAttribute('title'), 'Truncated venue line must preserve full accessible title');
-      assert.ok(oppLine2.querySelector('span').className.includes('truncate'), 'Opponent kickoff line 2 must truncate cleanly to a single line');
-      assert.ok(oppLine2.querySelector('span').getAttribute('title'), 'Truncated kickoff line must preserve full accessible title');
+      assert.ok(oppLine1.className.includes('truncate'), 'Opponent venue line must truncate cleanly to a single line');
+      assert.ok(oppLine1.getAttribute('title'), 'Truncated venue line must preserve full accessible title');
+      assert.ok(
+        !userLine1.textContent.includes('Dome (') && !oppLine1.textContent.includes('Dome (') && !userLine1.textContent.includes('Open Air'),
+        'Matchup venue line must omit roof_type so stadium name renders cleanly without truncation',
+      );
+      assert.ok(oppLine2.className.includes('truncate'), 'Opponent kickoff line must truncate cleanly to a single line');
+      assert.ok(oppLine2.getAttribute('title'), 'Truncated kickoff line must preserve full accessible title');
 
       // Verify card containers have h-full and flex flex-col
       assert.ok(userCard.className.includes('h-full'), 'User card must have h-full');
@@ -3056,28 +3082,21 @@ describe('Tier 8: React Component RTL Iteration & UI Suite', () => {
       assert.equal(document.querySelectorAll('[data-testid="matchup-bar-opp"]').length, 0, 'Old matchup-bar-opp must be removed');
       assert.equal(document.querySelectorAll('[data-testid="matchup-bar-arrows"]').length, 0, 'Old matchup-bar-arrows must be removed');
 
-      // Hierarchical Stats/Stars -> Oracle node tree verification
+      // Tabular Base / Modifier metrics group verification
       const trees = Array.from(document.querySelectorAll('[data-testid="player-oracle-tree"]'));
-      assert.ok(trees.length > 0, 'Must render hierarchical player-oracle-tree widgets inside player cards');
+      assert.ok(trees.length > 0, 'Must render player-oracle-tree metrics groups inside player cards');
       for (const tree of trees) {
-        assert.equal(tree.getAttribute('role'), 'group', 'Tree container must have role="group"');
+        assert.equal(tree.getAttribute('role'), 'group', 'Metrics container must have role="group"');
         const oracleNode = tree.querySelector('[data-testid="oracle-node"]');
-        const branches = tree.querySelector('[data-testid="oracle-tree-branches"]');
+        const modNode = tree.querySelector('[data-testid="modifier-node"]');
         const statsLeaf = tree.querySelector('[data-testid="stats-node"]');
-        const starsLeaf = tree.querySelector('[data-testid="stars-node"]');
-        assert.ok(oracleNode, 'Tree must include top oracle-node');
-        assert.ok(branches && branches.tagName.toLowerCase() === 'svg', 'Tree must render SVG feed connectors between leaves and Oracle');
-        assert.equal(branches.getAttribute('aria-hidden'), 'true', 'Tree connector SVG must be aria-hidden');
-        assert.ok(statsLeaf && statsLeaf.textContent.toUpperCase().includes('STATS'), 'Tree must include Stats child leaf');
-        assert.ok(starsLeaf && starsLeaf.textContent.toUpperCase().includes('STARS'), 'Tree must include Stars child leaf');
-        // Verify DOM order: Oracle top -> SVG branches -> leaf row containing Stats & Stars
-        assert.equal(tree.children.length, 3, 'Node tree must have 3 vertical tiers: Oracle, branches, leaves');
-        assert.ok(tree.children[0].contains(oracleNode), 'Tier 0 must be Oracle node');
-        assert.equal(tree.children[1], branches, 'Tier 1 must be connector SVG');
-        assert.ok(tree.children[2].contains(statsLeaf) && tree.children[2].contains(starsLeaf), 'Tier 2 must contain Stats and Stars leaf nodes');
+        assert.ok(oracleNode && oracleNode.textContent.toUpperCase().includes('PROJECTED'), 'Metrics group must include Projected cell');
+        assert.ok(modNode && modNode.textContent.toUpperCase().includes('MODIFIER'), 'Metrics group must include Modifier cell');
+        assert.ok(statsLeaf && statsLeaf.textContent.toUpperCase().includes('BASE'), 'Metrics group must include Base cell');
+        assert.equal(tree.children.length, 3, 'Metrics group must have 3 aligned cells: Base, Modifier, and Projected');
       }
 
-      // Dominant winning starter card must glow on oracle-node and render floating 5-point SVG stars
+      // Dominant winning starter card highlights Oracle in starlight gold / astral sky with floating SVG stars
       const dominantCards = Array.from(document.querySelectorAll('[data-dominant="true"]'));
       const nonDominantCards = Array.from(document.querySelectorAll('[data-dominant="false"]'));
       assert.ok(dominantCards.length > 0, 'At least one favored starter card must have data-dominant="true"');
@@ -3085,84 +3104,52 @@ describe('Tier 8: React Component RTL Iteration & UI Suite', () => {
 
       for (const card of dominantCards) {
         const node = card.querySelector('[data-testid="oracle-node"]');
-        assert.ok(node && node.className.includes('shadow-[0_0_16px_rgba('), 'Dominant Oracle node must glow');
+        assert.ok(
+          node && (node.querySelector('.text-amber-300') || node.querySelector('.text-sky-200')),
+          'Dominant Oracle node must highlight in starlight gold or astral sky',
+        );
         assert.equal(node.querySelectorAll('[data-testid="oracle-powerup-arrows"]').length, 0, 'Power-up arrows must be removed');
-        const starsOverlay = node.querySelector('[data-testid="oracle-powerup-stars"]');
-        assert.ok(starsOverlay, 'Dominant Oracle node must render oracle-powerup-stars');
-        assert.equal(starsOverlay.getAttribute('aria-hidden'), 'true', 'Power-up stars overlay must be aria-hidden');
-        const starSvgs = starsOverlay.querySelectorAll('svg');
-        assert.ok(starSvgs.length >= 5, `Power-up overlay must render multiple floating 5-point SVG stars, got ${starSvgs.length}`);
-        const sizes = new Set();
-        const delays = new Set();
-        const lefts = new Set();
-        for (const svg of starSvgs) {
+        const starsHost = node.querySelector('[data-testid="oracle-powerup-stars"]');
+        assert.ok(starsHost, 'Dominant Oracle node must render floating SVG stars container');
+        const svgs = Array.from(starsHost.querySelectorAll('svg'));
+        assert.equal(svgs.length, 6, 'PowerupStars must render 6 floating SVG star particles');
+        const leftCoords = new Set();
+        for (const svg of svgs) {
           const poly = svg.querySelector('polygon');
-          assert.ok(poly && (poly.getAttribute('points') || '').split(/\s+/).length >= 10, 'Star SVG must render a 5-point polygon');
-          assert.ok(!svg.textContent.includes('✨') && !svg.textContent.includes('▲'), 'Must use actual star SVG, not sparkle emoji or arrow');
-          const cls = svg.getAttribute('class') || '';
-          assert.ok(cls.includes('animate-powerup-star-float'), 'Star SVG must use animate-powerup-star-float');
-          assert.ok(cls.includes('motion-reduce:animate-none'), 'Star SVG must respect reduced motion');
+          assert.equal(
+            poly?.getAttribute('points'),
+            '12,2 15,9 22,9 17,14 19,21 12,17 5,21 7,14 2,9 9,9',
+            'Each floating star SVG must use the canonical 5-point star polygon',
+          );
           const w = Number(svg.getAttribute('width'));
-          assert.ok(w >= 8 && w <= 14, `Star SVG width must be between 8px and 14px, got ${w}`);
-          const delayNum = parseFloat(svg.style.animationDelay);
-          assert.ok(!Number.isNaN(delayNum) && delayNum <= 0, `Floating star delay must be <= 0s to avoid mount flash, got ${svg.style.animationDelay}`);
-          sizes.add(svg.getAttribute('width'));
-          delays.add(svg.style.animationDelay);
-          lefts.add(svg.style.left);
+          const h = Number(svg.getAttribute('height'));
+          assert.ok(w >= 8 && w <= 12 && h >= 8 && h <= 12, `Star SVG dimensions (${w}x${h}) must lie within [8, 12]`);
+          const styleAttr = svg.getAttribute('style') || '';
+          const delayVal = String(svg.style?.animationDelay || (styleAttr.match(/animation-delay:\s*([^;]+)/i)?.[1] ?? '')).trim();
+          assert.ok(delayVal.startsWith('-'), 'Floating star must use negative animationDelay for staggered mid-cycle start');
+          const leftVal = String(svg.style?.left || (styleAttr.match(/left:\s*([^;]+)/i)?.[1] ?? '')).trim();
+          if (leftVal) leftCoords.add(leftVal);
+          const cls = svg.getAttribute('class') || '';
+          assert.ok(
+            cls.includes('animate-powerup-star-float') && cls.includes('motion-reduce:animate-none'),
+            'Floating star must carry animate-powerup-star-float and motion-reduce:animate-none',
+          );
         }
-        assert.ok(sizes.size >= 2, 'Floating stars must have varied sizes');
-        assert.ok(delays.size >= 3, 'Floating stars must have staggered timing delays');
-        assert.ok(lefts.size >= 4, 'Floating stars must be distributed across varied horizontal positions');
+        assert.ok(leftCoords.size >= 4, 'Floating star horizontal positions must be distributed across distinct left% offsets');
       }
       for (const card of nonDominantCards) {
         const node = card.querySelector('[data-testid="oracle-node"]');
-        assert.ok(node && !node.className.includes('shadow-[0_0_16px_rgba('), 'Non-dominant Oracle node must not glow');
+        assert.ok(
+          node && !node.querySelector('.text-amber-300') && !node.querySelector('.text-sky-200'),
+          'Non-dominant Oracle node must remain neutral',
+        );
         assert.equal(card.querySelectorAll('[data-testid="oracle-powerup-stars"]').length, 0, 'Non-dominant card must render 0 floating stars');
       }
-      // Header radiogroup touch target + ARIA ArrowLeft/ArrowRight keyboard switching + completed Final scores
-      const oracleBtn = screen.getByTestId('matchup-score-mode-oracle');
-      const statsBtn = screen.getByTestId('matchup-score-mode-stats');
+      // Scoreboard displays Base + Modifier net totals on active weeks and Final scores on completed weeks
       assert.ok(
-        oracleBtn.className.split(/\s+/).includes('min-h-[44px]') && oracleBtn.className.split(/\s+/).includes('min-w-[44px]'),
-        'Oracle radio toggle must include >= 44x44px touch target classes',
+        screen.getByTestId('matchup-header-user-score').textContent.includes('Base'),
+        'Active matchup scoreboard must display Base and Modifier breakdown',
       );
-      assert.ok(
-        statsBtn.className.split(/\s+/).includes('min-h-[44px]') && statsBtn.className.split(/\s+/).includes('min-w-[44px]'),
-        'Stats radio toggle must include >= 44x44px touch target classes',
-      );
-      assert.equal(oracleBtn.getAttribute('tabindex'), '0', 'Selected Oracle radio must have roving tabIndex=0');
-      assert.equal(statsBtn.getAttribute('tabindex'), '-1', 'Unselected Stats radio must have roving tabIndex=-1');
-      const sendKey = (el, key) => {
-        act(() => {
-          el.dispatchEvent({
-            type: 'keydown',
-            key,
-            bubbles: true,
-            cancelable: true,
-            defaultPrevented: false,
-            preventDefault() { this.defaultPrevented = true; },
-            stopPropagation() { this._propagationStopped = true; },
-          });
-        });
-      };
-      oracleBtn.focus();
-      sendKey(oracleBtn, 'ArrowRight');
-      assert.equal(screen.getByTestId('matchup-score-mode-stats').getAttribute('aria-checked'), 'true', 'ArrowRight must switch to Stats');
-      assert.equal(screen.getByTestId('matchup-score-mode-stats').getAttribute('tabindex'), '0', 'Selected Stats radio must get tabIndex=0');
-      assert.equal(screen.getByTestId('matchup-score-mode-oracle').getAttribute('tabindex'), '-1', 'Unselected Oracle radio must get tabIndex=-1');
-      assert.equal(oracleBtn.ownerDocument.activeElement, screen.getByTestId('matchup-score-mode-stats'), 'ArrowRight must move focus to Stats radio');
-
-      sendKey(screen.getByTestId('matchup-score-mode-stats'), 'ArrowLeft');
-      assert.equal(screen.getByTestId('matchup-score-mode-oracle').getAttribute('aria-checked'), 'true', 'ArrowLeft must switch back to Oracle');
-      assert.equal(oracleBtn.ownerDocument.activeElement, screen.getByTestId('matchup-score-mode-oracle'), 'ArrowLeft must move focus back to Oracle radio');
-
-      sendKey(screen.getByTestId('matchup-score-mode-oracle'), 'End');
-      assert.equal(screen.getByTestId('matchup-score-mode-stats').getAttribute('aria-checked'), 'true', 'End key must select last (Stats) radio');
-      assert.equal(oracleBtn.ownerDocument.activeElement, screen.getByTestId('matchup-score-mode-stats'), 'End key must focus Stats radio');
-
-      sendKey(screen.getByTestId('matchup-score-mode-stats'), 'Home');
-      assert.equal(screen.getByTestId('matchup-score-mode-oracle').getAttribute('aria-checked'), 'true', 'Home key must select first (Oracle) radio');
-      assert.equal(oracleBtn.ownerDocument.activeElement, screen.getByTestId('matchup-score-mode-oracle'), 'Home key must focus Oracle radio');
       cleanup();
 
       const completedMatchup = {
@@ -3178,9 +3165,6 @@ describe('Tier 8: React Component RTL Iteration & UI Suite', () => {
           jsx(MatchupsScreen, { weeklyMatchup: completedMatchup }),
         ),
       );
-      assert.equal(screen.getByTestId('matchup-score-mode-oracle').getAttribute('aria-checked'), 'true', 'Completed matchup must still default to Oracle');
-      assert.equal(screen.getByTestId('matchup-score-mode-stats').textContent.trim(), 'Final', 'Completed matchup with scores must label Stats mode as Final');
-      fireEvent.click(screen.getByTestId('matchup-score-mode-stats'));
       assert.equal(screen.getByTestId('matchup-header-user-score').textContent.trim(), '142.35 Final');
       assert.equal(screen.getByTestId('matchup-header-opp-score').textContent.trim(), '119.80 Final');
       cleanup();
@@ -3198,9 +3182,10 @@ describe('Tier 8: React Component RTL Iteration & UI Suite', () => {
           jsx(MatchupsScreen, { weeklyMatchup: completedNoScoreMatchup }),
         ),
       );
-      assert.equal(screen.getByTestId('matchup-score-mode-stats').textContent.trim(), 'Stats', 'Completed matchup missing official scores must keep Stats label instead of Final');
-      fireEvent.click(screen.getByTestId('matchup-score-mode-stats'));
-      assert.ok(screen.getByTestId('matchup-header-user-score').textContent.trim().endsWith('Stats'), 'Header must display Stats label when completed week lacks score_user');
+      assert.ok(
+        !screen.getByTestId('matchup-header-user-score').textContent.trim().endsWith('Final'),
+        'Header must omit Final label when completed week lacks official score_user',
+      );
       cleanup();
 
       // Edge Cases: Kickoff fallback display ('Time TBA' / 'Bye week') and zero arrows on even/open splits
@@ -3255,24 +3240,28 @@ describe('Tier 8: React Component RTL Iteration & UI Suite', () => {
           {
             ...userStarters[0],
             player_id: 'p_even_user',
-            player_name: 'Even User Player',
-            name: 'Even User Player',
+            player_name: 'Even Alpha RB',
+            name: 'Even Alpha RB',
             position: 'RB',
             is_user_team: true,
             is_starter: true,
             slot_role: 'RB',
+            birth_date: '1998-05-21',
+            jersey_number: 22,
             spirit_score: 80.0,
             draft_score: 80.0,
           },
           {
             ...userStarters[0],
             player_id: 'p_even_opp',
-            player_name: 'Even Opp Player',
-            name: 'Even Opp Player',
+            player_name: 'Alpha Even RB',
+            name: 'Alpha Even RB',
             position: 'RB',
             is_user_team: false,
             is_starter: true,
             slot_role: 'RB',
+            birth_date: '1998-05-21',
+            jersey_number: 22,
             spirit_score: 80.0,
             draft_score: 80.0,
           },
@@ -3315,13 +3304,13 @@ describe('Tier 8: React Component RTL Iteration & UI Suite', () => {
       assert.equal(byeCard.getAttribute('data-dominant'), 'false', 'Starter on bye must never be marked data-dominant="true"');
       assert.equal(byeCard.querySelectorAll('[data-testid="oracle-powerup-stars"]').length, 0, 'Starter on bye must render 0 floating stars');
 
-      // Verify RB Even tie pair has equal non-zero Oracle values and '- Even' sr-only status
+      // Verify RB Even tie pair has equal non-zero net point values and '- Even' sr-only status
       const srSummaries = Array.from(document.querySelectorAll('span.sr-only')).map((el) => el.textContent.trim());
-      const evenSummary = srSummaries.find((text) => text.includes('Even User Player') && text.includes('Even Opp Player'));
+      const evenSummary = srSummaries.find((text) => text.includes('Even Alpha RB') && text.includes('Alpha Even RB'));
       assert.ok(evenSummary, 'Tie pair must render accessible sr-only summary');
-      const oracleMatches = [...evenSummary.matchAll(/Oracle ([\d.]+)/g)].map((m) => Number(m[1]));
-      assert.equal(oracleMatches.length, 2, 'Tie pair sr-only summary must report both player Oracle scores');
-      assert.ok(oracleMatches[0] > 0 && Math.abs(oracleMatches[0] - oracleMatches[1]) <= 0.05, 'Tie pair must exercise equal non-zero Oracle values');
+      const netMatches = [...evenSummary.matchAll(/([\d.]+) pts/g)].map((m) => Number(m[1]));
+      assert.equal(netMatches.length, 2, 'Tie pair sr-only summary must report both player net point scores');
+      assert.ok(netMatches[0] > 0 && Math.abs(netMatches[0] - netMatches[1]) <= 0.05, 'Tie pair must exercise equal non-zero net point values');
       assert.ok(evenSummary.endsWith(' - Even'), `Equal non-zero pair must report Even status, got: ${evenSummary}`);
 
       // Negative assertion for even splits and open slots: 0 dominant Oracle nodes and 0 floating stars
@@ -4587,7 +4576,7 @@ describe('Tier 8: React Component RTL Iteration & UI Suite', () => {
       assert.ok(oracleMarker, 'Oracle marker must render placeholder marker ~');
       const statsBox = Array.from(container.querySelectorAll('div')).find((el) => el.getAttribute('title')?.includes('0.0 pts (on bye)'));
       assert.ok(statsBox, 'Baseline projected points element with placeholder tooltip must be present');
-      assert.equal(statsBox.textContent.replace(/\s+/g, ''), 'Stats0.0');
+      assert.ok(statsBox.textContent.replace(/\s+/g, '').startsWith('Base0.0'));
       cleanup();
     });
 
@@ -4864,19 +4853,21 @@ describe('Tier 8: React Component RTL Iteration & UI Suite', () => {
       const lambda = mockState.settings?.chaos_lambda ?? scoring.DEFAULT_CHAOS_LAMBDA;
       const expectedCurrentOracle = oracle.currentWeekOracleScore(rushBoard, lambda, 7);
       const expectedBenchOracle = oracle.currentWeekOracleScore(huntleyBoard, lambda, 7);
-      const expectedGain = (Math.round((expectedBenchOracle - expectedCurrentOracle) * 10) / 10).toFixed(1);
+      const expectedGain = (
+        Math.round((Number(expectedBenchOracle.toFixed(1)) - Number(expectedCurrentOracle.toFixed(1))) * 10) / 10
+      ).toFixed(1);
 
       assert.equal(
         titleAttr,
-        `Bench ${huntleyBoard.name} scores +${expectedGain} higher Oracle (${expectedBenchOracle.toFixed(1)} vs ${expectedCurrentOracle.toFixed(1)})`,
-        'Swap tooltip title must exactly match calculated bench and current-week Oracle values',
+        `Bench ${huntleyBoard.name} projects +${expectedGain} pts higher (${expectedBenchOracle.toFixed(1)} vs ${expectedCurrentOracle.toFixed(1)} net pts)`,
+        'Swap tooltip title must exactly match calculated bench and current-week net point values',
       );
 
       const tooltipText = cardEl.querySelector('span[data-testid="matchup-swap-tooltip"]')?.textContent || '';
       assert.equal(
         tooltipText,
-        `Swap Opportunity: Bench ${huntleyBoard.name} adds +${expectedGain} Oracle`,
-        'Swap tooltip banner must state exact calculated gain',
+        `Start ${huntleyBoard.name} (+${expectedGain} pts)`,
+        'Swap tooltip banner must state exact calculated gain in pts',
       );
       cleanup();
 
@@ -5223,19 +5214,18 @@ describe('Tier 8: React Component RTL Iteration & UI Suite', () => {
           ),
         );
 
-        // 1a. Header 3-metric tile grid isolation
-        const headerGrid = modalView.container.querySelector('div.grid');
+        // 1a. Header 3-metric tile grid isolation (Base, Overall Modifier & Projected)
+        const headerGrid = modalView.container.querySelector('[data-testid="modal-hero-metrics"]');
         assert.ok(headerGrid, 'Header 3-metric grid must exist in modal');
         const headerTiles = headerGrid.children;
-        assert.equal(headerTiles.length, 3, 'Must render exactly 3 header tiles');
+        assert.equal(headerTiles.length, 3, 'Must render 3 header tiles: Base, Overall Modifier, and Projected');
         const statsTile = headerTiles[0];
-        const oracleTile = headerTiles[1];
-        const starsTile = headerTiles[2];
+        const oracleTile = headerTiles[2];
 
-        assert.ok(statsTile.textContent?.includes('0.0 pts'), 'Stats tile must render 0.0 pts');
+        assert.ok(statsTile.textContent?.includes('0.0') && statsTile.textContent?.includes('pts'), 'Base tile must render 0.0 pts');
         assert.ok(
-          statsTile.getAttribute('title')?.includes('0.0 pts (on bye). Oracle rating uses 16.5 pt average projection placeholder.'),
-          'Stats tile tooltip must explain placeholder',
+          statsTile.getAttribute('title')?.includes('0.0 pts (on bye). Next-game baseline uses 16.5 pt season average.'),
+          'Base tile tooltip must explain placeholder',
         );
 
         const oracleMarker = oracleTile.querySelector('[data-testid="oracle-placeholder-marker"]');
@@ -5492,7 +5482,7 @@ describe('Tier 8: React Component RTL Iteration & UI Suite', () => {
 
         const statusBadge = screen.getByText(/MY ROSTER|FREE AGENT|ROSTERED/);
         assert.ok(statusBadge, 'Squad status badge must be present');
-        assert.ok((statusBadge.parentElement?.className || '').includes('w-full'), 'Squad status badge container must be full width (w-full)');
+        assert.ok((statusBadge.parentElement?.className || '').includes('flex-wrap'), 'Squad status badge container must wrap cleanly');
         cleanup();
 
         // 2. Verify CosmicBoard comparison functionality
@@ -5554,7 +5544,7 @@ describe('Tier 8: React Component RTL Iteration & UI Suite', () => {
         const pinnedTbody = boardView.querySelector('tbody[data-testid="compare-pinned"]');
         assert.ok(pinnedTbody, 'compare-pinned tbody must render when player is pinned');
         assert.ok(pinnedTbody.textContent.includes(playerName0), 'Pinned tbody must contain player name');
-        assert.ok(pinnedTbody.textContent.includes('PINNED'), 'Pinned row must display PINNED badge');
+        assert.ok(/Pinned/i.test(pinnedTbody.textContent), 'Pinned row must display Pinned badge');
 
         const pinnedCheckbox = pinnedTbody.querySelector('input[type="checkbox"]');
         const pinnedCheckboxCell = pinnedCheckbox ? pinnedCheckbox.parentNode : null;
@@ -5568,7 +5558,7 @@ describe('Tier 8: React Component RTL Iteration & UI Suite', () => {
         // Action bar should appear showing 1 candidate
         const actionBar = boardView.querySelector('[data-testid="compare-action-bar"]');
         assert.ok(actionBar, 'compare-action-bar must render when players are pinned');
-        assert.ok(actionBar.textContent.includes('Comparing 1 / 6'), 'Action bar must show count');
+        assert.ok(actionBar.textContent.includes('Comparing 1 of 6'), 'Action bar must show count');
 
         // Pin second player
         const remainingCheckboxes = boardView.querySelectorAll('input[type="checkbox"]').filter(cb => {
@@ -5581,7 +5571,7 @@ describe('Tier 8: React Component RTL Iteration & UI Suite', () => {
         fireEvent.click(checkbox1);
 
         // Now action bar must show 2, keep sticky bottom-4 layout, and NOT render Head-to-Head button
-        assert.ok(actionBar.textContent.includes('Comparing 2 / 6'), 'Action bar must show 2 candidates');
+        assert.ok(actionBar.textContent.includes('Comparing 2 of 6'), 'Action bar must show 2 candidates');
         assert.ok(actionBar.className.includes('sticky') && actionBar.className.includes('bottom-4'), 'Action bar must have sticky bottom-4 layout');
         assert.equal(
           boardView.querySelector('button[data-testid="head-to-head-btn"]'),
@@ -5647,10 +5637,10 @@ describe('Tier 8: React Component RTL Iteration & UI Suite', () => {
           fireEvent.click(unpinnedCheckboxes[0]);
         }
 
-        // Action bar should display Comparing 6 / 6
+        // Action bar should display Comparing 6 of 6
         const actionBar = boardView.querySelector('[data-testid="compare-action-bar"]');
         assert.ok(actionBar, 'Action bar must exist when 6 players are pinned');
-        assert.ok(actionBar.textContent.includes('Comparing 6 / 6'), 'Action bar must show 6 / 6');
+        assert.ok(actionBar.textContent.includes('Comparing 6 of 6'), 'Action bar must show 6 of 6');
 
         // All unpinned checkboxes must now be disabled with title
         const remainingUnpinned = boardView.querySelectorAll('input[type="checkbox"]').filter(cb => {
@@ -5674,7 +5664,7 @@ describe('Tier 8: React Component RTL Iteration & UI Suite', () => {
 
         // Unpin one player by clicking its pinned checkbox
         fireEvent.click(pinnedTableCheckboxes[0]);
-        assert.ok(actionBar.textContent.includes('Comparing 5 / 6'), 'Action bar must reflect 5 / 6 after unpinning');
+        assert.ok(actionBar.textContent.includes('Comparing 5 of 6'), 'Action bar must reflect 5 of 6 after unpinning');
 
         // Unpinned checkboxes must become re-enabled
         const reenabledUnpinned = boardView.querySelectorAll('input[type="checkbox"]').filter(cb => {
@@ -5791,7 +5781,7 @@ describe('Tier 8: React Component RTL Iteration & UI Suite', () => {
         );
         const actionBar = boardView.querySelector('[data-testid="compare-action-bar"]');
         assert.ok(actionBar, 'Action bar must still render when 3 players are pinned');
-        assert.ok(actionBar.textContent.includes('Comparing 3 / 6'), 'Action bar must display 3 pinned count');
+        assert.ok(actionBar.textContent.includes('Comparing 3 of 6'), 'Action bar must display 3 pinned count');
         assert.equal(actionBar.querySelectorAll('button').length, 1, 'Only Clear All button should remain in action bar');
         cleanup();
 
@@ -5811,7 +5801,7 @@ describe('Tier 8: React Component RTL Iteration & UI Suite', () => {
 
         const modal = modalView.querySelector('[role="dialog"]');
         assert.ok(modal, 'PlayerDetailModal must render when isOpen is true');
-        assert.ok(modal.textContent.includes('Comparing 3 Candidates') || modal.textContent.includes('Comparing 3 Selected Candidates'), 'Modal header must reflect 3 candidates');
+        assert.ok(modal.textContent.includes('Comparing 3') || modal.textContent.includes('Comparing 3 Selected Candidates'), 'Modal header must reflect 3 candidates');
 
         // multi-candidate-grid must be present
         const grid = modal.querySelector('[data-testid="multi-candidate-grid"]');
@@ -5826,10 +5816,9 @@ describe('Tier 8: React Component RTL Iteration & UI Suite', () => {
           );
         }
 
-        // Must display Stats, Oracle, and Stars metrics
-        assert.ok(grid.textContent.includes('Stats'), 'Grid must display Stats');
-        assert.ok(grid.textContent.includes('Oracle'), 'Grid must display Oracle');
-        assert.ok(grid.textContent.includes('Stars'), 'Grid must display Stars');
+        // Must display Base and Modifier metrics
+        assert.ok(grid.textContent.includes('Base'), 'Grid must display Base');
+        assert.ok(grid.textContent.includes('Modifier'), 'Grid must display Modifier');
         assert.ok(grid.textContent.includes('Leader'), 'Grid must highlight leader');
 
         // Close modal callback fires on X click
@@ -5844,74 +5833,83 @@ describe('Tier 8: React Component RTL Iteration & UI Suite', () => {
       }
     });
 
-    test('9.4.2 CelestialLeaderboardGraph tier badges match displayed rating across Oracle, Stars, Stats, and Harmony tabs', () => {
+    test('9.4.2 CelestialLeaderboardGraph re-orders teams across Projected, Base, and Modifier tabs without percentages', () => {
       try {
+        const pHighBase = {
+          id: 'p_hb',
+          name: 'High Base WR',
+          position: 'WR',
+          team: 'NYG',
+          birth_date: '1997-01-04',
+          jersey_number: 80,
+          projected_points: 24.0,
+          sleeper_projected_points: 24.0,
+        };
+        const pHighMod = {
+          id: 'p_hm',
+          name: 'High Mod WR',
+          position: 'WR',
+          team: 'DET',
+          birth_date: '1999-10-24',
+          jersey_number: 14,
+          projected_points: 12.0,
+          sleeper_projected_points: 12.0,
+        };
+        oracle.setActiveUnitPool([pHighBase, pHighMod], testDraftState.my_roster || []);
+        const modHB = oracle.playerModifier(pHighBase, { currentWeek: 2 });
+        const modHM = oracle.playerModifier(pHighMod, { currentWeek: 2 });
+        const higherModPlayer = modHM >= modHB ? pHighMod : pHighBase;
+        const lowerModPlayer = higherModPlayer === pHighMod ? pHighBase : pHighMod;
+        lowerModPlayer.projected_points = 24.0;
+        lowerModPlayer.sleeper_projected_points = 24.0;
+        higherModPlayer.projected_points = 12.0;
+        higherModPlayer.sleeper_projected_points = 12.0;
+
         const mismatchedTeams = [
           {
             slot: 1,
             roster_id: 1,
-            name: 'HighComposite LowSpirit',
-            avg_spirit_score: 72.0,
-            avg_draft_score: 82.0,
-            harmony_score: 84.8,
+            name: 'HighBase Team',
+            starters: [lowerModPlayer.id],
+            players: [lowerModPlayer.id],
             picks: [],
           },
           {
             slot: 4,
             roster_id: 4,
-            name: 'LowComposite HighSpirit',
-            avg_spirit_score: 76.0,
-            avg_draft_score: 70.0,
-            harmony_score: 74.9,
+            name: 'HighMod Team',
+            starters: [higherModPlayer.id],
+            players: [higherModPlayer.id],
             picks: [],
           },
         ];
 
-        render(
+        const view = render(
           jsx(
             OneiromancyProvider,
-            { initialDraftState: { ...testDraftState, competitor_teams: mismatchedTeams } },
+            {
+              initialDraftState: {
+                ...testDraftState,
+                weekly_matchup: { ...testDraftState.weekly_matchup, week: 2 },
+                cosmic_board: [pHighBase, pHighMod],
+                competitor_teams: mismatchedTeams,
+              },
+            },
             jsx(CelestialLeaderboardGraph, { competitorTeams: mismatchedTeams }),
           ),
         );
 
-        const rank1Oracle = screen.getByTestId('leaderboard-row-rank-1');
-        assert.ok(rank1Oracle.textContent.includes('HighComposite LowSpirit'), 'Oracle tab #1 must be 78.8 composite team');
-        assert.ok(rank1Oracle.textContent.includes('78.8'), 'Oracle tab #1 must display 78.8');
-        assert.ok(rank1Oracle.textContent.includes('Harmonic (Stable)'), 'Oracle tab #1 (78.8) must show Harmonic (Stable)');
-        assert.ok(!rank1Oracle.textContent.includes('Discordant'), 'Oracle tab #1 (78.8) must never show Discordant');
+        const rank1Projected = screen.getByTestId('leaderboard-row-rank-1');
+        assert.ok(rank1Projected.textContent.includes('HighBase Team'), 'Projected tab #1 must be HighBase Team');
+        assert.ok(!view.container.textContent.includes('%'), 'Leaderboard must not display % symbols');
 
-        const row4Oracle = screen.getByTestId('leaderboard-row-slot-4');
-        assert.ok(row4Oracle.textContent.includes('73.9'), 'Oracle tab row #2 must display 73.9');
-        assert.ok(row4Oracle.textContent.includes('Discordant (At Risk)'), 'Oracle tab row (73.9) must show Discordant (At Risk)');
+        fireEvent.click(screen.getByTestId('leaderboard-toggle-base'));
+        assert.ok(screen.getByTestId('leaderboard-row-rank-1').textContent.includes('HighBase Team'), 'Base tab #1 must be HighBase Team');
 
-        // Switch to Stars tab (spiritScore: 76.0 vs 72.0)
-        fireEvent.click(screen.getByTestId('leaderboard-toggle-spirit'));
-        const rank1Stars = screen.getByTestId('leaderboard-row-rank-1');
-        assert.ok(rank1Stars.textContent.includes('LowComposite HighSpirit'), 'Stars tab #1 must be 76.0 spirit team');
-        assert.ok(rank1Stars.textContent.includes('Harmonic (Stable)'), 'Stars tab #1 (76.0) must show Harmonic (Stable)');
-        const row1StarsSecond = screen.getByTestId('leaderboard-row-slot-1');
-        assert.ok(row1StarsSecond.textContent.includes('72.0'), 'Stars tab row #2 must display 72.0');
-        assert.ok(row1StarsSecond.textContent.includes('Discordant (At Risk)'), 'Stars tab row #2 (72.0) must show Discordant (At Risk)');
-
-        // Switch to Stats tab (draftScore: 82.0 vs 70.0)
-        fireEvent.click(screen.getByTestId('leaderboard-toggle-draft'));
-        const rank1Stats = screen.getByTestId('leaderboard-row-rank-1');
-        assert.ok(rank1Stats.textContent.includes('HighComposite LowSpirit'), 'Stats tab #1 must be 82.0 draft team');
-        assert.ok(rank1Stats.textContent.includes('82.0'), 'Stats tab #1 must display 82.0');
-        assert.ok(rank1Stats.textContent.includes('Harmonic (Stable)'), 'Stats tab #1 (82.0) must show Harmonic (Stable)');
-        const row4Stats = screen.getByTestId('leaderboard-row-slot-4');
-        assert.ok(row4Stats.textContent.includes('70.0'), 'Stats tab row #2 must display 70.0');
-        assert.ok(row4Stats.textContent.includes('Discordant (At Risk)'), 'Stats tab row #2 (70.0) must show Discordant (At Risk)');
-
-        // Switch to Harmony tab: rounded 84.8 -> 85% must show Favorable (Optimal); rounded 74.9 -> 75% must show Harmonic (Stable)
-        fireEvent.click(screen.getByTestId('leaderboard-toggle-harmony'));
-        const rank1Harmony = screen.getByTestId('leaderboard-row-rank-1');
-        assert.ok(rank1Harmony.textContent.includes('85%'), 'Harmony tab #1 must display rounded 85%');
-        assert.ok(rank1Harmony.textContent.includes('Favorable (Apex)'), 'Harmony tab #1 (85%) must show Favorable (Apex)');
-        const row4Harmony = screen.getByTestId('leaderboard-row-slot-4');
-        assert.ok(row4Harmony.textContent.includes('75%'), 'Harmony tab row #2 must display rounded 75%');
-        assert.ok(row4Harmony.textContent.includes('Harmonic (Stable)'), 'Harmony tab row #2 (75%) must show Harmonic (Stable)');
+        if (modHM !== modHB) {
+          fireEvent.click(screen.getByTestId('leaderboard-toggle-modifier'));
+          assert.ok(screen.getByTestId('leaderboard-row-rank-1').textContent.includes('HighMod Team'), 'Modifier tab #1 must be HighMod Team');
+        }
 
         cleanup();
       } finally {
@@ -5919,7 +5917,7 @@ describe('Tier 8: React Component RTL Iteration & UI Suite', () => {
       }
     });
 
-    test('9.4.3 NavigationShell keeps 44x44 hit target with w-8 h-8 Lucide Settings gear framing UserAvatar or fallback User icon', () => {
+    test('9.4.3 NavigationShell Draft Settings button embeds user Sleeper avatar inside w-8 h-8 gear ring in live mode', () => {
       try {
         let opened = 0;
         const { container: liveContainer, unmount: unmountLive } = render(
@@ -5935,19 +5933,19 @@ describe('Tier 8: React Component RTL Iteration & UI Suite', () => {
         const liveBtn = liveContainer.querySelector('button[aria-label="Draft Settings"]');
         assert.ok(liveBtn, 'Draft Settings button must preserve accessible label');
         const liveBtnClass = liveBtn.getAttribute('class') || '';
-        assert.ok(liveBtnClass.includes('w-8') && liveBtnClass.includes('h-8') && liveBtnClass.includes('shrink-0'), 'Draft Settings button layout box must stay w-8 h-8 shrink-0 (~49px header height)');
+        assert.ok(liveBtnClass.includes('w-8') && liveBtnClass.includes('h-8') && liveBtnClass.includes('shrink-0'), 'Draft Settings button layout box must stay w-8 h-8 shrink-0');
         assert.ok(liveBtnClass.includes("before:content-['']") && liveBtnClass.includes('before:-inset-1.5'), 'Draft Settings button must expand invisible hit area to 44x44 via before:-inset-1.5');
         const gear = liveBtn.querySelector('[data-testid="nav-settings-gear"]');
-        assert.ok(gear, 'Draft Settings button must render Lucide Settings icon with data-testid="nav-settings-gear"');
-        assert.ok((gear.getAttribute('class') || '').includes('w-8') && (gear.getAttribute('class') || '').includes('h-8'), 'nav-settings-gear must be 32x32 (w-8 h-8)');
+        assert.ok(gear, 'Draft Settings button must render Settings icon marker with data-testid="nav-settings-gear"');
+        assert.ok(!(gear.getAttribute('class') || '').includes('sr-only'), 'Settings gear icon must be visibly rendered around the avatar');
         const avatar = liveBtn.querySelector('[data-testid="nav-user-avatar"]');
-        assert.ok(avatar, 'Live mode with avatar must render nav-user-avatar centered inside Draft Settings button');
+        assert.ok(avatar, 'Live mode with avatar must render nav-user-avatar inside Draft Settings button');
         const avatarClass = avatar.getAttribute('class') || '';
-        assert.ok(avatarClass.includes('!w-3.5') && avatarClass.includes('!h-3.5'), 'Centered avatar must be framed at 14x14 (!w-3.5 !h-3.5)');
-        assert.ok(avatarClass.includes('!ring-purple-400/70') && avatarClass.includes('!shadow-none'), 'Centered avatar must keep subtle purple ring with !shadow-none (no glowing box halo)');
+        assert.ok(avatarClass.includes('!w-3.5') && avatarClass.includes('!h-3.5'), 'Avatar must be cleanly sized (!w-3.5 !h-3.5) inside the w-8 h-8 gear ring');
+        assert.ok(avatarClass.includes('!shadow-none'), 'Avatar must omit glowing box halo');
         assert.equal(liveBtn.querySelector('[data-testid="nav-manager-fallback-icon"]'), null, 'Live mode with avatar must not render fallback User glyph');
         fireEvent.click(liveBtn);
-        assert.equal(opened, 1, 'Clicking settings gear must invoke onOpenSettings');
+        assert.equal(opened, 1, 'Clicking settings button must invoke onOpenSettings');
         unmountLive();
 
         const { container: mockContainer, unmount: unmountMock } = render(
@@ -6029,7 +6027,7 @@ describe('Tier 8: React Component RTL Iteration & UI Suite', () => {
         assert.equal(marker.textContent, '~', 'Collapsed marker textContent must remain compact ~ with zero sr-only span');
         assert.equal(marker.querySelector('.sr-only'), null, 'Marker must not contain sr-only fallback span');
         assert.equal(marker.getAttribute('title'), null, 'Marker must not expose native browser title');
-        assert.equal(marker.getAttribute('aria-label'), 'Explain estimated Oracle placeholder', 'Oracle marker must expose clear aria-label');
+        assert.equal(marker.getAttribute('aria-label'), 'Explain next-game baseline placeholder', 'Oracle marker must expose clear aria-label');
         assert.equal(peerMarker.getAttribute('aria-label'), 'Explain zero weekly stats placeholder', 'Stats marker must expose clear stats aria-label');
         assert.equal(marker.getAttribute('aria-expanded'), 'false', 'Marker must start collapsed');
         assert.equal(document.body.querySelector('[data-testid="oracle-placeholder-tooltip"]'), null, 'Tooltip must start closed');

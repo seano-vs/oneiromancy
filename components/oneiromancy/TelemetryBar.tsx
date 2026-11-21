@@ -18,7 +18,7 @@
 
 import React from 'react';
 import GlassCard from '@/components/common/GlassCard';
-import { TrendingUp, BarChart2, Flame, Droplet, Wind, Mountain, Layers } from 'lucide-react';
+import { TeamLogo } from '@/components/common/PlayerHeadshot';
 
 export interface TelemetryBarProps {
   totalProjectedPoints?: number;
@@ -65,119 +65,77 @@ export const TelemetryBar: React.FC<TelemetryBarProps> = ({
   const water = elementalDistribution.Water ?? 0;
 
   const hasQuadBalance = fire >= 1 && earth >= 1 && air >= 1 && water >= 1;
-  const trines: { name: string; element: string; bonus: number }[] = [];
-  if (water >= 3) trines.push({ name: 'Water Trine', element: '💧', bonus: water >= 4 ? 18.0 : 12.0 });
-  if (fire >= 3) trines.push({ name: 'Fire Trine', element: '🔥', bonus: fire >= 4 ? 18.0 : 12.0 });
-  if (earth >= 3) trines.push({ name: 'Earth Trine', element: '🌍', bonus: earth >= 4 ? 18.0 : 12.0 });
-  if (air >= 3) trines.push({ name: 'Air Trine', element: '💨', bonus: air >= 4 ? 18.0 : 12.0 });
+  const trines: { name: string; bonus: number }[] = [];
+  if (water >= 3) trines.push({ name: 'Water Trine', bonus: water >= 4 ? 18.0 : 12.0 });
+  if (fire >= 3) trines.push({ name: 'Fire Trine', bonus: fire >= 4 ? 18.0 : 12.0 });
+  if (earth >= 3) trines.push({ name: 'Earth Trine', bonus: earth >= 4 ? 18.0 : 12.0 });
+  if (air >= 3) trines.push({ name: 'Air Trine', bonus: air >= 4 ? 18.0 : 12.0 });
 
   return (
     <div className={`grid grid-cols-2 md:grid-cols-4 gap-3 w-full ${className}`}>
-      {/* 1. Total Projected Output */}
-      <GlassCard variant="panel" glowColor="cyan" className="p-3.5 flex flex-col justify-between">
-        <div className="flex items-center justify-between">
-          <span className="text-[10px] font-mono uppercase tracking-wider text-slate-400">
-            Projected Output
-          </span>
-          <TrendingUp className="w-3.5 h-3.5 text-cyan-400" />
-        </div>
+      <GlassCard variant="panel" className="p-3.5 flex flex-col justify-between">
+        <span className="text-xs font-sans text-zinc-400">Projected Output</span>
         <div className="my-1">
-          <span className="font-mono text-xl sm:text-2xl font-bold text-slate-100 tracking-tight">
+          <span className="font-mono tabular-nums text-xl sm:text-2xl font-semibold text-zinc-100 tracking-tight">
             {totalProjectedPoints.toFixed(1)}
           </span>
-          <span className="text-[11px] font-mono text-cyan-400 ml-1">pts</span>
+          <span className="text-xs font-sans text-zinc-400 ml-1">pts</span>
         </div>
-        <span className="text-[10px] font-mono text-slate-500 truncate">
-          Total Expected PPR
-        </span>
+        <span className="text-[11px] font-sans text-zinc-400 truncate">Total Expected PPR</span>
       </GlassCard>
 
-      {/* 2. Total Accumulated VOR */}
-      <GlassCard variant="panel" glowColor="green" className="p-3.5 flex flex-col justify-between">
-        <div className="flex items-center justify-between">
-          <span className="text-[10px] font-mono uppercase tracking-wider text-slate-400">
-            Total VOR
-          </span>
-          <BarChart2 className="w-3.5 h-3.5 text-emerald-400" />
-        </div>
+      <GlassCard variant="panel" className="p-3.5 flex flex-col justify-between">
+        <span className="text-xs font-sans text-zinc-400">Total VOR</span>
         <div className="my-1">
-          <span className="font-mono text-xl sm:text-2xl font-bold text-emerald-400 tracking-tight">
+          <span className="font-mono tabular-nums text-xl sm:text-2xl font-semibold text-emerald-300 tracking-tight">
             {totalVOR >= 0 ? `+${totalVOR.toFixed(1)}` : totalVOR.toFixed(1)}
           </span>
-          <span className="text-[11px] font-mono text-emerald-500 ml-1">VOR</span>
+          <span className="text-xs font-sans text-zinc-400 ml-1">VOR</span>
         </div>
-        <span className="text-[10px] font-mono text-slate-500 truncate">
-          Net Value Over Replacement
-        </span>
+        <span className="text-[11px] font-sans text-zinc-400 truncate">Value Over Replacement</span>
       </GlassCard>
 
-      {/* 3. Squad Alchemy & Western Trines */}
-      <GlassCard variant="panel" glowColor="purple" className="p-3.5 flex flex-col justify-between">
+      <GlassCard variant="panel" className="p-3.5 flex flex-col justify-between">
         <div className="flex items-center justify-between">
-          <span className="text-[10px] font-mono uppercase tracking-wider text-purple-400">
-            Squad Alchemy
-          </span>
-          <span className="text-[10px] font-mono text-purple-300">Western Trines</span>
+          <span className="text-xs font-sans text-zinc-400">Elements</span>
+          <span className="text-[11px] font-sans text-zinc-400">Trines</span>
         </div>
-        <div className="my-1 flex items-center justify-between text-xs font-mono">
-          <span className="flex items-center gap-0.5 text-rose-400" title="Fire">
-            <Flame className="w-3 h-3 inline" /> {fire}
-          </span>
-          <span className="flex items-center gap-0.5 text-emerald-400" title="Earth">
-            <Mountain className="w-3 h-3 inline" /> {earth}
-          </span>
-          <span className="flex items-center gap-0.5 text-cyan-400" title="Air">
-            <Wind className="w-3 h-3 inline" /> {air}
-          </span>
-          <span className="flex items-center gap-0.5 text-blue-400" title="Water">
-            <Droplet className="w-3 h-3 inline" /> {water}
-          </span>
+        <div className="my-1 flex items-center justify-between text-xs font-mono tabular-nums text-zinc-200">
+          <span title="Fire">F {fire}</span>
+          <span title="Earth">E {earth}</span>
+          <span title="Air">A {air}</span>
+          <span title="Water">W {water}</span>
         </div>
-        <div className="flex items-center gap-1 overflow-hidden truncate">
-          {trines.length > 0 ? (
-            <span className="text-[9px] font-mono font-bold text-cyan-300 bg-cyan-950/60 px-1.5 py-0.5 rounded border border-cyan-500/30 truncate">
-              {trines[0].element} {trines[0].name} (+{trines[0].bonus})
-            </span>
-          ) : hasQuadBalance ? (
-            <span className="text-[9px] font-mono font-bold text-amber-300 bg-amber-950/60 px-1.5 py-0.5 rounded border border-amber-500/30 truncate">
-              ✦ Quad-Balance (+10.0)
-            </span>
-          ) : (
-            <span className="text-[10px] font-mono text-slate-500 truncate">
-              Seeking Trine (3x)
-            </span>
-          )}
+        <div className="truncate text-[11px] font-sans text-zinc-300">
+          {trines.length > 0
+            ? `${trines[0].name} (+${trines[0].bonus})`
+            : hasQuadBalance
+            ? 'Quad-Balance (+10.0)'
+            : 'Seeking Trine (3x)'}
         </div>
       </GlassCard>
 
-      {/* 4. Active Correlation Stacks */}
-      <GlassCard variant="panel" glowColor="gold" className="p-3.5 flex flex-col justify-between">
-        <div className="flex items-center justify-between">
-          <span className="text-[10px] font-mono uppercase tracking-wider text-amber-400">
-            Active Stacks
-          </span>
-          <Layers className="w-3.5 h-3.5 text-amber-400" />
-        </div>
+      <GlassCard variant="panel" className="p-3.5 flex flex-col justify-between">
+        <span className="text-xs font-sans text-zinc-400">Active Stacks</span>
         <div className="my-1">
           {activeStacks.length > 0 ? (
-            <div className="flex items-baseline gap-1.5">
-              <span className="font-mono text-lg sm:text-xl font-bold text-amber-300">
+            <div className="flex items-baseline gap-1.5 font-mono tabular-nums">
+              <span className="text-lg sm:text-xl font-semibold text-amber-300">
+                <TeamLogo team={activeStacks[0].team} className="mr-1.5" />
                 {activeStacks[0].team} {activeStacks[0].multiplier.toFixed(1)}x
               </span>
-              <span className="text-[10px] font-mono text-emerald-400">
+              <span className="text-[11px] text-emerald-300">
                 (+{(activeStacks[0].bonus_points ?? (activeStacks[0] as any).bonusPoints ?? 18.0).toFixed(1)})
               </span>
             </div>
           ) : (
-            <span className="font-mono text-sm text-slate-400 block py-1">
-              No Stacks
-            </span>
+            <span className="font-sans text-sm text-zinc-400 block py-1">No Stacks</span>
           )}
         </div>
-        <span className="text-[10px] font-mono text-slate-500 truncate">
+        <span className="text-[11px] font-sans text-zinc-400 truncate">
           {activeStacks.length > 0
-            ? activeStacks[0].description || `${activeStacks[0].qb_name || 'QB'} ↔ Stack`
-            : 'Drafting QB/WR correlation'}
+            ? activeStacks[0].description || `${activeStacks[0].qb_name || 'QB'} stack`
+            : 'QB/WR correlation'}
         </span>
       </GlassCard>
     </div>

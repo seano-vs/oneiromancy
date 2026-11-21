@@ -58,6 +58,14 @@ import {
   setSeasonContext,
 } from '@/lib/sleeper';
 import {
+  ALL_PREDICTOR_SYSTEM_IDS,
+  DEFAULT_ENABLED_PREDICTOR_SYSTEM_IDS,
+  PREDICTOR_CATEGORIES,
+  setActiveEnabledSystems,
+  setActiveUnitPool,
+  VALID_PREDICTOR_SYSTEM_IDS,
+} from '@/lib/oracle';
+import {
   calculateHarmony,
   calculateSnakePick,
   clamp,
@@ -104,6 +112,33 @@ function loadOracleSettings(): { chaos_lambda?: number; oracle_weights?: OracleW
       out.oracle_weights = normalizeOracleWeights(v.oracle_weights);
     }
     return Object.keys(out).length ? out : null;
+  } catch {
+    return null;
+  }
+}
+
+// v5: bumped storage key to enable only the 11 positive-edge OOS predictors by default.
+const PREDICTOR_STORAGE_KEY = 'oneiromancy_predictors_v5';
+
+function saveEnabledPredictorSystems(ids: readonly string[]): void {
+  try {
+    localStorage.setItem(PREDICTOR_STORAGE_KEY, JSON.stringify(ids));
+  } catch {
+    // Storage may be unavailable (private mode); the session still works.
+  }
+}
+
+function loadEnabledPredictorSystems(): string[] | null {
+  try {
+    const raw = localStorage.getItem(PREDICTOR_STORAGE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return null;
+    const valid = parsed.filter(
+      (id): id is string =>
+        typeof id === 'string' && VALID_PREDICTOR_SYSTEM_IDS.has(id),
+    );
+    return valid;
   } catch {
     return null;
   }
@@ -196,6 +231,8 @@ export interface OneiromancyContextState {
   userTeamName: string;
   /** Selected player IDs for multi-player comparison across board views (max 6) */
   comparedPlayerIds: string[];
+  /** Active predictive system IDs contributing to player modifiers */
+  enabledSystems: string[];
 }
 
 export interface OneiromancyContextActions {
@@ -241,6 +278,16 @@ export interface OneiromancyContextActions {
   toggleComparePlayer: (id: string) => void;
   /** Clears all compared players */
   clearComparedPlayers: () => void;
+  /** Toggles an individual predictive system on/off in the combined modifier */
+  togglePredictorSystem: (systemId: string) => void;
+  /** Toggles all predictive systems belonging to a cosmic/divinatory category */
+  togglePredictorCategory: (categoryId: string) => void;
+  /** Enables all 25 pure esoteric predictive systems */
+  enableAllPredictorSystems: () => void;
+  /** Disables all 25 predictive systems so individual predictors can be toggled on */
+  disableAllPredictorSystems: () => void;
+  /** Restores all 25 pure esoteric predictive systems */
+  resetPredictorSystems: () => void;
 }
 
 export type OneiromancyContextValue = OneiromancyContextState & OneiromancyContextActions;
@@ -338,6 +385,86 @@ export const OneiromancyProvider: React.FC<OneiromancyProviderProps> = ({
   const [syncWarning, setSyncWarning] = useState<string | null>(null);
   const [hasHydrated, setHasHydrated] = useState<boolean>(false);
   const [comparedPlayerIds, setComparedPlayerIds] = useState<string[]>([]);
+  const [enabledSystems, setEnabledSystems] = useState<string[]>(() =>
+    initialDraftState.settings?.enabled_systems
+      ? initialDraftState.settings.enabled_systems.filter((id) =>
+          VALID_PREDICTOR_SYSTEM_IDS.has(id),
+        )
+      : [...DEFAULT_ENABLED_PREDICTOR_SYSTEM_IDS],
+  );
+  const enabledSystemsRef = useRef<string[]>(enabledSystems);
+  enabledSystemsRef.current = enabledSystems;
+
+  // Sync active unit pool & enabled predictor systems into core/lib/oracle
+  useEffect(() => {
+    setActiveUnitPool(draftState.cosmic_board || [], draftState.my_roster || []);
+  }, [draftState.cosmic_board, draftState.my_roster]);
+
+  useEffect(() => {
+    setActiveEnabledSystems(enabledSystems);
+  }, [enabledSystems]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const saved = loadEnabledPredictorSystems();
+    if (saved) {
+      enabledSystemsRef.current = saved;
+      setEnabledSystems(saved);
+      setActiveEnabledSystems(saved);
+    }
+  }, []);
+
+  const applyEnabledSystemsUpdate = useCallback((next: string[]) => {
+    enabledSystemsRef.current = next;
+    setEnabledSystems(next);
+    setActiveEnabledSystems(next);
+    saveEnabledPredictorSystems(next);
+    setDraftState((s) => ({
+      ...s,
+      settings: { ...s.settings, enabled_systems: next },
+    }));
+  }, []);
+
+  const togglePredictorSystem = useCallback(
+    (systemId: string) => {
+      if (!VALID_PREDICTOR_SYSTEM_IDS.has(systemId)) {
+        return;
+      }
+      const prev = enabledSystemsRef.current;
+      const next = prev.includes(systemId)
+        ? prev.filter((id) => id !== systemId)
+        : ALL_PREDICTOR_SYSTEM_IDS.filter((id) => id === systemId || prev.includes(id));
+      applyEnabledSystemsUpdate(next);
+    },
+    [applyEnabledSystemsUpdate],
+  );
+
+  const togglePredictorCategory = useCallback(
+    (categoryId: string) => {
+      const cat = PREDICTOR_CATEGORIES.find((c) => c.id === categoryId);
+      if (!cat) return;
+      const prev = enabledSystemsRef.current;
+      const catSet = new Set<string>(cat.systemIds);
+      const allActiveInCat = cat.systemIds.every((id) => prev.includes(id));
+      const next = allActiveInCat
+        ? prev.filter((id) => !catSet.has(id))
+        : ALL_PREDICTOR_SYSTEM_IDS.filter((id) => prev.includes(id) || catSet.has(id));
+      applyEnabledSystemsUpdate(next);
+    },
+    [applyEnabledSystemsUpdate],
+  );
+
+  const enableAllPredictorSystems = useCallback(() => {
+    applyEnabledSystemsUpdate([...ALL_PREDICTOR_SYSTEM_IDS]);
+  }, [applyEnabledSystemsUpdate]);
+
+  const disableAllPredictorSystems = useCallback(() => {
+    applyEnabledSystemsUpdate([]);
+  }, [applyEnabledSystemsUpdate]);
+
+  const resetPredictorSystems = useCallback(() => {
+    applyEnabledSystemsUpdate([...DEFAULT_ENABLED_PREDICTOR_SYSTEM_IDS]);
+  }, [applyEnabledSystemsUpdate]);
 
   const toggleComparePlayer = useCallback((id: string) => {
     setComparedPlayerIds((prev) => {
@@ -1999,7 +2126,7 @@ export const OneiromancyProvider: React.FC<OneiromancyProviderProps> = ({
   }, [statusType, mode, isAutoUpdate, draftState.settings?.offline_mode_active]);
 
   const statusText = useMemo(() => {
-    if (effectiveStatusType === 'syncing') return 'SYNCING...';
+    if (effectiveStatusType === 'syncing') return 'SYNCING';
     if (effectiveStatusType === 'offline') {
       if (mode === 'mock') return 'MOCK / OFFLINE';
       if (!isAutoUpdate) return 'PAUSED / OFFLINE';
@@ -2079,6 +2206,7 @@ export const OneiromancyProvider: React.FC<OneiromancyProviderProps> = ({
       userSlot,
       userTeamName,
       comparedPlayerIds,
+      enabledSystems,
       setTab,
       selectPlayer,
       updateChaosLambda,
@@ -2100,6 +2228,11 @@ export const OneiromancyProvider: React.FC<OneiromancyProviderProps> = ({
       isUserTeam,
       toggleComparePlayer,
       clearComparedPlayers,
+      togglePredictorSystem,
+      togglePredictorCategory,
+      enableAllPredictorSystems,
+      disableAllPredictorSystems,
+      resetPredictorSystems,
     }),
     [
       draftState,
@@ -2119,6 +2252,7 @@ export const OneiromancyProvider: React.FC<OneiromancyProviderProps> = ({
       userSlot,
       userTeamName,
       comparedPlayerIds,
+      enabledSystems,
       setTab,
       selectPlayer,
       updateChaosLambda,
@@ -2140,6 +2274,11 @@ export const OneiromancyProvider: React.FC<OneiromancyProviderProps> = ({
       isUserTeam,
       toggleComparePlayer,
       clearComparedPlayers,
+      togglePredictorSystem,
+      togglePredictorCategory,
+      enableAllPredictorSystems,
+      disableAllPredictorSystems,
+      resetPredictorSystems,
     ]
   );
 

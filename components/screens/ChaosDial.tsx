@@ -17,462 +17,455 @@
 
 'use client';
 
-import React, { useState, useMemo } from 'react';
-import Astrolabe from '@/components/astrolabe/Astrolabe';
+import React, { useState } from 'react';
 import GlassCard from '@/components/common/GlassCard';
-import { useOneiromancy } from '@/context/OneiromancyContext';
+import { TeamLogo } from '@/components/common/PlayerHeadshot';
+import { useOptionalOneiromancy } from '@/context/OneiromancyContext';
 import {
-  DEFAULT_CHAOS_LAMBDA,
-  DEFAULT_ORACLE_WEIGHTS,
-  DIVINATION_PILLARS,
-} from '@/lib/scoring';
-import { CosmicPlayer, OracleWeights } from '@/types/oneiromancy';
-import { oracleScore, starsScore, statsPoints } from '@/lib/oracle';
+  ALL_PREDICTOR_SYSTEM_IDS,
+  DEFAULT_ENABLED_PREDICTOR_SYSTEM_IDS,
+  formatSignedModifier,
+  getPredictiveCategoriesWithSystems,
+  GITHUB_EMPIRICAL_STUDY_URL,
+  modifierTextColor,
+  playerForecast,
+  POINT_DIFF_STUDY_SUMMARY,
+  PREDICTOR_SYSTEM_META,
+  resolveActiveWeek,
+} from '@/lib/oracle';
+import { CosmicPlayer } from '@/types/oneiromancy';
 import {
-  Sparkles,
   ChevronDown,
   ChevronUp,
-  BookOpen,
   ExternalLink,
   HelpCircle,
-  Orbit,
-  Flame,
-  Droplet,
-  Wind,
-  Mountain,
   RotateCcw,
 } from 'lucide-react';
 
 export interface ChaosDialProps {
-  lambda?: number;
-  onLambdaChange?: (lambda: number) => void;
-  weights?: OracleWeights;
-  onWeightsChange?: (weights: Partial<OracleWeights>) => void;
   players?: CosmicPlayer[];
   className?: string;
   onResetWeights?: () => void;
-  /** Inside the Oracle panel: show only weights and the reference guide. */
+  /** Inside the Predictors drawer: render compact directory and methodology. */
   embedded?: boolean;
 }
 
-export const CHAOS_ZONES = [
-  {
-    name: 'Analytic Orthodoxy',
-    min: 0.0,
-    max: 0.2,
-    badge: 'bg-cyan-950/60 text-cyan-400 border-cyan-500/40',
-    description: 'Baseline football projections lead; stars break ties.',
-  },
-  {
-    name: 'Balanced Oracle',
-    min: 0.21,
-    max: 0.49,
-    badge: 'bg-purple-950/60 text-purple-300 border-purple-500/40',
-    description: 'Balanced blend of projected points and astrological alignment.',
-  },
-  {
-    name: 'Mystic Ascendance',
-    min: 0.5,
-    max: 0.79,
-    badge: 'bg-amber-950/60 text-amber-300 border-amber-500/40',
-    description: 'Natal transits and elemental trines outweigh chalk consensus.',
-  },
-  {
-    name: 'Cosmic Bedlam',
-    min: 0.8,
-    max: 1.0,
-    badge: 'bg-rose-950/60 text-rose-400 border-rose-500/40',
-    description: 'Pure astrological alignment drives every lineup and waiver call.',
-  },
-];
-
 export const ChaosDial: React.FC<ChaosDialProps> = ({
-  lambda: controlledLambda,
-  onLambdaChange,
-  weights: controlledWeights,
-  onWeightsChange,
   players: propPlayers,
   className = '',
   onResetWeights,
   embedded = false,
 }) => {
-  const context = useOneiromancy();
+  const context = useOptionalOneiromancy();
+  const enabledSystems = context?.enabledSystems ?? [...DEFAULT_ENABLED_PREDICTOR_SYSTEM_IDS];
+  const players = propPlayers || context?.draftState?.cosmic_board || [];
+  const activeWeek = resolveActiveWeek(context?.draftState);
 
-  const lambda =
-    controlledLambda !== undefined
-      ? controlledLambda
-      : context.draftState?.settings?.chaos_lambda ?? DEFAULT_CHAOS_LAMBDA;
+  const [isMethodologyOpen, setIsMethodologyOpen] = useState<boolean>(true);
+  const [activeTooltipId, setActiveTooltipId] = useState<string | null>(null);
 
-  const weights =
-    controlledWeights !== undefined
-      ? controlledWeights
-      : context.draftState?.settings?.oracle_weights ?? DEFAULT_ORACLE_WEIGHTS;
+  const categorizedGroups = getPredictiveCategoriesWithSystems();
+  const isDefaultSet =
+    enabledSystems.length === DEFAULT_ENABLED_PREDICTOR_SYSTEM_IDS.length &&
+    DEFAULT_ENABLED_PREDICTOR_SYSTEM_IDS.every((id) => enabledSystems.includes(id));
+  const isAllSystemsActive = enabledSystems.length === ALL_PREDICTOR_SYSTEM_IDS.length;
+  const isNoneActive = enabledSystems.length === 0;
 
-  const players = propPlayers || context.draftState?.cosmic_board || [];
-  const [isAccordionOpen, setIsAccordionOpen] = useState<boolean>(true);
-  const [isEncyclopediaOpen, setIsEncyclopediaOpen] = useState<boolean>(true);
-  const [activeTooltipKey, setActiveTooltipKey] = useState<string | null>(null);
+  const samplePlayer: CosmicPlayer | undefined =
+    context?.draftState?.my_roster?.find((s) => s.player)?.player || players[0];
 
-  const activeZone = useMemo(
-    () => CHAOS_ZONES.find((z) => lambda >= z.min && lambda <= z.max) || CHAOS_ZONES[1],
-    [lambda],
-  );
+  const sampleForecast = samplePlayer
+    ? playerForecast(samplePlayer, {
+        currentWeek: activeWeek,
+        enabledSystems,
+        placeholder: true,
+        nextGameLookahead: true,
+      })
+    : null;
 
-  const samplePlayer =
-    context.draftState?.my_roster?.find((s) => s.player)?.player ||
-    players[0] || {
-      name: "Ja'Marr Chase",
-      projected_points: 19.8,
-      vor_normalized: 89.2,
-      spirit_score: 92.6,
-    };
-  const sampleStats = statsPoints(samplePlayer as CosmicPlayer);
-  const sampleStars = starsScore(samplePlayer as CosmicPlayer);
-  const sampleOracle = oracleScore(samplePlayer as CosmicPlayer, lambda);
-  const weightTotal = Math.round(
-    Object.values(weights || {}).reduce((sum: number, v) => sum + (Number(v) || 0), 0) * 100,
-  );
+  const handleReset = () => {
+    if (onResetWeights) onResetWeights();
+    if (context?.resetPredictorSystems) context.resetPredictorSystems();
+  };
+
+  const handleEnableAll = () => {
+    if (context?.enableAllPredictorSystems) context.enableAllPredictorSystems();
+  };
+
+  const handleDisableAll = () => {
+    if (context?.disableAllPredictorSystems) context.disableAllPredictorSystems();
+  };
 
   return (
     <div className={`flex flex-col gap-5 w-full max-w-5xl mx-auto ${className}`}>
       {!embedded && (
-        <>
-          <div className="text-center space-y-1">
-            <h2 className="font-serif text-2xl sm:text-3xl font-bold text-slate-100 tracking-wide">
-              Divination Equilibrium
-            </h2>
-            <p className="text-xs text-slate-400 max-w-xl mx-auto font-sans">
-              Tune how baseline football projections (Stats) blend with astrological alignment (Stars).
-            </p>
-          </div>
-
-          <GlassCard
-            variant="gradient"
-            glowColor="cyan"
-            className="flex flex-col items-center justify-center p-4 relative overflow-hidden"
-          >
-            <div className="my-2 select-none">
-              <Astrolabe
-                size={120}
-                lambda={lambda}
-                speedMultiplier={1 + 3 * lambda}
-                className="drop-shadow-[0_0_30px_rgba(6,182,212,0.35)]"
-              />
-            </div>
-            <div className="mt-3 flex flex-col items-center gap-1">
-              <span
-                className={`px-3 py-1 rounded-full border text-xs font-mono font-bold tracking-wide uppercase ${activeZone.badge}`}
-              >
-                {activeZone.name}
-              </span>
-              <p className="text-[11px] text-slate-400 text-center max-w-sm">{activeZone.description}</p>
-            </div>
-          </GlassCard>
-
-          <GlassCard variant="panel" glowColor="purple" className="p-4 space-y-3">
-            <div className="flex justify-between items-center">
-              <span className="text-xs font-mono uppercase tracking-wider text-purple-400 font-semibold flex items-center gap-1">
-                <Sparkles className="w-3.5 h-3.5 text-purple-400" />
-                Stars vs. Stats Dial (λ)
-              </span>
-              <span className="font-mono text-base font-bold text-cyan-300 bg-slate-900/90 px-2.5 py-0.5 rounded-lg border border-cyan-500/30">
-                {lambda.toFixed(2)}
-              </span>
-            </div>
-            <input
-              type="range"
-              min="0"
-              max="1"
-              step="0.01"
-              aria-label="Stars vs. Stats Dial (lambda)"
-              value={lambda}
-              onChange={(e) => {
-                const val = parseFloat(e.target.value);
-                if (onLambdaChange) onLambdaChange(val);
-                else if (context.updateChaosLambda) context.updateChaosLambda(val);
-              }}
-              className="w-full h-2.5 bg-slate-950/80 rounded-full appearance-none cursor-pointer accent-cyan-400 border border-white/10"
-            />
-            <div className="flex items-center justify-between text-xs font-mono bg-slate-900/60 p-2.5 rounded-lg border border-white/5">
-              <div>
-                <span className="text-[10px] text-slate-500 uppercase block">Preview Player</span>
-                <span className="text-slate-200 font-bold">{samplePlayer.name}</span>
-              </div>
-              <div className="flex items-center gap-3">
-                <span className="text-cyan-300">Stats {sampleStats.toFixed(1)}</span>
-                <span className="text-emerald-300">Stars {sampleStars.toFixed(0)}</span>
-                <span className="text-purple-300 font-bold">Oracle {sampleOracle.toFixed(1)}</span>
-              </div>
-            </div>
-          </GlassCard>
-        </>
+        <div className="space-y-1">
+          <h2 className="font-sans text-2xl sm:text-3xl font-semibold tracking-tight text-zinc-100">
+            Predictive Systems
+          </h2>
+          <p className="text-xs text-zinc-400 font-sans">
+            {POINT_DIFF_STUDY_SUMMARY.systemCount} predictors across {POINT_DIFF_STUDY_SUMMARY.categoryCount} categories ({POINT_DIFF_STUDY_SUMMARY.conditionCount} rules checked against real NFL games).
+          </p>
+        </div>
       )}
 
-      {/* 5 Divination Pillar Weights with Interactive Tooltips */}
-      <GlassCard variant="panel" glowColor="gold" className="p-4 sm:p-5 space-y-4">
-        <div className="flex items-center justify-between gap-2">
-          <button
-            type="button"
-            onClick={() => !embedded && setIsAccordionOpen(!isAccordionOpen)}
-            aria-expanded={embedded || isAccordionOpen}
-            disabled={embedded}
-            className="flex-1 flex items-center justify-between text-left group disabled:cursor-default"
-          >
-            <div className="space-y-0.5">
-              <span className="text-xs font-mono uppercase tracking-wider text-amber-400 font-semibold flex items-center gap-1.5">
-                <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-                5 Divination Pillar Weights (Spirit)
+      {/* Live Sample Player Preview */}
+      {samplePlayer && sampleForecast && (
+        <GlassCard variant="panel" className="p-3.5 space-y-2">
+          <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
+            <div className="min-w-0">
+              <span className="text-[10px] font-sans text-zinc-400 block">Preview player</span>
+              <span className="font-sans text-zinc-100 font-semibold break-words block">
+                {samplePlayer.name} (<TeamLogo team={samplePlayer.team} className="w-3.5 h-3.5 mr-1 align-[-2px]" />
+                {samplePlayer.team})
               </span>
-              <p className="text-[11px] text-slate-400">
-                Adjust what builds each player&apos;s Spirit and weekly Stars score. Click any (?) icon to see what it measures.
-              </p>
             </div>
-            {!embedded && (
-              <div className="p-1 rounded-md text-slate-400 group-hover:text-slate-200 bg-slate-800/60 border border-white/10">
-                {isAccordionOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+            <div className="flex items-center gap-3.5 font-mono tabular-nums text-right shrink-0">
+              <div>
+                <span className="text-[10px] font-sans text-zinc-400 block">Base</span>
+                <span className="text-xs text-zinc-200 font-medium">
+                  {sampleForecast.basePts.toFixed(1)}
+                </span>
               </div>
-            )}
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              if (onResetWeights) onResetWeights();
-              else if (context.resetOracleWeights) context.resetOracleWeights();
-              else if (context.updateOracleWeights) context.updateOracleWeights(DEFAULT_ORACLE_WEIGHTS);
-            }}
-            data-testid="reset-weights-btn"
-            className="px-2 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 border border-white/10 text-[10px] font-mono text-slate-300 flex items-center gap-1 shrink-0"
-            title="Reset all 5 pillar weights to defaults"
-          >
-            <RotateCcw className="w-3 h-3" /> Reset
-          </button>
+              <div>
+                <span className="text-[10px] font-sans text-zinc-400 block">Modifier</span>
+                <span
+                  className={`text-xs font-semibold ${modifierTextColor(
+                    sampleForecast.overallModifierPts,
+                  )}`}
+                >
+                  {formatSignedModifier(sampleForecast.overallModifierPts)}
+                </span>
+              </div>
+              <div>
+                <span className="text-[10px] font-sans text-amber-200/90 block">Projected</span>
+                <span className="text-xs text-amber-200 font-semibold">
+                  {sampleForecast.adjustedPts.toFixed(1)}
+                </span>
+              </div>
+            </div>
+          </div>
+          <div className="pt-2 border-t border-white/[0.06] flex items-center justify-between text-[11px] font-mono tabular-nums text-zinc-400">
+            <span>Projected = Base + Modifier</span>
+            <span className="text-amber-300 font-semibold">
+              {sampleForecast.adjustedPts.toFixed(2)} pts
+            </span>
+          </div>
+        </GlassCard>
+      )}
+
+      {/* 6-Category Pure Esoteric Predictive Systems Directory */}
+      <div className="space-y-3.5 pb-5 border-b border-white/[0.08]">
+        <div className="flex items-start justify-between gap-2 flex-wrap">
+          <div className="space-y-0.5">
+            <span className="font-sans text-sm font-semibold text-zinc-100 block">
+              Active Predictors ({enabledSystems.length} of {PREDICTOR_SYSTEM_META.length})
+            </span>
+            <p className="text-xs font-sans text-zinc-400 leading-snug">
+              The {DEFAULT_ENABLED_PREDICTOR_SYSTEM_IDS.length} predictors that beat Sleeper&apos;s projections in 2023-2026 are on by default. Ones that fell flat start off.
+            </p>
+          </div>
+          <div className="flex items-center gap-1.5 flex-wrap shrink-0">
+            <button
+              type="button"
+              onClick={handleReset}
+              data-testid="reset-weights-btn"
+              className={`px-2.5 py-1 rounded-md border text-xs font-sans font-medium flex items-center gap-1 cursor-pointer transition-colors ${
+                isDefaultSet
+                  ? 'bg-amber-400/15 border-amber-400/40 text-amber-200'
+                  : 'bg-zinc-900 hover:bg-zinc-800 border-white/10 text-zinc-200'
+              }`}
+              title={`Restore the ${DEFAULT_ENABLED_PREDICTOR_SYSTEM_IDS.length} positive-edge default predictors`}
+            >
+              <RotateCcw className="w-3 h-3" /> Default ({DEFAULT_ENABLED_PREDICTOR_SYSTEM_IDS.length})
+            </button>
+            <button
+              type="button"
+              onClick={handleEnableAll}
+              data-testid="enable-all-predictors-btn"
+              className={`px-2.5 py-1 rounded-md border text-xs font-sans font-medium cursor-pointer transition-colors ${
+                isAllSystemsActive
+                  ? 'bg-amber-400/15 border-amber-400/40 text-amber-200'
+                  : 'bg-zinc-900 hover:bg-zinc-800 border-white/10 text-zinc-200'
+              }`}
+              title={`Enable all ${PREDICTOR_SYSTEM_META.length} predictive systems`}
+            >
+              Enable all ({PREDICTOR_SYSTEM_META.length})
+            </button>
+            <button
+              type="button"
+              onClick={handleDisableAll}
+              data-testid="disable-all-predictors-btn"
+              className={`px-2.5 py-1 rounded-md border text-xs font-sans font-medium cursor-pointer transition-colors ${
+                isNoneActive
+                  ? 'bg-zinc-800 border-white/20 text-zinc-200'
+                  : 'bg-zinc-900 hover:bg-zinc-800 border-white/10 text-zinc-300'
+              }`}
+              title="Disable all predictive systems"
+            >
+              Disable all
+            </button>
+          </div>
         </div>
 
-        {(embedded || isAccordionOpen) && (
-          <div className="space-y-3.5 pt-2 border-t border-white/10">
-            {DIVINATION_PILLARS.map((tier) => {
-              const currentPercent = Math.round((weights[tier.key] ?? tier.defaultVal / 100) * 100);
-              const isTooltipOpen = activeTooltipKey === tier.key;
+        <div className="space-y-3">
+          {categorizedGroups.map((cat) => {
+            const activeInCat = cat.systems.filter((s) => enabledSystems.includes(s.id)).length;
+            const allCatEnabled = activeInCat === cat.systems.length;
 
-              return (
-                <div
-                  key={tier.key}
-                  data-testid={`weight-pillar-${tier.key}`}
-                  className="space-y-1.5 font-mono text-xs p-2.5 rounded-xl bg-slate-950/60 border border-white/5"
-                >
-                  <div className="flex justify-between items-start gap-2">
-                    <div className="space-y-0.5">
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-slate-100 font-bold">{tier.label}</span>
-                        <button
-                          type="button"
-                          onClick={() => setActiveTooltipKey(isTooltipOpen ? null : tier.key)}
-                          aria-label={`Explain ${tier.label}`}
-                          data-testid={`pillar-tooltip-btn-${tier.key}`}
-                          title={`${tier.whatItMeasures} - ${tier.whyItMatters}`}
-                          className="text-slate-400 hover:text-cyan-300 transition-colors"
-                        >
-                          <HelpCircle className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                      <span className="text-[11px] text-slate-400 font-sans block">{tier.desc}</span>
+            return (
+              <div
+                key={cat.id}
+                data-testid={`predictor-category-${cat.id}`}
+                className="rounded-lg border border-white/[0.08] bg-[#0f1012] overflow-hidden"
+              >
+                <div className="px-3.5 py-2.5 bg-[#15181e] border-b border-white/[0.06] flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="font-sans text-xs font-semibold text-zinc-100">
+                        {cat.label}
+                      </span>
+                      <span className="font-mono tabular-nums text-[10px] text-zinc-400">
+                        {activeInCat}/{cat.systems.length} active
+                      </span>
                     </div>
-                    <span className="font-bold text-amber-300 bg-slate-900 px-2 py-0.5 rounded border border-amber-500/30 shrink-0">
-                      {currentPercent}%
+                    <span className="text-[11px] font-sans text-zinc-400 block mt-0.5 leading-snug">
+                      {cat.cosmicSource}
                     </span>
                   </div>
-
-                  {isTooltipOpen && (
-                    <div
-                      data-testid={`pillar-tooltip-${tier.key}`}
-                      className="p-2.5 rounded-lg bg-slate-900/95 border border-cyan-500/30 text-[11px] font-sans space-y-1 text-slate-200"
-                    >
-                      <div>
-                        <span className="font-mono font-bold text-cyan-300">What it measures: </span>
-                        {tier.whatItMeasures}
-                      </div>
-                      <div>
-                        <span className="font-mono font-bold text-purple-300">Why it matters on game day: </span>
-                        {tier.whyItMatters}
-                      </div>
-                    </div>
-                  )}
-
-                  <input
-                    type="range"
-                    min="0"
-                    max="100"
-                    step="1"
-                    aria-label={tier.label}
-                    value={currentPercent}
-                    onChange={(e) => {
-                      const pct = parseFloat(e.target.value) / 100;
-                      const next = { ...weights, [tier.key]: pct };
-                      if (onWeightsChange) onWeightsChange(next);
-                      else if (context.updateOracleWeights) context.updateOracleWeights(next);
-                    }}
-                    className="w-full h-2 bg-slate-800/80 rounded-full appearance-none cursor-pointer accent-amber-400"
-                  />
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={allCatEnabled}
+                    data-testid={`predictor-category-toggle-${cat.id}`}
+                    aria-label={`Toggle ${cat.label} category`}
+                    onClick={() => context?.togglePredictorCategory(cat.id)}
+                    className="shrink-0 px-2 py-0.5 rounded border border-white/10 bg-zinc-900 hover:bg-zinc-800 text-[11px] font-sans font-medium text-zinc-300 hover:text-zinc-100 cursor-pointer transition-colors"
+                  >
+                    {allCatEnabled ? 'Disable group' : 'Enable group'}
+                  </button>
                 </div>
-              );
-            })}
 
-            <div className="flex items-center justify-between pt-2 border-t border-white/10 font-mono text-xs">
-              <span className="text-slate-400">Normalized total:</span>
-              <span className="font-bold px-2 py-0.5 rounded bg-emerald-950/60 border border-emerald-500/40 text-emerald-300">
-                {weightTotal}% → 100%
-              </span>
-            </div>
-          </div>
-        )}
-      </GlassCard>
+                <div className="divide-y divide-white/[0.06]">
+                  {cat.systems.map((sys) => {
+                    const isEnabled = enabledSystems.includes(sys.id);
+                    const isInfoOpen = activeTooltipId === sys.id;
+                    const oosSpread = sys.oosQuintileSpreadPts;
 
-      {/* Condensed Scannable Astrology & Scoring Encyclopedia */}
-      <GlassCard variant="panel" glowColor="purple" className="p-4 sm:p-5 space-y-4">
+                    return (
+                      <div
+                        key={sys.id}
+                        data-testid={`predictor-row-${sys.id}`}
+                        className={`px-3.5 py-2.5 space-y-1.5 font-sans text-xs transition-colors ${
+                          isEnabled ? 'bg-[#0f1012]' : 'bg-[#0b0c0e]'
+                        }`}
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex items-start gap-2.5 min-w-0 flex-1">
+                            <button
+                              type="button"
+                              role="switch"
+                              aria-checked={isEnabled}
+                              data-testid={`predictor-toggle-${sys.id}`}
+                              aria-label={`Enable ${sys.name}`}
+                              onClick={() => context?.togglePredictorSystem(sys.id)}
+                              className={`mt-0.5 relative inline-flex h-4 w-7 shrink-0 items-center rounded-full border transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-amber-400 ${
+                                isEnabled
+                                  ? 'bg-amber-400/85 border-amber-300/60'
+                                  : 'bg-zinc-800 border-white/15'
+                              }`}
+                            >
+                              <span
+                                className={`inline-block h-2.5 w-2.5 rounded-full transition-transform ${
+                                  isEnabled
+                                    ? 'translate-x-3.5 bg-zinc-950'
+                                    : 'translate-x-0.5 bg-zinc-400'
+                                }`}
+                              />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => context?.togglePredictorSystem(sys.id)}
+                              className="min-w-0 flex-1 text-left cursor-pointer"
+                            >
+                              <span className="flex items-center gap-1.5 flex-wrap leading-snug">
+                                <span
+                                  className={
+                                    isEnabled
+                                      ? 'text-zinc-100 font-medium'
+                                      : 'text-zinc-400 font-medium'
+                                  }
+                                >
+                                  {sys.shortName}
+                                </span>
+                                {sys.defaultEnabled && (
+                                  <span className="px-1.5 py-0.2 rounded bg-amber-400/10 border border-amber-400/25 text-[10px] font-sans font-medium text-amber-300">
+                                    Default
+                                  </span>
+                                )}
+                              </span>
+                              <span className="text-[11px] text-zinc-400 block leading-snug">
+                                {sys.subCategory} · {sys.conditionCount} rules
+                              </span>
+                            </button>
+                          </div>
+
+                          <div className="flex items-center gap-2 shrink-0">
+                            <span
+                              title="Average fantasy point gap between favorable and unfavorable games in 2023-2026 blind testing"
+                              data-testid={`predictor-edge-${sys.id}`}
+                              className={`font-mono tabular-nums text-[11px] font-medium ${modifierTextColor(
+                                oosSpread,
+                              )}`}
+                            >
+                              {formatSignedModifier(oosSpread)} pts edge
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => setActiveTooltipId(isInfoOpen ? null : sys.id)}
+                              aria-label={`Explain ${sys.shortName}`}
+                              data-testid={`predictor-tooltip-btn-${sys.id}`}
+                              className="text-zinc-400 hover:text-zinc-200 transition-colors p-1.5 -m-1 cursor-pointer"
+                            >
+                              <HelpCircle className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </div>
+
+                        {isInfoOpen && (
+                          <div
+                            data-testid={`predictor-info-${sys.id}`}
+                            className="p-2.5 rounded-md bg-[#16181d] border border-white/10 text-[11px] font-sans space-y-1.5 text-zinc-300"
+                          >
+                            <p className="leading-relaxed">{sys.description}</p>
+                            <div>
+                              <a
+                                href={sys.sourceUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                data-testid={`predictor-source-link-${sys.id}`}
+                                className="inline-flex items-center gap-1 text-amber-300 hover:text-amber-200 underline underline-offset-2 font-medium"
+                              >
+                                <span>{sys.sourceLabel}</span>
+                                <ExternalLink className="w-3 h-3 shrink-0" aria-hidden="true" />
+                              </a>
+                            </div>
+                            <p className="font-mono tabular-nums text-zinc-400">
+                              Past accuracy: {formatSignedModifier(oosSpread)} pts/game · Largest
+                              single rule: up to {sys.maxAbsRawDeltaPts.toFixed(2)} pts
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* How Scores Work & Study Link */}
+      <div className="space-y-3">
         <button
           type="button"
-          onClick={() => setIsEncyclopediaOpen((prev) => !prev)}
-          aria-expanded={isEncyclopediaOpen}
+          onClick={() => setIsMethodologyOpen((prev) => !prev)}
+          aria-expanded={isMethodologyOpen}
           data-testid="encyclopedia-toggle"
-          className="w-full flex items-center justify-between gap-2 border-b border-white/10 pb-3 text-left"
+          className="w-full flex items-center justify-between gap-2 text-left cursor-pointer"
         >
-          <div className="flex items-center gap-2">
-            <BookOpen className="w-4 h-4 text-purple-400 shrink-0" />
-            <div>
-              <h3 className="font-serif text-base font-bold text-slate-100">
-                Astrology &amp; Divination Field Guide (Encyclopedia)
-              </h3>
-              <p className="text-[11px] text-slate-400">
-                Quick reference for Western Tropical Zodiac signs, Natal Chart Planetary Aspects, and Elemental Triplicities.
-              </p>
-            </div>
+          <div>
+            <h3 className="font-sans text-sm font-semibold text-zinc-100">
+              How Scores Work
+            </h3>
+            <p className="text-xs font-sans text-zinc-400">
+              How past NFL games turn into weekly point adjustments.
+            </p>
           </div>
-          <div className="p-1 rounded-md text-slate-400 hover:text-slate-200 bg-slate-800/60 border border-white/10 shrink-0">
-            {isEncyclopediaOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+          <div className="p-1 rounded-md text-zinc-400 hover:text-zinc-200 shrink-0">
+            {isMethodologyOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
           </div>
         </button>
 
-        {isEncyclopediaOpen && (
-          <div className="space-y-4">
-            {/* Formula Summary Card (shown only when standalone; OraclePanel already displays the formula above) */}
-            {!embedded && (
-              <div className="p-3 rounded-xl bg-slate-950/80 border border-purple-500/30 font-mono text-xs space-y-2">
-                <div className="text-purple-300 font-bold">
-                  Oracle = (1 &minus; &lambda;) &times; Stats + &lambda; &times; Stars
-                </div>
-                <p className="text-[11px] text-slate-400 font-sans">
-                  Blends projected fantasy points (Stats) with astrological alignment (Stars) into a single Oracle rating. Use the dial to set your mix from pure statistics to pure cosmic alignment.
-                </p>
-                <div className="pt-1 border-t border-white/5 space-y-1 text-[11px] text-slate-400 font-sans">
-                  <p>
-                    <strong className="text-slate-300">Unit Conversion:</strong> Raw projected fantasy points (Stats) are rescaled to a 0&ndash;100 index (where 25 points = 100) before blending with Stars (0&ndash;100).
-                  </p>
-                  <p>
-                    <strong className="text-slate-300">Worked Example (Ja&apos;Marr Chase):</strong> 19.8 projected points rescales to 79.2 Stats. With 85 Stars and the dial set to 75% Stars (&lambda; = 0.75): (1 &minus; 0.75) &times; 79.2 + 0.75 &times; 85 = 19.8 + 63.75 = 83.55 (rounds to 83.6 Oracle).
-                  </p>
-                </div>
+        {isMethodologyOpen && (
+          <div className="space-y-3 font-sans text-xs text-zinc-400 pt-1">
+            <div className="p-3 rounded-lg bg-[#0f1012] border border-white/[0.08] space-y-1.5">
+              <div className="font-mono text-zinc-200 font-medium text-[11px]">
+                Actual Points Minus Sleeper Projection
               </div>
-            )}
+              <p className="text-[11px] leading-relaxed">
+                We compared what NFL players scored against what Sleeper projected across{' '}
+                {POINT_DIFF_STUDY_SUMMARY.totalPlayerGames.toLocaleString()} appearances (
+                {POINT_DIFF_STUDY_SUMMARY.uniqueNflGames.toLocaleString()} games,{' '}
+                {POINT_DIFF_STUDY_SUMMARY.seasonRange}). Quarterbacks, running backs, receivers,
+                tight ends, kickers, and defenses are scored separately so big QB swings aren&apos;t
+                watered down by kickers, keeping an average game at 0.00 pts.
+              </p>
+            </div>
 
-        {/* Natal Chart Planetary Aspects - 4 Compact Cards */}
-        <div className="space-y-2">
-          <h4 className="text-xs font-mono uppercase tracking-wider text-cyan-300 flex items-center gap-1.5">
-            <Orbit className="w-3.5 h-3.5" /> Natal Chart Planetary Aspects
-          </h4>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs">
-            <div className="p-2.5 rounded-lg bg-rose-950/20 border border-rose-500/20">
-              <div className="font-mono font-bold text-rose-300">Mars Aspects (Red-Zone Power)</div>
-              <p className="text-[11px] text-slate-400 mt-0.5">
-                Measures physical burst on short-yardage carries and broken tackles near the goal line.
-              </p>
-            </div>
-            <div className="p-2.5 rounded-lg bg-amber-950/20 border border-amber-500/20">
-              <div className="font-mono font-bold text-amber-300">Saturn Transits (Durability &amp; Snap Share)</div>
-              <p className="text-[11px] text-slate-400 mt-0.5">
-                Tracks snap-count reliability, pass protection, and four-quarter workload resilience.
-              </p>
-            </div>
-            <div className="p-2.5 rounded-lg bg-sky-950/20 border border-sky-500/20">
-              <div className="font-mono font-bold text-sky-300">Mercury Retrogrades (Route Timing &amp; Mix-ups)</div>
-              <p className="text-[11px] text-slate-400 mt-0.5">
-                Flags audible miscommunications, broken routes, and turnover volatility.
-              </p>
-            </div>
-            <div className="p-2.5 rounded-lg bg-emerald-950/20 border border-emerald-500/20">
-              <div className="font-mono font-bold text-emerald-300">Jupiter Alignments (Big-Play Upside)</div>
-              <p className="text-[11px] text-slate-400 mt-0.5">
-                Boosts probability for explosive gains, multi-touchdown spikes, and ceiling weeks.
-              </p>
-            </div>
-          </div>
-        </div>
+            <dl className="grid grid-cols-2 gap-3 text-[11px] border-t border-white/[0.06] pt-3 font-mono tabular-nums">
+              <div>
+                <dt className="font-sans text-zinc-400">Blind Test Seasons</dt>
+                <dd className="text-zinc-200 mt-0.5">
+                  2023-2026 ({POINT_DIFF_STUDY_SUMMARY.testRowCount.toLocaleString()} games)
+                </dd>
+              </div>
+              <div>
+                <dt className="font-sans text-zinc-400">Scored By Position</dt>
+                <dd className="text-zinc-200 mt-0.5">
+                  QB, RB, WR, TE, K, DEF
+                </dd>
+              </div>
+              <div>
+                <dt className="font-sans text-zinc-400">
+                  Best {POINT_DIFF_STUDY_SUMMARY.trainScreenedConditionCount} Rules
+                </dt>
+                <dd className="text-emerald-300 font-semibold mt-0.5">
+                  +{POINT_DIFF_STUDY_SUMMARY.trainScreenedOosDecileSpreadPts.toFixed(2)} pts per game
+                </dd>
+              </div>
+              <div>
+                <dt className="font-sans text-zinc-400">All 25 Predictors</dt>
+                <dd className="text-emerald-300 font-semibold mt-0.5">
+                  +{POINT_DIFF_STUDY_SUMMARY.oosDecileSpreadPts.toFixed(2)} pts per game
+                </dd>
+              </div>
+            </dl>
 
-        {/* Elemental Triplicities in Gridiron Divination */}
-        <div className="space-y-2">
-          <h4 className="text-xs font-mono uppercase tracking-wider text-purple-300">
-            Elemental Triplicities in Gridiron Divination
-          </h4>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px]">
-            <div className="p-2 rounded-lg bg-rose-950/20 border border-rose-500/25">
-              <span className="font-mono font-bold text-rose-300 flex items-center gap-1">
-                <Flame className="w-3 h-3" /> Fire
-              </span>
-              <span className="text-slate-400 block text-[10px]">Aries · Leo · Sagittarius - Explosive big-play ceiling</span>
+            <div className="pt-2 border-t border-white/[0.06] flex flex-wrap gap-4 text-xs font-sans text-zinc-400">
+              <a
+                href="https://docs.sleeper.com/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:text-zinc-200 underline flex items-center gap-1"
+              >
+                <span>Sleeper Public API</span>
+                <ExternalLink className="w-3 h-3" />
+              </a>
+              <a
+                href="https://ssd.jpl.nasa.gov/horizons/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:text-zinc-200 underline flex items-center gap-1"
+              >
+                <span>NASA Planetary Positions</span>
+                <ExternalLink className="w-3 h-3" />
+              </a>
+              <a
+                href={GITHUB_EMPIRICAL_STUDY_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                data-testid="empirical-study-github-link"
+                className="hover:text-zinc-200 underline flex items-center gap-1"
+              >
+                <span>Read the full 2018-2026 study on GitHub</span>
+                <ExternalLink className="w-3 h-3" />
+              </a>
             </div>
-            <div className="p-2 rounded-lg bg-teal-950/20 border border-teal-500/25">
-              <span className="font-mono font-bold text-teal-300 flex items-center gap-1">
-                <Mountain className="w-3 h-3" /> Earth
-              </span>
-              <span className="text-slate-400 block text-[10px]">Taurus · Virgo · Capricorn - High-volume, steady floor</span>
-            </div>
-            <div className="p-2 rounded-lg bg-sky-950/20 border border-sky-500/25">
-              <span className="font-mono font-bold text-sky-300 flex items-center gap-1">
-                <Wind className="w-3 h-3" /> Air
-              </span>
-              <span className="text-slate-400 block text-[10px]">Gemini · Libra · Aquarius - Quick, precise passing &amp; timing</span>
-            </div>
-            <div className="p-2 rounded-lg bg-blue-950/20 border border-blue-500/25">
-              <span className="font-mono font-bold text-blue-300 flex items-center gap-1">
-                <Droplet className="w-3 h-3" /> Water
-              </span>
-              <span className="text-slate-400 block text-[10px]">Cancer · Scorpio · Pisces - YAC &amp; open-field flow</span>
-            </div>
-          </div>
-        </div>
-
-        {/* External Reference Links */}
-        <div className="pt-2 border-t border-white/10 flex flex-wrap gap-3 text-[11px] font-mono">
-          <a
-            href="https://en.wikipedia.org/wiki/Astrological_aspect"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-cyan-400 hover:text-cyan-300 underline flex items-center gap-1"
-          >
-            <span>Astrological Aspects</span>
-            <ExternalLink className="w-3 h-3" />
-          </a>
-          <a
-            href="https://en.wikipedia.org/wiki/Astrology"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-purple-300 hover:text-purple-200 underline flex items-center gap-1"
-          >
-            <span>What is astrology? (Wikipedia)</span>
-            <ExternalLink className="w-3 h-3" />
-          </a>
-          <a
-            href="https://ssd.jpl.nasa.gov/horizons/"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-amber-300 hover:text-amber-200 underline flex items-center gap-1"
-          >
-            <span>NASA JPL Ephemeris</span>
-            <ExternalLink className="w-3 h-3" />
-          </a>
-        </div>
           </div>
         )}
-      </GlassCard>
+      </div>
     </div>
   );
 };

@@ -294,7 +294,7 @@ export const OraclePlaceholderMarker: React.FC<OraclePlaceholderMarkerProps> = (
   const ariaLabel =
     kind === 'stats'
       ? 'Explain zero weekly stats placeholder'
-      : 'Explain estimated Oracle placeholder';
+      : 'Explain next-game baseline placeholder';
   const explainerText =
     kind === 'stats'
       ? placeholder.statsMarkerExplainerText || placeholder.statsTooltipText

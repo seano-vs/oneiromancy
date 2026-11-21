@@ -1,0 +1,176 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 980 505" width="980" height="505" font-family="ui-sans-serif, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif">
+<rect x="0" y="0" width="980" height="505" rx="12" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5"/>
+<text x="28" y="35" font-size="18" font-weight="700" fill="#0f172a">Witchcraft, Grimoire &amp; Ancient Mystical Systems + 5×5 Wu Xing Matrix (2018–2026)</text>
+<text x="28" y="56" font-size="12.5" fill="#475569">Pure Esoteric Sleeper Point Differentials Across Witchcraft, Medieval Geomancy, Runes/Ogham, Kabbalah, Vedic, Fixed Stars &amp; BaZi</text>
+<text x="261" y="88" text-anchor="middle" font-size="13" font-weight="700" fill="#0f172a">A. 5×5 Wu Xing Offense-vs-Offense (Day Masters)</text>
+<text x="261" y="106" text-anchor="middle" font-size="10.5" font-weight="600" fill="#475569">Opponent Dominant Wu Xing →</text>
+<text x="22" y="277" text-anchor="middle" font-size="10.5" font-weight="600" fill="#475569" transform="rotate(-90 22 277)">My Team Dominant Wu Xing</text>
+<text x="113" y="119" text-anchor="middle" font-size="11" font-weight="700" fill="#334155">Wood</text>
+<text x="187" y="119" text-anchor="middle" font-size="11" font-weight="700" fill="#334155">Fire</text>
+<text x="261" y="119" text-anchor="middle" font-size="11" font-weight="700" fill="#334155">Earth</text>
+<text x="335" y="119" text-anchor="middle" font-size="11" font-weight="700" fill="#334155">Metal</text>
+<text x="409" y="119" text-anchor="middle" font-size="11" font-weight="700" fill="#334155">Water</text>
+<text x="70" y="157" text-anchor="end" font-size="11" font-weight="700" fill="#334155">Wood</text>
+<rect x="78" y="124" width="70" height="58" rx="5" fill="rgb(236,245,246)" stroke="#cbd5e1" stroke-width="1"/>
+<text x="113" y="147" text-anchor="middle" font-size="12" font-weight="700" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" fill="#0f172a">+0.02</text>
+<text x="113" y="163" text-anchor="middle" font-size="9.5" fill="#475569">n=1068</text>
+<text x="113" y="175" text-anchor="middle" font-size="9" fill="#475569">t=+0.1</text>
+<rect x="152" y="124" width="70" height="58" rx="5" fill="rgb(108,189,183)" stroke="#cbd5e1" stroke-width="1"/>
+<text x="187" y="147" text-anchor="middle" font-size="12" font-weight="700" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" fill="#ffffff">+0.21</text>
+<text x="187" y="163" text-anchor="middle" font-size="9.5" fill="#f1f5f9">n=1282</text>
+<text x="187" y="175" text-anchor="middle" font-size="9" fill="#f1f5f9">t=+1.1</text>
+<rect x="226" y="124" width="70" height="58" rx="5" fill="rgb(195,227,226)" stroke="#cbd5e1" stroke-width="1"/>
+<text x="261" y="147" text-anchor="middle" font-size="12" font-weight="700" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" fill="#0f172a">+0.08</text>
+<text x="261" y="163" text-anchor="middle" font-size="9.5" fill="#475569">n=1441</text>
+<text x="261" y="175" text-anchor="middle" font-size="9" fill="#475569">t=+0.5</text>
+<rect x="300" y="124" width="70" height="58" rx="5" fill="rgb(137,202,197)" stroke="#cbd5e1" stroke-width="1"/>
+<text x="335" y="147" text-anchor="middle" font-size="12" font-weight="700" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" fill="#0f172a">+0.17</text>
+<text x="335" y="163" text-anchor="middle" font-size="9.5" fill="#475569">n=1478</text>
+<text x="335" y="175" text-anchor="middle" font-size="9" fill="#475569">t=+0.9</text>
+<rect x="374" y="124" width="70" height="58" rx="5" fill="rgb(234,118,144)" stroke="#cbd5e1" stroke-width="1"/>
+<text x="409" y="147" text-anchor="middle" font-size="12" font-weight="700" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" fill="#ffffff">-0.21</text>
+<text x="409" y="163" text-anchor="middle" font-size="9.5" fill="#f1f5f9">n=988</text>
+<text x="409" y="175" text-anchor="middle" font-size="9" fill="#f1f5f9">t=-1.0</text>
+<text x="70" y="219" text-anchor="end" font-size="11" font-weight="700" fill="#334155">Fire</text>
+<rect x="78" y="186" width="70" height="58" rx="5" fill="rgb(245,220,227)" stroke="#cbd5e1" stroke-width="1"/>
+<text x="113" y="209" text-anchor="middle" font-size="12" font-weight="700" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" fill="#0f172a">-0.05</text>
+<text x="113" y="225" text-anchor="middle" font-size="9.5" fill="#475569">n=1224</text>
+<text x="113" y="237" text-anchor="middle" font-size="9" fill="#475569">t=-0.2</text>
+<rect x="152" y="186" width="70" height="58" rx="5" fill="rgb(242,193,205)" stroke="#cbd5e1" stroke-width="1"/>
+<text x="187" y="209" text-anchor="middle" font-size="12" font-weight="700" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" fill="#0f172a">-0.09</text>
+<text x="187" y="225" text-anchor="middle" font-size="9.5" fill="#475569">n=1125</text>
+<text x="187" y="237" text-anchor="middle" font-size="9" fill="#475569">t=-0.4</text>
+<rect x="226" y="186" width="70" height="58" rx="5" fill="rgb(237,149,170)" stroke="#cbd5e1" stroke-width="1"/>
+<text x="261" y="209" text-anchor="middle" font-size="12" font-weight="700" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" fill="#0f172a">-0.16</text>
+<text x="261" y="225" text-anchor="middle" font-size="9.5" fill="#475569">n=1166</text>
+<text x="261" y="237" text-anchor="middle" font-size="9" fill="#475569">t=-0.8</text>
+<rect x="300" y="186" width="70" height="58" rx="5" fill="rgb(246,235,240)" stroke="#cbd5e1" stroke-width="1"/>
+<text x="335" y="209" text-anchor="middle" font-size="12" font-weight="700" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" fill="#0f172a">-0.02</text>
+<text x="335" y="225" text-anchor="middle" font-size="9.5" fill="#475569">n=1172</text>
+<text x="335" y="237" text-anchor="middle" font-size="9" fill="#475569">t=-0.1</text>
+<rect x="374" y="186" width="70" height="58" rx="5" fill="rgb(131,199,194)" stroke="#cbd5e1" stroke-width="1"/>
+<text x="409" y="209" text-anchor="middle" font-size="12" font-weight="700" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" fill="#0f172a">+0.17</text>
+<text x="409" y="225" text-anchor="middle" font-size="9.5" fill="#475569">n=974</text>
+<text x="409" y="237" text-anchor="middle" font-size="9" fill="#475569">t=+0.8</text>
+<text x="70" y="281" text-anchor="end" font-size="11" font-weight="700" fill="#334155">Earth</text>
+<rect x="78" y="248" width="70" height="58" rx="5" fill="rgb(244,209,218)" stroke="#cbd5e1" stroke-width="1"/>
+<text x="113" y="271" text-anchor="middle" font-size="12" font-weight="700" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" fill="#0f172a">-0.07</text>
+<text x="113" y="287" text-anchor="middle" font-size="9.5" fill="#475569">n=1420</text>
+<text x="113" y="299" text-anchor="middle" font-size="9" fill="#475569">t=-0.3</text>
+<rect x="152" y="248" width="70" height="58" rx="5" fill="rgb(230,72,107)" stroke="#cbd5e1" stroke-width="1"/>
+<text x="187" y="271" text-anchor="middle" font-size="12" font-weight="700" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" fill="#ffffff">-0.28</text>
+<text x="187" y="287" text-anchor="middle" font-size="9.5" fill="#f1f5f9">n=1161</text>
+<text x="187" y="299" text-anchor="middle" font-size="9" fill="#f1f5f9">t=-1.5</text>
+<rect x="226" y="248" width="70" height="58" rx="5" fill="rgb(238,151,171)" stroke="#cbd5e1" stroke-width="1"/>
+<text x="261" y="271" text-anchor="middle" font-size="12" font-weight="700" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" fill="#0f172a">-0.16</text>
+<text x="261" y="287" text-anchor="middle" font-size="9.5" fill="#475569">n=1372</text>
+<text x="261" y="299" text-anchor="middle" font-size="9" fill="#475569">t=-0.8</text>
+<rect x="300" y="248" width="70" height="58" rx="5" fill="rgb(204,231,230)" stroke="#cbd5e1" stroke-width="1"/>
+<text x="335" y="271" text-anchor="middle" font-size="12" font-weight="700" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" fill="#0f172a">+0.07</text>
+<text x="335" y="287" text-anchor="middle" font-size="9.5" fill="#475569">n=1734</text>
+<text x="335" y="299" text-anchor="middle" font-size="9" fill="#475569">t=+0.4</text>
+<rect x="374" y="248" width="70" height="58" rx="5" fill="rgb(226,43,83)" stroke="#cbd5e1" stroke-width="1"/>
+<text x="409" y="271" text-anchor="middle" font-size="12" font-weight="700" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" fill="#ffffff">-0.33</text>
+<text x="409" y="287" text-anchor="middle" font-size="9.5" fill="#f1f5f9">n=1258</text>
+<text x="409" y="299" text-anchor="middle" font-size="9" fill="#f1f5f9">t=-1.7</text>
+<text x="70" y="343" text-anchor="end" font-size="11" font-weight="700" fill="#334155">Metal</text>
+<rect x="78" y="310" width="70" height="58" rx="5" fill="rgb(242,193,205)" stroke="#cbd5e1" stroke-width="1"/>
+<text x="113" y="333" text-anchor="middle" font-size="12" font-weight="700" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" fill="#0f172a">-0.09</text>
+<text x="113" y="349" text-anchor="middle" font-size="9.5" fill="#475569">n=1481</text>
+<text x="113" y="361" text-anchor="middle" font-size="9" fill="#475569">t=-0.5</text>
+<rect x="152" y="310" width="70" height="58" rx="5" fill="rgb(13,148,136)" stroke="#cbd5e1" stroke-width="1"/>
+<text x="187" y="333" text-anchor="middle" font-size="12" font-weight="700" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" fill="#ffffff">+0.42</text>
+<text x="187" y="349" text-anchor="middle" font-size="9.5" fill="#f1f5f9">n=1211</text>
+<text x="187" y="361" text-anchor="middle" font-size="9" fill="#f1f5f9">t=+2.3</text>
+<rect x="226" y="310" width="70" height="58" rx="5" fill="rgb(240,246,248)" stroke="#cbd5e1" stroke-width="1"/>
+<text x="261" y="333" text-anchor="middle" font-size="12" font-weight="700" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" fill="#0f172a">+0.01</text>
+<text x="261" y="349" text-anchor="middle" font-size="9.5" fill="#475569">n=1742</text>
+<text x="261" y="361" text-anchor="middle" font-size="9" fill="#475569">t=+0.1</text>
+<rect x="300" y="310" width="70" height="58" rx="5" fill="rgb(211,234,234)" stroke="#cbd5e1" stroke-width="1"/>
+<text x="335" y="333" text-anchor="middle" font-size="12" font-weight="700" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" fill="#0f172a">+0.06</text>
+<text x="335" y="349" text-anchor="middle" font-size="9.5" fill="#475569">n=1580</text>
+<text x="335" y="361" text-anchor="middle" font-size="9" fill="#475569">t=+0.3</text>
+<rect x="374" y="310" width="70" height="58" rx="5" fill="rgb(244,208,218)" stroke="#cbd5e1" stroke-width="1"/>
+<text x="409" y="333" text-anchor="middle" font-size="12" font-weight="700" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" fill="#0f172a">-0.07</text>
+<text x="409" y="349" text-anchor="middle" font-size="9.5" fill="#475569">n=1362</text>
+<text x="409" y="361" text-anchor="middle" font-size="9" fill="#475569">t=-0.4</text>
+<text x="70" y="405" text-anchor="end" font-size="11" font-weight="700" fill="#334155">Water</text>
+<rect x="78" y="372" width="70" height="58" rx="5" fill="rgb(245,221,229)" stroke="#cbd5e1" stroke-width="1"/>
+<text x="113" y="395" text-anchor="middle" font-size="12" font-weight="700" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" fill="#0f172a">-0.05</text>
+<text x="113" y="411" text-anchor="middle" font-size="9.5" fill="#475569">n=963</text>
+<text x="113" y="423" text-anchor="middle" font-size="9" fill="#475569">t=-0.2</text>
+<rect x="152" y="372" width="70" height="58" rx="5" fill="rgb(13,148,136)" stroke="#cbd5e1" stroke-width="1"/>
+<text x="187" y="395" text-anchor="middle" font-size="12" font-weight="700" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" fill="#ffffff">+0.55</text>
+<text x="187" y="411" text-anchor="middle" font-size="9.5" fill="#f1f5f9">n=949</text>
+<text x="187" y="423" text-anchor="middle" font-size="9" fill="#f1f5f9">t=+2.6</text>
+<rect x="226" y="372" width="70" height="58" rx="5" fill="rgb(227,51,90)" stroke="#cbd5e1" stroke-width="1"/>
+<text x="261" y="395" text-anchor="middle" font-size="12" font-weight="700" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" fill="#ffffff">-0.32</text>
+<text x="261" y="411" text-anchor="middle" font-size="9.5" fill="#f1f5f9">n=1165</text>
+<text x="261" y="423" text-anchor="middle" font-size="9" fill="#f1f5f9">t=-1.6</text>
+<rect x="300" y="372" width="70" height="58" rx="5" fill="rgb(157,210,207)" stroke="#cbd5e1" stroke-width="1"/>
+<text x="335" y="395" text-anchor="middle" font-size="12" font-weight="700" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" fill="#0f172a">+0.14</text>
+<text x="335" y="411" text-anchor="middle" font-size="9.5" fill="#475569">n=1306</text>
+<text x="335" y="423" text-anchor="middle" font-size="9" fill="#475569">t=+0.7</text>
+<rect x="374" y="372" width="70" height="58" rx="5" fill="rgb(238,246,247)" stroke="#cbd5e1" stroke-width="1"/>
+<text x="409" y="395" text-anchor="middle" font-size="12" font-weight="700" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" fill="#0f172a">+0.02</text>
+<text x="409" y="411" text-anchor="middle" font-size="9.5" fill="#475569">n=945</text>
+<text x="409" y="423" text-anchor="middle" font-size="9" fill="#475569">t=+0.1</text>
+<text x="716.5" y="88" text-anchor="middle" font-size="13" font-weight="700" fill="#0f172a">B. Top Signals Across 16 Ancient &amp; Classical Systems</text>
+<line x1="810.0" y1="108" x2="810.0" y2="449" stroke="#334155" stroke-width="1.4"/>
+<text x="478" y="121.5" font-size="10.5" font-weight="600" fill="#0f172a">Natal Sun or Mars Conjunct Malefic Fix</text>
+<text x="478" y="133.5" font-size="9" fill="#64748b">fixed_stars_parans</text>
+<line x1="819.2" y1="123.5" x2="884.9" y2="123.5" stroke="#0d9488" stroke-width="1.8" opacity="0.75"/>
+<circle cx="845.3" cy="123.5" r="4.5" fill="#0d9488" stroke="#ffffff" stroke-width="1.1"/>
+<text x="956" y="127.5" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-weight="600" fill="#0d9488">+0.42 (t=+2.5)</text>
+<text x="478" y="152.5" font-size="10.5" font-weight="600" fill="#0f172a">Game-Day 5° Shem HaMephorash Quinary i</text>
+<text x="478" y="164.5" font-size="9" fill="#64748b">kabbalah_gematria</text>
+<line x1="814.0" y1="154.5" x2="863.6" y2="154.5" stroke="#0d9488" stroke-width="1.8" opacity="0.75"/>
+<circle cx="835.8" cy="154.5" r="4.5" fill="#0d9488" stroke="#ffffff" stroke-width="1.1"/>
+<text x="956" y="158.5" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-weight="600" fill="#0d9488">+0.31 (t=+2.3)</text>
+<text x="478" y="183.5" font-size="10.5" font-weight="600" fill="#0f172a">Natal Sun in Martial Egyptian 10° Deca</text>
+<text x="478" y="195.5" font-size="9" fill="#64748b">egyptian_decans_modality</text>
+<line x1="809.8" y1="185.5" x2="849.6" y2="185.5" stroke="#0d9488" stroke-width="1.8" opacity="0.75"/>
+<circle cx="828.8" cy="185.5" r="4.5" fill="#0d9488" stroke="#ffffff" stroke-width="1.1"/>
+<text x="956" y="189.5" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-weight="600" fill="#0d9488">+0.23 (t=+1.9)</text>
+<text x="478" y="214.5" font-size="10.5" font-weight="600" fill="#0f172a">Rokuyō Senbu (先負) Afternoon/Evening Vi</text>
+<text x="478" y="226.5" font-size="9" fill="#64748b">rokuyo_tenchusatsu</text>
+<line x1="806.0" y1="216.5" x2="851.3" y2="216.5" stroke="#0d9488" stroke-width="1.8" opacity="0.75"/>
+<circle cx="827.8" cy="216.5" r="4.5" fill="#0d9488" stroke="#ffffff" stroke-width="1.1"/>
+<text x="956" y="220.5" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-weight="600" fill="#0d9488">+0.21 (t=+1.6)</text>
+<text x="478" y="245.5" font-size="10.5" font-weight="600" fill="#0f172a">Game-Day Solar 10° Decan in Exact 120°</text>
+<text x="478" y="257.5" font-size="9" fill="#64748b">egyptian_decans_modality</text>
+<line x1="801.1" y1="247.5" x2="858.7" y2="247.5" stroke="#0d9488" stroke-width="1.8" opacity="0.75"/>
+<circle cx="827.4" cy="247.5" r="4.5" fill="#0d9488" stroke="#ffffff" stroke-width="1.1"/>
+<text x="956" y="251.5" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-weight="600" fill="#0d9488">+0.21 (t=+1.4)</text>
+<text x="478" y="276.5" font-size="10.5" font-weight="600" fill="#0f172a">Xuan Kong Period 8 Stadium (Opened 200</text>
+<text x="478" y="288.5" font-size="9" fill="#64748b">qimen_bagua</text>
+<line x1="810.0" y1="278.5" x2="844.0" y2="278.5" stroke="#0d9488" stroke-width="1.8" opacity="0.75"/>
+<circle cx="826.6" cy="278.5" r="4.5" fill="#0d9488" stroke="#ffffff" stroke-width="1.1"/>
+<text x="956" y="282.5" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-weight="600" fill="#0d9488">+0.20 (t=+2.0)</text>
+<text x="478" y="307.5" font-size="10.5" font-weight="600" fill="#0f172a">Xuan Kong Period 6/7 Stadium (Opened &lt;</text>
+<text x="478" y="319.5" font-size="9" fill="#64748b">qimen_bagua</text>
+<line x1="776.0" y1="309.5" x2="810.0" y2="309.5" stroke="#e11d48" stroke-width="1.8" opacity="0.75"/>
+<circle cx="793.2" cy="309.5" r="4.5" fill="#e11d48" stroke="#ffffff" stroke-width="1.1"/>
+<text x="956" y="313.5" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-weight="600" fill="#e11d48">-0.20 (t=-2.0)</text>
+<text x="478" y="338.5" font-size="10.5" font-weight="600" fill="#0f172a">Apparent Geocentric Mercury Retrograde</text>
+<text x="478" y="350.5" font-size="9" fill="#64748b">hellenistic_planetary</text>
+<line x1="735.2" y1="340.5" x2="831.0" y2="340.5" stroke="#e11d48" stroke-width="1.8" opacity="0.75"/>
+<circle cx="789.3" cy="340.5" r="4.5" fill="#e11d48" stroke="#ffffff" stroke-width="1.1"/>
+<text x="956" y="344.5" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-weight="600" fill="#e11d48">-0.25 (t=-1.1)</text>
+<text x="478" y="369.5" font-size="10.5" font-weight="600" fill="#0f172a">Approaching / Exact Saturn Return (Age</text>
+<text x="478" y="381.5" font-size="9" fill="#64748b">hellenistic_planetary</text>
+<line x1="770.9" y1="371.5" x2="803.9" y2="371.5" stroke="#e11d48" stroke-width="1.8" opacity="0.75"/>
+<circle cx="788.3" cy="371.5" r="4.5" fill="#e11d48" stroke="#ffffff" stroke-width="1.1"/>
+<text x="956" y="375.5" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-weight="600" fill="#e11d48">-0.26 (t=-2.7)</text>
+<text x="478" y="400.5" font-size="10.5" font-weight="600" fill="#0f172a">Kshipra Swift Athletic Lunar Mansion (</text>
+<text x="478" y="412.5" font-size="9" fill="#64748b">vedic_jyotish</text>
+<line x1="762.3" y1="402.5" x2="808.1" y2="402.5" stroke="#e11d48" stroke-width="1.8" opacity="0.75"/>
+<circle cx="786.8" cy="402.5" r="4.5" fill="#e11d48" stroke="#ffffff" stroke-width="1.1"/>
+<text x="956" y="406.5" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-weight="600" fill="#e11d48">-0.28 (t=-2.1)</text>
+<text x="478" y="431.5" font-size="10.5" font-weight="600" fill="#0f172a">Game-Day Moon Conjunct Malefic Fixed S</text>
+<text x="478" y="443.5" font-size="9" fill="#64748b">fixed_stars_parans</text>
+<line x1="735.0" y1="433.5" x2="815.8" y2="433.5" stroke="#e11d48" stroke-width="1.8" opacity="0.75"/>
+<circle cx="775.5" cy="433.5" r="4.5" fill="#e11d48" stroke="#ffffff" stroke-width="1.1"/>
+<text x="956" y="437.5" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-weight="600" fill="#e11d48">-0.41 (t=-1.7)</text>
+<text x="28" y="490" font-size="11" fill="#64748b">Sheng/Ke 5-Phase cycles, Mayan 260-day kins, Hellenistic retrogrades, and PGM XII.351 gladiatorial isopsephy are evaluated on identical Sleeper point-diff residuals.</text>
+</svg>

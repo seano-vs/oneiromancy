@@ -30,13 +30,19 @@ import {
 } from '@/lib/mockData';
 import { DEFAULT_CHAOS_LAMBDA } from '@/lib/scoring';
 import { deriveEligiblePositions } from '@/lib/sleeper';
-import { computeWaiverMoves, elementRelation, resolveActiveWeek } from '@/lib/oracle';
+import {
+  ALL_PREDICTOR_SYSTEM_IDS,
+  DEFAULT_ENABLED_PREDICTOR_SYSTEM_IDS,
+  buildUnitMap,
+  computeWaiverMoves,
+  elementRelation,
+  resolveActiveWeek,
+} from '@/lib/oracle';
 import {
   CosmicPlayer,
   NFLPosition,
   RosterSlot,
 } from '@/types/oneiromancy';
-import { Sparkles, TrendingUp } from 'lucide-react';
 import React, { useCallback, useMemo, useState } from 'react';
 
 export type MarketplaceSubTab = 'waivers' | 'trades' | 'all';
@@ -96,16 +102,19 @@ export const PlayerMarketplace: React.FC<PlayerMarketplaceProps> = ({
   );
 
   const oracleLambda = context.draftState?.settings?.chaos_lambda ?? DEFAULT_CHAOS_LAMBDA;
+  const activeSystems = context.enabledSystems ?? DEFAULT_ENABLED_PREDICTOR_SYSTEM_IDS;
+  const unitByTeam = useMemo(
+    () => buildUnitMap(allPlayers, allRoster),
+    [allPlayers, allRoster],
+  );
   const waiverMoves = useMemo(
     () =>
-      computeWaiverMoves(
-        allPlayers,
-        allRoster,
-        oracleLambda,
-        activeWeek,
-        40,
-      ),
-    [allPlayers, allRoster, oracleLambda, activeWeek],
+      computeWaiverMoves(allPlayers, allRoster, oracleLambda, activeWeek, 40, {
+        currentWeek: activeWeek,
+        enabledSystems: activeSystems,
+        unitByTeam,
+      }),
+    [allPlayers, allRoster, oracleLambda, activeWeek, activeSystems, unitByTeam],
   );
 
   const visibleMoves = useMemo(
@@ -142,125 +151,113 @@ export const PlayerMarketplace: React.FC<PlayerMarketplaceProps> = ({
 
   return (
     <div className={`flex flex-col gap-4 w-full max-w-5xl mx-auto ${className}`}>
-      {section !== 'trades' && (
-        <div className="space-y-1">
-          <span className="text-[10px] font-mono uppercase tracking-widest text-purple-300/80">
-            Alchemical Transmutations
-          </span>
-          <h3 className="font-serif text-lg sm:text-xl font-bold text-slate-100">
+      <div className="flex justify-between items-baseline">
+        {section !== 'trades' && (
+          <h3 className="font-sans text-lg font-semibold text-zinc-100">
             Waiver Upgrades
           </h3>
-        </div>
-      )}
+        )}
+        <span className="text-xs font-mono tabular-nums text-zinc-400">
+          {activeSystems.length} of {ALL_PREDICTOR_SYSTEM_IDS.length} predictors
+        </span>
+      </div>
 
       <div className="space-y-3">
-          <div className="flex justify-between items-center px-1">
-            <span className="text-xs font-mono uppercase text-cyan-400 font-semibold tracking-wider flex items-center gap-1.5">
-              <TrendingUp className="w-3.5 h-3.5 text-cyan-400" />
-              Top Waiver Moves
-            </span>
-            <span className="text-[10px] font-mono text-slate-400">
-              Oracle λ {oracleLambda.toFixed(2)}
-            </span>
-          </div>
-
-          {visibleMoves.length === 0 ? (
-            <GlassCard variant="panel" className="p-5 text-center space-y-1">
-              <p className="text-sm font-serif text-slate-300">No waiver move beats your bench right now</p>
-            </GlassCard>
-          ) : (
-            <ol className="flex flex-col gap-3">
-              {visibleMoves.map((move, idx) => (
-                <li key={`${move.add.id}-${move.drop.id}`}>
-                  <GlassCard variant="panel" glowColor="green" className="p-4 space-y-3">
-                    <div className="flex flex-wrap justify-between items-center gap-2 border-b border-white/10 pb-2.5">
-                      <div className="flex flex-wrap items-center gap-2 min-w-0">
-                        <span className="px-2 py-0.5 rounded-full bg-emerald-950/80 border border-emerald-500/40 text-emerald-400 font-mono text-[10px] font-bold">
-                          #{idx + 1}
-                        </span>
-                        <Tag tone={move.wouldStart ? 'cyan' : 'slate'}>
-                          {move.wouldStart ? 'Would start' : 'Bench depth'}
-                        </Tag>
-                        <PositionalBadge position={move.add.position} size="sm" depth={move.add.depth_chart_order} />
-                      </div>
-                      <div className="flex flex-wrap items-center gap-1.5">
-                        <DeltaBadge value={move.oracleGain} unit="ORACLE" tone="emerald" />
-                        <DeltaBadge value={move.statsGain} unit="PTS" tone="amber" />
-                        <DeltaBadge value={move.starsAdd - move.starsDrop} unit="STARS" tone="purple" digits={0} />
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 font-mono text-xs">
-                      <div className="p-3 rounded-xl bg-purple-950/25 border border-purple-500/50 space-y-2">
-                        <div className="flex justify-between items-center">
-                          <span className="text-[9px] uppercase tracking-wider text-purple-300 font-bold">
-                            Your Bench Drop
-                          </span>
-                          <HealthTag player={move.drop} activeWeek={activeWeek} />
-                        </div>
-                        <div className="flex items-center gap-2 min-w-0">
-                          <PlayerHeadshot player={move.drop} size="trade" />
-                          <div className="min-w-0 flex-1 space-y-0.5">
-                            <div className="flex items-center gap-1.5 min-w-0">
-                              <PositionalBadge position={move.drop.position} size="sm" depth={move.drop.depth_chart_order} />
-                              <span className="font-serif font-bold text-slate-200 text-sm truncate">
-                                <PlayerLink player={move.drop} vs={move.add} onOpen={openTarget} />
-                              </span>
-                            </div>
-                            <div className="text-[10px] font-mono text-slate-400 flex items-center gap-1 whitespace-nowrap">
-                              <TeamLogo team={move.drop.team} />
-                              <span>{move.drop.team} · Bye {move.drop.bye_week || '-'}</span>
-                            </div>
-                          </div>
-                        </div>
-                        <StatTiles player={move.drop} lambda={oracleLambda} muted />
-                      </div>
-
-                      <div className="p-3 rounded-xl bg-emerald-950/20 border border-emerald-500/30 space-y-2">
-                        <div className="flex justify-between items-center">
-                          <span className="text-[9px] uppercase tracking-wider text-emerald-400 font-bold">
-                            Free Agent Add
-                          </span>
-                          <HealthTag player={move.add} activeWeek={activeWeek} />
-                        </div>
-                        <div className="flex items-center gap-2 min-w-0">
-                          <PlayerHeadshot player={move.add} size="trade" />
-                          <div className="min-w-0 flex-1 space-y-0.5">
-                            <div className="flex items-center gap-1.5 min-w-0">
-                              <PositionalBadge position={move.add.position} size="sm" depth={move.add.depth_chart_order} />
-                              <span className="font-serif font-bold text-slate-100 text-sm truncate">
-                                <PlayerLink player={move.add} vs={move.drop} onOpen={openTarget} />
-                              </span>
-                            </div>
-                            <div className="text-[10px] font-mono text-slate-400 flex items-center gap-1 whitespace-nowrap">
-                              <TeamLogo team={move.add.team} />
-                              <span>{move.add.team} · Bye {move.add.bye_week || '-'}</span>
-                            </div>
-                          </div>
-                        </div>
-                        <StatTiles player={move.add} lambda={oracleLambda} />
-                      </div>
-                    </div>
-
-                    <div className="text-[11px] font-sans text-purple-200 flex items-center gap-1.5">
-                      <Sparkles className="w-3.5 h-3.5 text-purple-400 shrink-0" />
-                      <span>
-                        {move.reason}{' '}
-                        {(() => {
-                          const rel = elementRelation(
-                            move.add.elemental_traits?.element,
-                            move.drop.elemental_traits?.element,
-                          );
-                          return rel === '-' ? null : `(${rel})`;
-                        })()}
+        {visibleMoves.length === 0 ? (
+          <GlassCard variant="panel" className="p-6 text-center">
+            <p className="text-sm font-sans text-zinc-300">No waiver move beats your current bench.</p>
+          </GlassCard>
+        ) : (
+          <ol className="flex flex-col gap-3">
+            {visibleMoves.map((move, idx) => (
+              <li key={`${move.add.id}-${move.drop.id}`}>
+                <GlassCard variant="panel" className="p-4 space-y-3">
+                  <div className="flex flex-wrap justify-between items-center gap-2 border-b border-white/[0.06] pb-2.5">
+                    <div className="flex flex-wrap items-center gap-2 min-w-0">
+                      <span className="font-mono tabular-nums text-xs text-zinc-400">
+                        #{idx + 1}
                       </span>
+                      <Tag tone={move.wouldStart ? 'amber' : 'slate'}>
+                        {move.wouldStart ? 'Would start' : 'Bench depth'}
+                      </Tag>
+                      <PositionalBadge position={move.add.position} size="sm" depth={move.add.depth_chart_order} />
                     </div>
-                  </GlassCard>
-                </li>
-              ))}
-            </ol>
-          )}
-        </div>
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <DeltaBadge value={move.pointsGain} unit="PTS" tone="emerald" />
+                      <DeltaBadge
+                        value={move.modifierAdd}
+                        unit="MOD"
+                        tone={move.modifierAdd >= 0 ? 'amber' : 'slate'}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs divide-y md:divide-y-0 md:divide-x divide-white/[0.06]">
+                    <div className="space-y-2 pt-1 md:pt-0 md:pr-4">
+                      <div className="flex justify-between items-center">
+                        <span className="text-xs font-sans text-zinc-400">
+                          Drop from bench
+                        </span>
+                        <HealthTag player={move.drop} activeWeek={activeWeek} />
+                      </div>
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <PlayerHeadshot player={move.drop} size="trade" />
+                        <div className="min-w-0 flex-1 space-y-0.5">
+                          <div className="flex items-center gap-1.5 min-w-0">
+                            <span className="font-sans font-medium text-zinc-200 text-sm break-words">
+                              <PlayerLink player={move.drop} vs={move.add} onOpen={openTarget} />
+                            </span>
+                          </div>
+                          <div className="text-[11px] font-mono tabular-nums text-zinc-400 flex items-center gap-1 whitespace-nowrap">
+                            <TeamLogo team={move.drop.team} />
+                            <span>{move.drop.team} · Bye {move.drop.bye_week || '-'}</span>
+                          </div>
+                        </div>
+                      </div>
+                      <StatTiles player={move.drop} lambda={oracleLambda} muted />
+                    </div>
+
+                    <div className="space-y-2 pt-3 md:pt-0 md:pl-4">
+                      <div className="flex justify-between items-center">
+                        <span className="text-xs font-sans font-medium text-emerald-300">
+                          Add free agent
+                        </span>
+                        <HealthTag player={move.add} activeWeek={activeWeek} />
+                      </div>
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <PlayerHeadshot player={move.add} size="trade" />
+                        <div className="min-w-0 flex-1 space-y-0.5">
+                          <div className="flex items-center gap-1.5 min-w-0">
+                            <span className="font-sans font-medium text-zinc-100 text-sm break-words">
+                              <PlayerLink player={move.add} vs={move.drop} onOpen={openTarget} />
+                            </span>
+                          </div>
+                          <div className="text-[11px] font-mono tabular-nums text-zinc-400 flex items-center gap-1 whitespace-nowrap">
+                            <TeamLogo team={move.add.team} />
+                            <span>{move.add.team} · Bye {move.add.bye_week || '-'}</span>
+                          </div>
+                        </div>
+                      </div>
+                      <StatTiles player={move.add} lambda={oracleLambda} />
+                    </div>
+                  </div>
+
+                  <p className="text-xs font-sans text-zinc-400 pt-1 border-t border-white/[0.06]">
+                    {move.reason}{' '}
+                    {(() => {
+                      const rel = elementRelation(
+                        move.add.elemental_traits?.element,
+                        move.drop.elemental_traits?.element,
+                      );
+                      return rel === '-' ? null : `(${rel})`;
+                    })()}
+                  </p>
+                </GlassCard>
+              </li>
+            ))}
+          </ol>
+        )}
+      </div>
 
       <PlayerDetailModal
         player={inspectedPlayer}

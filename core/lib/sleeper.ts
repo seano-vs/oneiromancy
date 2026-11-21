@@ -34,7 +34,14 @@
  *   to immediately clear active cooldowns and unblock lookups.
  */
 
-import { clearNflGames, fetchEspnWeek, kickoffLabel, moonAt, neutralVenueCoords, planetaryHourAt, raceWithAbort, setWeekGames, teamGame, type NflGame } from './nflGames';
+import { clearNflGames, kickoffLabel, moonAt, neutralVenueCoords, planetaryHourAt, raceWithAbort, setWeekGames, teamGame, type NflGame } from './nflGames';
+import {
+  calculateLifePath,
+  extractOracularObservables,
+  getZodiacFromDate,
+  KNOWN_SLEEPER_BIRTH_DATES_BY_ID,
+  KNOWN_SLEEPER_BIRTH_DATES_BY_NAME,
+} from './pointDiffEngine';
 import { clearGameStatus, setGameStatus, teamGameStatus, type GameStatus } from './gameStatus';
 import {
   AscensionStep,
@@ -1023,9 +1030,7 @@ export async function loadSeasonContext(
       }),
     );
   }
-  // Real games for the matchup cards: Sleeper's dates and home/away teams,
-  // overlaid with ESPN's kickoffs and venues where available.
-  const sleeperWeekGamesByWeek = new Map<number, NflGame[]>();
+  // Real games for the matchup cards: Sleeper's dates and home/away teams.
   const pendingWeekGames = new Map<number, NflGame[]>();
   for (let w = 1; w <= lastRegularWeek; w++) {
     const wkGames = games
@@ -1039,51 +1044,9 @@ export async function loadSeasonContext(
         venue: null,
         neutral: false,
       }));
-    sleeperWeekGamesByWeek.set(w, wkGames);
     pendingWeekGames.set(w, wkGames);
   }
-  const espnRequests: Promise<void>[] = [];
-  for (let w = 1; w <= lastRegularWeek; w++) {
-    const week = w;
-    espnRequests.push(
-      fetchEspnWeek(season, week, week < currentWeek, signal).then((espn) => {
-        if (signal?.aborted || !espn || espn.length === 0) return;
-        const base = sleeperWeekGamesByWeek.get(week) || [];
-        if (base.length === 0) {
-          pendingWeekGames.set(week, espn);
-          return;
-        }
-        const pairKey = (a: string, b: string) => [a, b].sort().join(':');
-        const espnByPair = new Map<string, NflGame>();
-        for (const eg of espn) {
-          espnByPair.set(pairKey(eg.home, eg.away), eg);
-        }
-        const seenPairs = new Set<string>();
-        const merged: NflGame[] = base.map((sg) => {
-          const key = pairKey(sg.home, sg.away);
-          seenPairs.add(key);
-          const match = espnByPair.get(key);
-          if (!match) return sg;
-          return {
-            ...sg,
-            kickoff: match.kickoff ?? sg.kickoff,
-            date: match.date ?? sg.date,
-            venue: match.venue ?? sg.venue,
-            neutral: match.neutral ?? sg.neutral,
-          };
-        });
-        for (const eg of espn) {
-          if (!seenPairs.has(pairKey(eg.home, eg.away))) {
-            merged.push(eg);
-          }
-        }
-        if (!signal?.aborted) {
-          pendingWeekGames.set(week, merged);
-        }
-      }),
-    );
-  }
-  await Promise.all([...weekRequests, ...espnRequests]);
+  await Promise.all(weekRequests);
   if (signal?.aborted) return null;
   for (const [week, wkGames] of pendingWeekGames) {
     setWeekGames(week, wkGames);
@@ -1792,6 +1755,42 @@ export function getGroundedPositionBaseline(
   return standardBaseline;
 }
 
+interface ResolveSleeperNatalTraitsOptions {
+  readonly record?: SleeperPlayerRecord | null;
+  readonly playerId: string;
+  readonly fullName: string;
+  readonly fallbackBirthDate?: string | null;
+}
+
+interface ResolvedSleeperNatalTraits {
+  readonly resolvedBirthDate: string | null;
+  readonly realZodiac: ReturnType<typeof getZodiacFromDate> | null;
+  readonly realLifePath: ReturnType<typeof calculateLifePath> | null;
+  readonly realOracular: ReturnType<typeof extractOracularObservables> | null;
+}
+
+function resolveSleeperNatalTraits({
+  record,
+  playerId,
+  fullName,
+  fallbackBirthDate,
+}: ResolveSleeperNatalTraitsOptions): ResolvedSleeperNatalTraits {
+  const rawDate =
+    (typeof record?.birth_date === 'string' && record.birth_date.trim()) ||
+    (typeof fallbackBirthDate === 'string' && fallbackBirthDate.trim()) ||
+    KNOWN_SLEEPER_BIRTH_DATES_BY_ID[playerId] ||
+    KNOWN_SLEEPER_BIRTH_DATES_BY_NAME[fullName.trim().toLowerCase().replace(/\s+/g, ' ')] ||
+    null;
+  const resolvedBirthDate =
+    rawDate && /^\d{4}-\d{2}-\d{2}$/.test(rawDate) ? rawDate : null;
+  const realZodiac = resolvedBirthDate ? getZodiacFromDate(resolvedBirthDate) : null;
+  const realLifePath = resolvedBirthDate ? calculateLifePath(resolvedBirthDate) : null;
+  const realOracular = resolvedBirthDate
+    ? extractOracularObservables(resolvedBirthDate, 2025, 1)
+    : null;
+  return { resolvedBirthDate, realZodiac, realLifePath, realOracular };
+}
+
 /**
  * Enriches cosmic board players with live Sleeper NFL master dictionary updates
  * (status, injury_status, depth_chart_order, team, number) and appends any
@@ -1832,9 +1831,9 @@ export function enrichCosmicBoardWithNFLPlayers(
     const position = record.position
       ? (record.position.toUpperCase() as NFLPosition)
       : player.position;
-    const recordBaseline = Number((record as any)?.baseline_projected_points ?? 0);
+    const recordBaseline = Number(record.baseline_projected_points ?? 0);
     const pos = String(position || '').toUpperCase();
-    const searchRankRaw = (record as any)?.search_rank ?? (player as any)?.search_rank ?? null;
+    const searchRankRaw = record.search_rank ?? player.search_rank ?? null;
     const searchRank =
       searchRankRaw !== null &&
       searchRankRaw !== undefined &&
@@ -1845,7 +1844,7 @@ export function enrichCosmicBoardWithNFLPlayers(
       'depth_chart_order' in record
         ? (record.depth_chart_order ?? null)
         : (player.depth_chart_order ?? null);
-    const isMyTeam = player.draft_status === 'my_team' || (player as any)?.is_my_team === true;
+    const isMyTeam = player.draft_status === 'my_team' || player.is_my_team === true;
     const groundedPosBaseline = getGroundedPositionBaseline(pos, {
       searchRank: typeof searchRank === 'number' && searchRank > 0 ? searchRank : null,
       depthChartOrder: typeof depthChartOrder === 'number' ? depthChartOrder : null,
@@ -1866,8 +1865,8 @@ export function enrichCosmicBoardWithNFLPlayers(
           : isInjured && isPlayerSigned(record)
             ? groundedPosBaseline
             : player.baseline_projected_points;
-    const recordAvg = Number((record as any)?.average_projected_points ?? 0);
-    const recordSeason = Number((record as any)?.season_projected_points ?? 0);
+    const recordAvg = Number(record.average_projected_points ?? 0);
+    const recordSeason = Number(record.season_projected_points ?? 0);
     const averageProjectedPoints =
       typeof player.average_projected_points === 'number' &&
       Number.isFinite(player.average_projected_points) &&
@@ -1883,12 +1882,33 @@ export function enrichCosmicBoardWithNFLPlayers(
                 ? groundedPosBaseline
                 : undefined;
 
+    const { resolvedBirthDate, realZodiac, realLifePath, realOracular } =
+      resolveSleeperNatalTraits({
+        record,
+        playerId: pid,
+        fullName: name,
+        fallbackBirthDate: player.birth_date,
+      });
+
     return {
       ...player,
       first_name: firstName,
       last_name: lastName,
       name,
       position,
+      ...(resolvedBirthDate ? {birth_date: resolvedBirthDate} : {}),
+      ...(realZodiac
+        ? {
+            elemental_traits: {
+              ...player.elemental_traits,
+              sun_sign: realZodiac.sign,
+              element: realZodiac.element,
+              life_path_number: realLifePath ?? player.elemental_traits.life_path_number,
+              tarot_card: realOracular?.tarotName ?? player.elemental_traits.tarot_card,
+              iching_hexagram: realOracular?.hexagramNumber ?? player.elemental_traits.iching_hexagram,
+            },
+          }
+        : {}),
       ...(baselineProjectedPoints !== undefined
         ? {baseline_projected_points: baselineProjectedPoints}
         : {}),
@@ -2974,18 +2994,22 @@ export function synthesizeCosmicPlayerFromId(
   const team = liveTeam || meta?.team || record?.team || 'NFL';
   const jerseyNumber =
     Number(meta?.number || record?.number || 0) || 0;
-  const status =
-    meta?.status ||
-    (record as any)?.status ||
-    'Active';
+  const status = meta?.status || record?.status || 'Active';
   const injuryStatus =
-    (record as any)?.injury_status !== undefined
-      ? ((record as any).injury_status ?? null)
+    record?.injury_status !== undefined
+      ? (record.injury_status ?? null)
       : meta?.injury_status !== undefined
         ? meta.injury_status
         : null;
 
-  // Elemental traits generation based on player id/name
+  const { resolvedBirthDate, realZodiac, realLifePath, realOracular } =
+    resolveSleeperNatalTraits({
+      record,
+      playerId: String(playerId),
+      fullName: name,
+    });
+
+  // Elemental traits generation from real natal date when known, else deterministic hash
   const elements: ElementType[] = ['Fire', 'Earth', 'Air', 'Water'];
   let hash = 0;
   const seed = `${playerId}-${name}`;
@@ -2994,7 +3018,7 @@ export function synthesizeCosmicPlayerFromId(
     hash |= 0;
   }
   const absHash = Math.abs(hash);
-  const element = elements[absHash % 4];
+  const element = realZodiac?.element ?? elements[absHash % 4];
   const sunSigns = [
     'Aries',
     'Taurus',
@@ -3009,7 +3033,7 @@ export function synthesizeCosmicPlayerFromId(
     'Aquarius',
     'Pisces',
   ];
-  const sunSign = sunSigns[absHash % 12];
+  const sunSign = realZodiac?.sign ?? sunSigns[absHash % 12];
   const tarotCards = [
     'The Magician',
     'The High Priestess',
@@ -3033,7 +3057,7 @@ export function synthesizeCosmicPlayerFromId(
     'Judgement',
     'The World',
   ];
-  const tarotCard = tarotCards[absHash % tarotCards.length];
+  const tarotCard = realOracular?.tarotName ?? tarotCards[absHash % tarotCards.length];
 
   const celestialScore = Number(
     (
@@ -3152,6 +3176,7 @@ export function synthesizeCosmicPlayerFromId(
     last_name: lastName,
     position,
     team,
+    ...(resolvedBirthDate ? {birth_date: resolvedBirthDate} : {}),
     jersey_number: jerseyNumber,
     bye_week:
       getTeamByeWeek(team) ??
@@ -3192,10 +3217,10 @@ export function synthesizeCosmicPlayerFromId(
     elemental_traits: {
       sun_sign: sunSign,
       element,
-      life_path_number: (absHash % 9) + 1,
+      life_path_number: realLifePath ?? ((absHash % 9) + 1),
       gematria_resonance: (absHash % 10) + 1,
       tarot_card: tarotCard,
-      iching_hexagram: (absHash % 64) + 1,
+      iching_hexagram: realOracular?.hexagramNumber ?? ((absHash % 64) + 1),
       score: Math.round(celestialScore),
     },
     divination_breakdown: divinationBreakdown,
@@ -4925,25 +4950,25 @@ export function deriveWeeklyMatchup(
     if (calc.health_penalty < 0) {
       const onBye = onByeThisWeek;
       rationaleText = onBye
-        ? `🌑 Fallow week: ${p.name} (${sunSign} / ${elem}) is on bye (−22 Stars).`
+        ? `Bye week: ${p.name} (${sunSign}, ${elem}) has no game scheduled this week.`
         : p.injury_status
-          ? `⚠️ 6th House affliction: ${p.name} (${sunSign} / ${elem}) is ${p.injury_status} (−22 Stars).`
-          : `⚠️ 6th House affliction: ${p.name} (${sunSign} / ${elem}) has no projection this week (−22 Stars).`;
+          ? `Injury report: ${p.name} (${sunSign}, ${elem}) is listed as ${p.injury_status} this week.`
+          : `Inactive projection: ${p.name} (${sunSign}, ${elem}) has no weekly projection listed.`;
       aspectHighlights = onBye
-        ? ['🌑 Bye week (−22)']
-        : ['⚠️ 6th House affliction (−22)', p.injury_status || 'No projection'];
+        ? ['Bye week']
+        : ['Injury status', p.injury_status || 'No projection'];
     } else if (calc.verdict === 'HEAVILY FAVORED') {
-      rationaleText = `✨ Apex alignment: ${p.name} (${sunSign} / ${elem}) rides a ${stadiumObj.zodiac_ascendant} trine at ${stadiumName}.`;
-      aspectHighlights = [`✨ ${stadiumObj.zodiac_ascendant} Trine`, stadiumObj.geo_magnetic_resonance];
+      rationaleText = `Strong game-day sky for ${p.name} (${sunSign}, ${elem}) at ${stadiumName}.`;
+      aspectHighlights = [`${stadiumObj.zodiac_ascendant} alignment`, stadiumObj.geo_magnetic_resonance];
     } else if (calc.verdict === 'ASTRALLY FAVORED') {
-      rationaleText = `🌟 Harmonic alignment: ${p.name} (${sunSign} / ${elem}) has steady sextile support at ${stadiumName}.`;
-      aspectHighlights = ['🌟 Harmonic Sextile', stadiumObj.celestial_house];
+      rationaleText = `Friendly game-day sky for ${p.name} (${sunSign}, ${elem}) at ${stadiumName}.`;
+      aspectHighlights = ['Friendly sky angle', stadiumObj.celestial_house];
     } else if (calc.verdict === 'NEUTRAL') {
-      rationaleText = `⚖️ Mixed signals: ${p.name} (${sunSign} / ${elem}) has neither trine nor square at ${stadiumName}.`;
-      aspectHighlights = ['⚖️ Neutral transit', stadiumObj.celestial_house];
+      rationaleText = `Balanced game-day sky for ${p.name} (${sunSign}, ${elem}) at ${stadiumName}.`;
+      aspectHighlights = ['Neutral sky', stadiumObj.celestial_house];
     } else {
-      rationaleText = `⚠️ Planetary friction: ${p.name} (${sunSign} / ${elem}) faces a Saturn-Mars square at ${stadiumName}.`;
-      aspectHighlights = ['⚠️ Saturn-Mars Square', 'Contested matchup'];
+      rationaleText = `Tough game-day sky for ${p.name} (${sunSign}, ${elem}) at ${stadiumName}.`;
+      aspectHighlights = ['Headwind sky angle', 'Contested matchup'];
     }
 
     const kickoffSlots = [
@@ -8348,4 +8373,150 @@ export async function loadOptionalInternalData(options?: {
   }
 
   return {available: false, profile: null, playersLoaded: 0, playerCount: 0};
+}
+
+/**
+ * Resolves the real NFL team skill-position unit (up to 8 players) for a given
+ * NFL team code, merging active board/roster players with cached Sleeper NFL
+ * player data and KNOWN_ROSTERED_NFL_PLAYERS while preventing cross-team or
+ * duplicate-name collisions.
+ */
+export function resolveNFLTeamUnit(
+  teamCode?: string | null,
+  cosmicBoard: readonly CosmicPlayer[] = [],
+  roster: readonly RosterSlot[] = [],
+  anchorPlayer?: CosmicPlayer | null,
+): CosmicPlayer[] {
+  const normalizedTeam = String(anchorPlayer?.team || teamCode || '')
+    .trim()
+    .toUpperCase();
+  if (!VALID_NFL_TEAMS.has(normalizedTeam)) {
+    return anchorPlayer ? [anchorPlayer] : [];
+  }
+
+  const normName = (n?: string | null): string =>
+    String(n || '')
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g, ' ');
+
+  const knownDatasetIds = new Set<string>();
+  const knownDatasetNames = new Set<string>();
+  const sameTeamPool: CosmicPlayer[] = [];
+
+  const registerActivePlayer = (p?: CosmicPlayer | null) => {
+    if (!p) return;
+    const pid = String(p.id || '').trim();
+    const pname = normName(p.name);
+    if (pid) knownDatasetIds.add(pid);
+    if (pname) knownDatasetNames.add(pname);
+    if (String(p.team || '').trim().toUpperCase() === normalizedTeam) {
+      sameTeamPool.push(p);
+    }
+  };
+
+  if (anchorPlayer) {
+    registerActivePlayer(anchorPlayer);
+  }
+  for (const p of cosmicBoard) {
+    registerActivePlayer(p);
+  }
+  for (const slot of roster) {
+    registerActivePlayer(slot?.player);
+  }
+
+  const anchorId = anchorPlayer ? String(anchorPlayer.id) : null;
+  const rankBonusById = new Map<string, number>();
+
+  // Supplement from live Sleeper /players/nfl cache when loaded
+  if (playerDictionaryCache && typeof playerDictionaryCache === 'object') {
+    for (const [pid, rec] of Object.entries(playerDictionaryCache)) {
+      if (!rec || String(rec.team || '').toUpperCase() !== normalizedTeam) continue;
+      const pos = String(rec.position || '').toUpperCase();
+      if (!['QB', 'RB', 'WR', 'TE'].includes(pos)) continue;
+      const depthPos = String(rec.depth_chart_position || '').toUpperCase();
+      if (depthPos === 'FB') continue;
+      if (!isSignedActiveNFLPlayer(pid, rec)) continue;
+      const depth = rec.depth_chart_order;
+      const rawRank = Number(rec.search_rank);
+      const validRank =
+        Number.isFinite(rawRank) && rawRank > 0 && rawRank < 9000 ? rawRank : 9999;
+      const isStarterQb = pos === 'QB' && depth === 1;
+      if (!isStarterQb && validRank > 360) continue;
+
+      if (validRank < 9000) {
+        rankBonusById.set(String(pid), Math.max(30, 380 - validRank));
+      }
+      const fullName = normName(`${rec.first_name || ''} ${rec.last_name || ''}`);
+      if (knownDatasetIds.has(String(pid)) || (fullName && knownDatasetNames.has(fullName))) {
+        continue;
+      }
+      const hydrated = synthesizeCosmicPlayerFromId(String(pid), playerDictionaryCache, false);
+      knownDatasetIds.add(String(pid));
+      if (fullName) knownDatasetNames.add(fullName);
+      sameTeamPool.push(hydrated);
+    }
+  }
+
+  // Supplement from curated KNOWN_ROSTERED_NFL_PLAYERS starters across all 32 NFL teams
+  for (const [pid, rec] of Object.entries(KNOWN_ROSTERED_NFL_PLAYERS)) {
+    if (String(rec.team || '').toUpperCase() !== normalizedTeam) continue;
+    if (rec.position === 'DEF' || rec.position === 'K') continue;
+    rankBonusById.set(String(pid), Math.max(rankBonusById.get(String(pid)) || 0, 220));
+    const fullName = normName(`${rec.first_name} ${rec.last_name}`);
+    if (knownDatasetIds.has(String(pid)) || (fullName && knownDatasetNames.has(fullName))) {
+      continue;
+    }
+    const hydrated = synthesizeCosmicPlayerFromId(String(pid), null, false);
+    if (hydrated.depth_chart_order == null) {
+      hydrated.depth_chart_order = rec.depth_chart_order ?? 1;
+    }
+    knownDatasetIds.add(String(pid));
+    if (fullName) knownDatasetNames.add(fullName);
+    sameTeamPool.push(hydrated);
+  }
+
+  const seenIds = new Set<string>();
+  const seenNames = new Set<string>();
+  const deduped: CosmicPlayer[] = [];
+  for (const p of sameTeamPool) {
+    const isAnchor = Boolean(anchorId && String(p.id) === anchorId);
+    if (!isAnchor && (p.position === 'DEF' || p.position === 'K')) continue;
+    const pid = String(p.id || '').trim();
+    const pname = normName(p.name);
+    if ((pid && seenIds.has(pid)) || (pname && seenNames.has(pname))) continue;
+    if (pid) seenIds.add(pid);
+    if (pname) seenNames.add(pname);
+    deduped.push(p);
+  }
+
+  const rankTeammate = (p: CosmicPlayer): number => {
+    const pid = String(p.id);
+    if (anchorId && pid === anchorId) return 1_000_000;
+    const isKnownStarter = pid in KNOWN_ROSTERED_NFL_PLAYERS ? 220 : 0;
+    const searchBoost = rankBonusById.get(pid) || 0;
+    const isStarterQb =
+      p.position === 'QB' && (p.depth_chart_order === 1 || (!p.depth_chart_order && (isKnownStarter > 0 || searchBoost > 150)))
+        ? 600
+        : 0;
+    const depthScore = p.depth_chart_order === 1 ? 140 : p.depth_chart_order === 2 ? 70 : 30;
+    const proj = Number(p.weekly_projected_points ?? p.projected_points ?? 0) || 0;
+    return isStarterQb + Math.max(isKnownStarter, searchBoost) + depthScore + proj;
+  };
+
+  const sorted = [...deduped].sort((a, b) => rankTeammate(b) - rankTeammate(a));
+
+  // Keep only 1 starting QB in the 8-player offensive unit (plus anchorPlayer if anchor is QB2)
+  const unit: CosmicPlayer[] = [];
+  let nonAnchorQbAdded = false;
+  for (const cand of sorted) {
+    if (unit.length >= 8) break;
+    const isAnchor = Boolean(anchorId && String(cand.id) === anchorId);
+    if (cand.position === 'QB' && !isAnchor) {
+      if (nonAnchorQbAdded) continue;
+      nonAnchorQbAdded = true;
+    }
+    unit.push(cand);
+  }
+  return unit;
 }
