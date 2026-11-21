@@ -294,8 +294,8 @@ describe('Component Identity Audit: Single Global YOU & Zero Collisions', () => 
       );
       const userRows = view.getAllByTestId('leaderboard-user-team');
       assert.equal(userRows.length, 1, 'CelestialLeaderboardGraph renders exactly 1 leaderboard-user-team row');
-      assert.ok(!userRows[0].textContent.includes('YOU'), 'CelestialLeaderboardGraph must not render YOU pill label on user row');
-      assert.ok(userRows[0].className.includes('border-purple-400'), 'CelestialLeaderboardGraph preserves purple border highlight for active team');
+      assert.ok(!/\byou\b/i.test(userRows[0].textContent), 'CelestialLeaderboardGraph must not render YOU/You pill label on user row');
+      assert.ok(userRows[0].className.includes('bg-amber-500'), 'CelestialLeaderboardGraph preserves warm brass highlight for active team');
       view.unmount();
     });
 

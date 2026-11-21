@@ -54,12 +54,12 @@ export const GlassCard: React.FC<GlassCardProps> = ({
       : '';
 
   const interactiveClass = interactive
-    ? 'cursor-pointer transition-all duration-200 hover:border-white/20 hover:shadow-[0_12px_36px_-6px_rgba(0,0,0,0.7)] active:scale-[0.99]'
+    ? 'cursor-pointer transition-colors duration-150 hover:border-white/15 hover:bg-[#1a1d24]'
     : '';
 
   return (
     <div
-      className={`rounded-xl p-4 transition-colors ${variantClass} ${glowClass} ${interactiveClass} ${className}`}
+      className={`rounded-xl p-4 sm:p-5 transition-colors ${variantClass} ${glowClass} ${interactiveClass} ${className}`}
       {...rest}
     >
       {children}

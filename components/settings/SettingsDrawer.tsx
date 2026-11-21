@@ -20,7 +20,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useOneiromancy } from '@/context/OneiromancyContext';
 import UserAvatar from '@/components/common/UserAvatar';
 import { resetRateLimit } from '@/lib/sleeper';
-import { X, Settings, RefreshCw, Globe, Sparkles, ExternalLink, Compass } from 'lucide-react';
+import { X, RefreshCw, ExternalLink } from 'lucide-react';
 import {
   getOrientationPermissionStatus,
   isOrientationPermissionRequired,
@@ -58,12 +58,9 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
 }) => {
   const {
     draftState,
-    isAutoUpdate,
     isLoading,
-    toggleAutoUpdate,
     setPollInterval,
     setLeagueId,
-    updateChaosLambda,
     refreshDraft,
     loadMockData,
     setMode,
@@ -91,8 +88,6 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
     ''
   ).trim();
   const hasConfiguredUsername = !isFirstLaunch && Boolean(configuredUsername);
-  // Shown in a highlighted box until a real Sleeper account is connected.
-  const needsUsername = !hasConfiguredUsername;
   const currentUsername = configuredUsername;
   // Sample data has no Sleeper leagues; never present it as if it were connected.
   const availableLeagues = hasConfiguredUsername && !isMock
@@ -357,31 +352,28 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
       role="dialog"
       aria-modal="true"
       aria-labelledby="settings-drawer-title"
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/80 backdrop-blur-md animate-fadeIn"
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/75 backdrop-blur-xs"
       onClick={handleDismiss}
     >
       <div
         onClick={(e: { stopPropagation: () => void }) => e.stopPropagation()}
-        className={`w-full max-w-md max-h-[85vh] overflow-y-auto rounded-t-2xl sm:rounded-2xl bg-[#161622] border border-cyan-500/30 p-5 sm:p-6 shadow-[0_0_30px_rgba(6,182,212,0.2)] space-y-5 ${className}`}
+        className={`w-full max-w-md max-h-[88vh] overflow-y-auto rounded-t-xl sm:rounded-xl bg-[#16181d] border border-white/10 p-5 sm:p-6 shadow-2xl space-y-5 font-sans ${className}`}
       >
         {/* Drawer Header */}
-        <div className="flex justify-between items-center border-b border-white/10 pb-3">
-          <div className="flex items-center gap-2">
-            <Settings className="w-4 h-4 text-cyan-400" />
-            <h2
-              id="settings-drawer-title"
-              className="font-serif text-lg font-bold text-slate-100 tracking-wide"
-            >
-              Settings
-            </h2>
-          </div>
+        <div className="flex justify-between items-center border-b border-white/[0.08] pb-3">
+          <h2
+            id="settings-drawer-title"
+            className="font-sans text-base font-semibold text-zinc-100"
+          >
+            Settings
+          </h2>
           <button
             type="button"
             onClick={handleDismiss}
             aria-label="Close Settings"
-            className="p-2.5 min-w-[44px] min-h-[44px] inline-flex items-center justify-center rounded-lg text-slate-400 hover:text-slate-100 hover:bg-slate-800 transition-colors"
+            className="p-2 min-w-[44px] min-h-[44px] -mr-2 inline-flex items-center justify-center rounded-md text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 transition-colors"
           >
-            <X className="w-5 h-5" />
+            <X className="w-4 h-4" />
           </button>
         </div>
 
@@ -390,35 +382,26 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
           <div
             id="first-launch-welcome-banner"
             data-testid="first-launch-welcome-banner"
-            className="p-3.5 rounded-xl bg-gradient-to-r from-cyan-950/70 to-purple-950/70 border border-cyan-400/40 text-xs font-mono text-cyan-100 space-y-1 shadow-[0_0_20px_rgba(6,182,212,0.15)]"
+            className="text-xs font-sans text-zinc-300 leading-relaxed"
           >
-            <div className="font-bold text-cyan-300 flex items-center gap-1.5">
-              <Sparkles className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
-              <span>Welcome to Oneiromancy</span>
-            </div>
-            <p className="text-[11px] text-slate-300 leading-relaxed font-sans">
-              Enter your Sleeper username below to connect your fantasy league, or load the Mock Oneiromancy Engine to explore offline.
-            </p>
+            Welcome to Oneiromancy. Enter your Sleeper username to load your leagues and rosters, or try the sample league.
           </div>
         )}
 
-        {/* Active User Avatar & Identity Badge */}
-        {/* Sample-data notice: nothing here is connected to Sleeper */}
-        {isMock && (
+        {/* Sample-data notice */}
+        {isMock && !isFirstLaunch && (
           <div
             data-testid="settings-mock-notice"
-            className="p-3 rounded-xl bg-purple-950/40 border border-purple-500/40 text-[11px] text-purple-200 font-sans leading-relaxed"
+            className="text-xs text-zinc-400 font-sans leading-relaxed"
           >
-            <span className="font-mono font-bold text-purple-300 block">Viewing sample data</span>
-            The mock league is made up and isn&apos;t connected to Sleeper. Nothing syncs or updates until you enter
-            your Sleeper username below.
+            Viewing sample league data. Enter your Sleeper username to connect a live league.
           </div>
         )}
 
         {!isMock && hasConfiguredUsername && (draftState?.user_avatar_url || draftState?.avatar_url || draftState?.avatar) && (
           <div
             data-testid="settings-user-profile"
-            className="flex items-center gap-3 p-3 rounded-xl bg-purple-950/30 border border-purple-500/30 font-mono text-xs"
+            className="flex items-center gap-3 pb-3 border-b border-white/[0.06] font-sans text-xs"
           >
             <UserAvatar
               src={draftState.user_avatar_url || draftState.avatar_url}
@@ -430,40 +413,36 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
               data-testid="settings-user-avatar"
             />
             <div>
-              <span className="text-[10px] text-purple-300 font-bold block uppercase tracking-wider">
-                Active Manager Profile
+              <span className="text-[11px] text-zinc-400 block">
+                Connected account
               </span>
-              <span className="text-slate-100 font-bold text-sm">
+              <span className="text-zinc-100 font-mono font-semibold text-sm">
                 @{currentUsername}
               </span>
             </div>
           </div>
         )}
 
-        {/* Sleeper Username Input: highlighted until an account is connected */}
+        {/* Sleeper Username Input */}
         <div
           data-testid="username-section"
-          className={`space-y-1.5 font-mono text-xs ${
-            needsUsername
-              ? 'p-3.5 rounded-xl bg-cyan-950/40 border-2 border-cyan-400 shadow-[0_0_24px_rgba(34,211,238,0.35)]'
-              : ''
-          }`}
+          className="space-y-1.5 font-sans text-xs"
         >
           <div className="flex items-center justify-between">
             <label
               htmlFor="username-input"
-              className={needsUsername ? 'text-cyan-200 font-bold text-sm block' : 'text-slate-300 font-semibold block'}
+              className="text-zinc-200 font-medium block"
             >
-              {needsUsername ? 'Enter your Sleeper username' : 'Sleeper Username'}
+              Sleeper username
             </label>
             <a
               href="https://docs.sleeper.com/"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-[11px] text-cyan-400 hover:text-cyan-300 underline flex items-center gap-1 transition-colors"
+              className="text-[11px] text-zinc-400 hover:text-zinc-200 underline flex items-center gap-1 transition-colors"
               title="Sleeper's public API: read-only, no login needed"
             >
-              <span>Sleeper API docs</span>
+              <span>API docs</span>
               <ExternalLink className="w-3 h-3" />
             </a>
           </div>
@@ -481,76 +460,63 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
                 if (e.key === 'Enter') handleSave();
               }}
               placeholder="e.g. OneiroVanguard"
-              className={`flex-1 rounded-xl bg-slate-900/90 text-slate-100 font-mono focus:outline-none focus:border-cyan-300 transition-colors ${
-                needsUsername
-                  ? 'p-3 text-sm border-2 border-cyan-400/80 ring-2 ring-cyan-400/30'
-                  : 'p-2.5 text-xs border border-cyan-500/30'
-              }`}
+              className="flex-1 px-3 py-2.5 rounded-lg bg-[#0f1012] border border-white/15 text-zinc-100 text-xs font-mono placeholder-zinc-500 focus:outline-none focus:border-amber-400/70 transition-colors"
               aria-label="Sleeper Username"
             />
           </div>
-          <span className="text-[10px] text-slate-400 block">
-            Your leagues and rosters load from Sleeper&apos;s public, read-only API (<a href="https://docs.sleeper.com/" target="_blank" rel="noopener noreferrer" className="text-cyan-400 underline hover:text-cyan-300">docs.sleeper.com</a>).
+          <span className="text-[11px] text-zinc-400 block leading-relaxed">
+            Read-only sync via Sleeper&apos;s public API (<a href="https://docs.sleeper.com/" target="_blank" rel="noopener noreferrer" className="text-zinc-300 underline hover:text-zinc-100">docs.sleeper.com</a>).
           </span>
-          {/* Prominent Sync Error Banner */}
+          {/* Sync Error Banner */}
           {(syncError || draftState?.sync_error) && (
             <div
               id="sync-error-banner"
-              className="p-3 rounded-xl bg-red-950/80 border border-red-500/50 text-red-200 text-xs font-mono flex items-start gap-2 shadow-[0_0_15px_rgba(239,68,68,0.25)] animate-fadeIn"
+              className="p-3 rounded-lg bg-rose-950/50 border border-rose-500/35 text-rose-200 text-xs font-sans space-y-0.5"
             >
-              <span className="text-red-400 text-sm leading-none shrink-0 mt-0.5">⚠️</span>
-              <div className="space-y-0.5 flex-1">
-                <div className="font-bold text-red-300">Sync Warning / Error</div>
-                <div className="text-[11px] text-red-200/90 break-words leading-relaxed">
-                  {syncError || draftState?.sync_error}
-                </div>
+              <div className="font-semibold text-rose-200">Sync error</div>
+              <div className="text-[11px] font-mono text-rose-200/90 break-words leading-relaxed">
+                {syncError || draftState?.sync_error}
               </div>
             </div>
           )}
-          {/* Real-time Dynamic Status Badge */}
+          {/* Dynamic Status */}
           {!isMock && (isFetchingLeagues || isLoading || syncError || (hasConfiguredUsername && availableLeagues.length > 0)) && (
             <div
               id="username-status-badge"
-              className={`p-2 rounded-lg text-[11px] font-mono flex items-center gap-1.5 transition-all ${
+              className={`px-2.5 py-1.5 rounded-md text-[11px] font-sans flex items-center gap-1.5 ${
                 isFetchingLeagues || isLoading
-                  ? 'bg-cyan-950/60 border border-cyan-500/30 text-cyan-300'
+                  ? 'bg-zinc-900 border border-white/10 text-zinc-300'
                   : syncError
-                  ? 'bg-red-950/60 border border-red-500/30 text-red-300'
-                  : 'bg-emerald-950/60 border border-emerald-500/30 text-emerald-300'
+                  ? 'bg-rose-950/40 border border-rose-500/30 text-rose-200'
+                  : 'bg-emerald-950/40 border border-emerald-500/25 text-emerald-300'
               }`}
             >
               {isFetchingLeagues || isLoading ? (
                 <>
-                  <RefreshCw className="w-3 h-3 animate-spin text-cyan-400 shrink-0" />
-                  <span>Querying Sleeper for @{validatedUsername || currentUsername}...</span>
+                  <RefreshCw className="w-3 h-3 animate-spin text-zinc-400 shrink-0" />
+                  <span>Checking Sleeper for <span className="font-mono">@{validatedUsername || currentUsername}</span></span>
                 </>
               ) : syncError ? (
-                <>
-                  <span className="shrink-0">⚠️</span>
-                  <span className="break-all">{syncError}</span>
-                </>
+                <span className="break-all font-mono">{syncError}</span>
               ) : (
-                <>
-                  <span className="shrink-0 text-emerald-400">✓</span>
-                  <span>
-                    Found {availableLeagues.length} league{availableLeagues.length === 1 ? '' : 's'} on Sleeper
-                  </span>
-                </>
+                <span>
+                  Connected · {availableLeagues.length} league{availableLeagues.length === 1 ? '' : 's'} found
+                </span>
               )}
             </div>
           )}
         </div>
 
         {/* Dynamic League Selector */}
-        <div className="space-y-1.5 font-mono text-xs">
+        <div className="space-y-1.5 font-sans text-xs">
           <div className="flex items-center justify-between">
-            <label htmlFor="league-select" className="text-slate-300 font-semibold block">
-              League Selector
+            <label htmlFor="league-select" className="text-zinc-200 font-medium block">
+              League
             </label>
             {isLoading && (
-              <div className="flex items-center gap-1 text-[10px] text-cyan-400">
+              <div className="flex items-center gap-1 text-[11px] text-zinc-400">
                 <RefreshCw className="w-3 h-3 animate-spin" />
-                <span>Loading leagues...</span>
+                <span>Loading</span>
               </div>
             )}
           </div>
@@ -560,18 +526,18 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
             value={currentLeagueId}
             onChange={handleLeagueChange}
             disabled={isLoading || !hasConfiguredUsername || isMock}
-            className="w-full p-2.5 rounded-xl bg-slate-900/90 border border-cyan-500/30 text-slate-100 font-mono text-xs focus:outline-none focus:border-cyan-400 transition-colors disabled:opacity-50"
+            className="w-full px-3 py-2.5 rounded-lg bg-[#0f1012] border border-white/15 text-zinc-100 font-sans text-xs focus:outline-none focus:border-amber-400/70 transition-colors disabled:opacity-50"
           >
             {!hasConfiguredUsername ? (
-              <option value="" disabled className="bg-slate-900 text-slate-400">
-                Enter a Sleeper username above to load leagues
+              <option value="" disabled className="bg-zinc-900 text-zinc-400">
+                Enter a Sleeper username first
               </option>
             ) : isMock ? (
-              <option value="" disabled className="bg-slate-900 text-slate-400">
-                Sample league (not on Sleeper)
+              <option value="" disabled className="bg-zinc-900 text-zinc-400">
+                Sample league
               </option>
             ) : availableLeagues.length === 0 ? (
-              <option value="" disabled className="bg-slate-900 text-slate-400">
+              <option value="" disabled className="bg-zinc-900 text-zinc-400">
                 No leagues found
               </option>
             ) : (
@@ -579,24 +545,18 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
                 <option
                   key={league.league_id}
                   value={league.league_id}
-                  className="bg-slate-900 text-slate-100"
+                  className="bg-zinc-900 text-zinc-100"
                 >
-                  {league.name} - {league.season}
+                  {league.name} · {league.season}
                 </option>
               ))
             )}
           </select>
-          <span className="text-[10px] text-slate-500 block">
-            Defaults to your first league.
-          </span>
           {/* Fallback Manual League ID Input when availableLeagues is empty */}
           {!isMock && hasConfiguredUsername && availableLeagues.length === 0 && (
-            <div className="mt-2 p-2.5 rounded-xl bg-slate-900/60 border border-amber-500/30 space-y-2">
-              <div className="text-[11px] text-amber-300 font-semibold flex items-center gap-1.5">
-                <span>⚠️ No leagues detected for @{validatedUsername || currentUsername}</span>
-              </div>
-              <p className="text-[10px] text-slate-400">
-                If your league is in an unlisted season or private, specify your Sleeper League ID directly:
+            <div className="mt-2 pt-2 border-t border-white/[0.06] space-y-2">
+              <p className="text-[11px] text-zinc-400">
+                No public leagues listed for <span className="font-mono text-zinc-300">@{validatedUsername || currentUsername}</span>. Enter a Sleeper League ID directly:
               </p>
               <div className="flex gap-2">
                 <input
@@ -605,12 +565,14 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
                   value={manualLeagueId}
                   onChange={(e) => setManualLeagueId(e.target.value)}
                   placeholder="e.g. 9000000000000000001"
-                  className="flex-1 p-2 rounded-lg bg-slate-950 border border-slate-700 text-slate-200 text-xs font-mono focus:outline-none focus:border-cyan-400"
+                  className="flex-1 px-2.5 py-2 rounded-lg bg-[#0f1012] border border-white/15 text-zinc-200 text-xs font-mono focus:outline-none focus:border-amber-400/70"
                   aria-label="Manual Sleeper League ID"
                 />
                 <button
                   type="button"
                   id="manual-league-apply-btn"
+                  disabled={isLoading}
+                  aria-busy={isLoading}
                   onClick={async () => {
                     const trimmed = manualLeagueId.trim();
                     if (trimmed && setLeagueId && refreshDraft) {
@@ -619,7 +581,7 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
                       await refreshDraft(validatedUsername || undefined, trimmed);
                     }
                   }}
-                  className="px-3 py-1.5 bg-cyan-600 hover:bg-cyan-500 text-white rounded-lg text-xs font-mono font-bold transition-all shrink-0"
+                  className="px-3 py-1.5 bg-amber-400 hover:bg-amber-300 text-zinc-950 rounded-lg text-xs font-sans font-semibold transition-colors shrink-0 disabled:opacity-50"
                 >
                   Set League
                 </button>
@@ -628,29 +590,28 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
           )}
         </div>
 
-        {/* Action Buttons: Apply & Sync and Load Mock Data */}
-        <div className="space-y-2">
+        {/* Action Buttons */}
+        <div className="space-y-2 pt-1">
           <button
             type="button"
             id="apply-sync-btn"
             onClick={handleSave}
             disabled={isLoading}
-            className="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-mono text-xs font-bold tracking-wide flex items-center justify-center gap-2 shadow-[0_0_15px_rgba(6,182,212,0.4)] transition-all active:scale-98 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full py-2.5 px-4 rounded-lg bg-amber-400 hover:bg-amber-300 text-zinc-950 font-sans text-xs font-semibold flex items-center justify-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             aria-label="Apply & Sync Draft"
           >
-            <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
-            <span>{isLoading ? 'Syncing...' : 'Apply & Sync'}</span>
+            {isLoading && <RefreshCw className="w-3.5 h-3.5 animate-spin" />}
+            <span>{isLoading ? 'Syncing' : 'Apply & Sync'}</span>
           </button>
 
           <button
             type="button"
             id="load-mock-btn"
             onClick={handleLoadMockData}
-            className="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-mono text-xs font-bold tracking-wide flex items-center justify-center gap-2 shadow-[0_0_15px_rgba(168,85,247,0.3)] transition-all active:scale-98"
+            className="w-full py-2.5 px-4 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-200 border border-white/10 font-sans text-xs font-medium flex items-center justify-center gap-2 transition-colors"
             aria-label="Load Mock Oneiromancy Engine"
           >
-            <Sparkles className="w-3.5 h-3.5 text-purple-200" />
-            <span>🔮 Load Mock Oneiromancy Engine</span>
+            <span>Use sample league</span>
           </button>
           {mode === 'mock' && hasConfiguredUsername && (
             <button
@@ -659,75 +620,27 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
                 setMode && setMode('live');
                 onClose();
               }}
-              className="w-full py-2 px-4 rounded-xl border border-cyan-500/40 text-cyan-300 font-mono text-xs hover:bg-cyan-950/40"
+              className="w-full py-2 px-4 rounded-lg border border-white/10 text-amber-300 font-sans text-xs font-medium hover:bg-white/[0.03]"
             >
-              Back to my live league
+              Return to @{currentUsername}
             </button>
           )}
         </div>
 
-        {/* Auto-Update Polling Status Switch */}
-        <div className="p-3.5 rounded-xl bg-slate-900/70 border border-white/10 flex items-center justify-between">
-          <div className="space-y-0.5">
-            <div className="flex items-center gap-1.5 font-mono text-xs font-semibold text-slate-200">
-              <RefreshCw
-                className={`w-3.5 h-3.5 text-cyan-400 ${isAutoUpdate && !isMock ? 'animate-spin' : ''}`}
-              />
-              <span>Real-Time Auto-Update</span>
-            </div>
-            <p className="text-[10px] text-slate-400 font-sans">
-              {isMock
-                ? 'Off while viewing sample data: there is no Sleeper league to update from.'
-                : 'Keeps rosters and scores in sync with Sleeper.'}
-            </p>
-          </div>
-
-          <button
-            type="button"
-            role="switch"
-            aria-label="Toggle Real-Time Auto-Update"
-            aria-checked={isAutoUpdate && !isMock}
-            disabled={isMock}
-            onClick={toggleAutoUpdate}
-            className={`w-12 h-6 rounded-full p-0.5 transition-colors duration-200 ease-in-out ${
-              isAutoUpdate && !isMock ? 'bg-cyan-500' : 'bg-slate-700'
-            } disabled:opacity-50 disabled:cursor-not-allowed`}
-          >
-            <div
-              className={`w-5 h-5 rounded-full bg-slate-950 shadow-md transform transition-transform duration-200 ease-in-out ${
-                isAutoUpdate && !isMock ? 'translate-x-6' : 'translate-x-0'
-              }`}
-            />
-          </button>
-        </div>
-
-        {/* Celestial Motion Tilt / Accelerometer Parallax Section */}
+        {/* Preferences */}
         <div
           data-testid="celestial-tilt-section"
-          className="p-3.5 rounded-xl bg-slate-900/70 border border-white/10 space-y-2.5 font-mono text-xs"
+          className="pt-4 border-t border-white/[0.08] space-y-2 font-sans text-xs"
         >
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-1.5 font-semibold text-slate-200">
-              <Compass className="w-3.5 h-3.5 text-cyan-400" />
-              <span>Celestial Motion Tilt</span>
-            </div>
+            <span className="font-medium text-zinc-200">Background parallax</span>
             <span
               data-testid="celestial-tilt-status-badge"
-              className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                tiltPermission !== 'unsupported'
-                  ? 'bg-emerald-950/80 text-emerald-300 border border-emerald-500/40'
-                  : 'bg-slate-800 text-slate-400 border border-slate-700'
-              }`}
+              className="text-[11px] font-mono text-zinc-400"
             >
-              {tiltPermission !== 'unsupported' ? 'Active' : 'Autonomous Drift'}
+              {tiltPermission !== 'unsupported' ? 'Active' : 'Static'}
             </span>
           </div>
-
-          <p className="text-[10px] text-slate-400 font-sans leading-relaxed">
-            {tiltPermission !== 'unsupported'
-              ? 'Motion tilt parallax is active by default. Autonomous celestial drift continues automatically if sensor events are unavailable.'
-              : 'Autonomous celestial drift is active. Motion sensors are disabled or unavailable on this device.'}
-          </p>
 
           {tiltPermission !== 'unsupported' &&
             tiltPermission !== 'granted' &&
@@ -738,23 +651,12 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
                 data-testid="enable-orientation-tilt-btn"
                 onClick={handleRequestOrientation}
                 disabled={isRequestingOrientation}
-                className="w-full py-1.5 px-3 rounded-lg bg-slate-900/90 hover:bg-slate-800 text-slate-300 text-[11px] font-mono border border-white/10 transition-all disabled:opacity-50"
+                className="w-full py-1.5 px-3 rounded-md bg-zinc-900 hover:bg-zinc-800 text-zinc-200 text-xs font-sans font-medium border border-white/10 transition-colors disabled:opacity-50"
                 aria-label="Enable Device Orientation Permission"
               >
-                {isRequestingOrientation ? 'Requesting...' : 'Enable iOS Motion Access'}
+                {isRequestingOrientation ? 'Requesting' : 'Enable iOS Motion Access'}
               </button>
             )}
-        </div>
-
-        {/* Drawer Footer Actions */}
-        <div className="pt-2 flex items-center justify-end gap-2">
-          <button
-            type="button"
-            onClick={handleDismiss}
-            className="w-full py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-xs font-mono text-slate-200 border border-white/10 active:scale-98 transition-all"
-          >
-            Close Settings
-          </button>
         </div>
       </div>
     </div>

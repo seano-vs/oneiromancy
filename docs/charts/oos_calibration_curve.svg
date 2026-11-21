@@ -1,0 +1,159 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 980 869" width="980" height="869" font-family="ui-sans-serif, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif">
+<rect x="0" y="0" width="980" height="869" rx="12" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5"/>
+<text x="28" y="35" font-size="18" font-weight="700" fill="#0f172a">Walk-Forward Out-of-Sample Calibration &amp; System Generalization (Test: 2023-2026)</text>
+<text x="28" y="56" font-size="12.5" fill="#475569">Fit on 2018-2022 (n = 20,616) • Unseen 2023-2026 (n = 15,547) • All 25 Systems t = +2.07 (Q5-Q1 = +0.37 pts) • Screened t = +2.25 (D10-D1 = +0.54 pts)</text>
+<text x="272" y="84" text-anchor="middle" font-size="13" font-weight="700" fill="#1e293b">A. Ex-Ante Train-Screened Decile Calibration (D1-D10)</text>
+<rect x="74" y="100" width="396" height="695" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1"/>
+<line x1="92.0" y1="100" x2="92.0" y2="795" stroke="#e2e8f0" stroke-width="1"/>
+<line x1="74" y1="763.4" x2="470" y2="763.4" stroke="#e2e8f0" stroke-width="1"/>
+<text x="92.0" y="813" text-anchor="middle" font-size="10.5" fill="#475569">-1.0</text>
+<text x="66" y="767.4" text-anchor="end" font-size="10.5" fill="#475569">-1.0</text>
+<line x1="182.0" y1="100" x2="182.0" y2="795" stroke="#e2e8f0" stroke-width="1"/>
+<line x1="74" y1="605.5" x2="470" y2="605.5" stroke="#e2e8f0" stroke-width="1"/>
+<text x="182.0" y="813" text-anchor="middle" font-size="10.5" fill="#475569">-0.5</text>
+<text x="66" y="609.5" text-anchor="end" font-size="10.5" fill="#475569">-0.5</text>
+<line x1="272.0" y1="100" x2="272.0" y2="795" stroke="#94a3b8" stroke-width="1.2"/>
+<line x1="74" y1="447.5" x2="470" y2="447.5" stroke="#94a3b8" stroke-width="1.2"/>
+<text x="272.0" y="813" text-anchor="middle" font-size="10.5" fill="#475569">+0.0</text>
+<text x="66" y="451.5" text-anchor="end" font-size="10.5" fill="#475569">+0.0</text>
+<line x1="362.0" y1="100" x2="362.0" y2="795" stroke="#e2e8f0" stroke-width="1"/>
+<line x1="74" y1="289.5" x2="470" y2="289.5" stroke="#e2e8f0" stroke-width="1"/>
+<text x="362.0" y="813" text-anchor="middle" font-size="10.5" fill="#475569">+0.5</text>
+<text x="66" y="293.5" text-anchor="end" font-size="10.5" fill="#475569">+0.5</text>
+<line x1="452.0" y1="100" x2="452.0" y2="795" stroke="#e2e8f0" stroke-width="1"/>
+<line x1="74" y1="131.6" x2="470" y2="131.6" stroke="#e2e8f0" stroke-width="1"/>
+<text x="452.0" y="813" text-anchor="middle" font-size="10.5" fill="#475569">+1.0</text>
+<text x="66" y="135.6" text-anchor="end" font-size="10.5" fill="#475569">+1.0</text>
+<line x1="101.0" y1="747.6" x2="443.0" y2="147.4" stroke="#0f172a" stroke-width="1.5" stroke-dasharray="5,4"/>
+<text x="376.4" y="256.3" font-size="10.5" fill="#334155" font-style="italic">Ideal y = x</text>
+<line x1="132.8" y1="427.1" x2="132.8" y2="637.3" stroke="#e11d48" stroke-width="1.8" opacity="0.7"/>
+<line x1="128.8" y1="427.1" x2="136.8" y2="427.1" stroke="#e11d48" stroke-width="1.4"/>
+<line x1="128.8" y1="637.3" x2="136.8" y2="637.3" stroke="#e11d48" stroke-width="1.4"/>
+<circle cx="132.8" cy="532.2" r="5.2" fill="#e11d48" stroke="#ffffff" stroke-width="1.4"/>
+<text x="140.8" y="524.2" text-anchor="start" font-size="10.5" font-weight="700" fill="#0f172a">D1 (-0.27)</text>
+<line x1="195.1" y1="347.6" x2="195.1" y2="559.5" stroke="#e11d48" stroke-width="1.8" opacity="0.7"/>
+<line x1="191.1" y1="347.6" x2="199.1" y2="347.6" stroke="#e11d48" stroke-width="1.4"/>
+<line x1="191.1" y1="559.5" x2="199.1" y2="559.5" stroke="#e11d48" stroke-width="1.4"/>
+<circle cx="195.1" cy="453.5" r="5.2" fill="#e11d48" stroke="#ffffff" stroke-width="1.4"/>
+<line x1="228.5" y1="320.4" x2="228.5" y2="533.0" stroke="#0d9488" stroke-width="1.8" opacity="0.7"/>
+<line x1="224.5" y1="320.4" x2="232.5" y2="320.4" stroke="#0d9488" stroke-width="1.4"/>
+<line x1="224.5" y1="533.0" x2="232.5" y2="533.0" stroke="#0d9488" stroke-width="1.4"/>
+<circle cx="228.5" cy="426.6" r="5.2" fill="#0d9488" stroke="#ffffff" stroke-width="1.4"/>
+<line x1="250.6" y1="345.2" x2="250.6" y2="559.0" stroke="#e11d48" stroke-width="1.8" opacity="0.7"/>
+<line x1="246.6" y1="345.2" x2="254.6" y2="345.2" stroke="#e11d48" stroke-width="1.4"/>
+<line x1="246.6" y1="559.0" x2="254.6" y2="559.0" stroke="#e11d48" stroke-width="1.4"/>
+<circle cx="250.6" cy="452.1" r="5.2" fill="#e11d48" stroke="#ffffff" stroke-width="1.4"/>
+<line x1="269.6" y1="341.8" x2="269.6" y2="541.3" stroke="#0d9488" stroke-width="1.8" opacity="0.7"/>
+<line x1="265.6" y1="341.8" x2="273.6" y2="341.8" stroke="#0d9488" stroke-width="1.4"/>
+<line x1="265.6" y1="541.3" x2="273.6" y2="541.3" stroke="#0d9488" stroke-width="1.4"/>
+<circle cx="269.6" cy="441.6" r="5.2" fill="#0d9488" stroke="#ffffff" stroke-width="1.4"/>
+<line x1="272.3" y1="368.1" x2="272.3" y2="555.7" stroke="#e11d48" stroke-width="1.8" opacity="0.7"/>
+<line x1="268.3" y1="368.1" x2="276.3" y2="368.1" stroke="#e11d48" stroke-width="1.4"/>
+<line x1="268.3" y1="555.7" x2="276.3" y2="555.7" stroke="#e11d48" stroke-width="1.4"/>
+<circle cx="272.3" cy="461.9" r="5.2" fill="#e11d48" stroke="#ffffff" stroke-width="1.4"/>
+<line x1="297.3" y1="275.3" x2="297.3" y2="490.7" stroke="#0d9488" stroke-width="1.8" opacity="0.7"/>
+<line x1="293.3" y1="275.3" x2="301.3" y2="275.3" stroke="#0d9488" stroke-width="1.4"/>
+<line x1="293.3" y1="490.7" x2="301.3" y2="490.7" stroke="#0d9488" stroke-width="1.4"/>
+<circle cx="297.3" cy="383.0" r="5.2" fill="#0d9488" stroke="#ffffff" stroke-width="1.4"/>
+<line x1="308.4" y1="389.3" x2="308.4" y2="605.4" stroke="#e11d48" stroke-width="1.8" opacity="0.7"/>
+<line x1="304.4" y1="389.3" x2="312.4" y2="389.3" stroke="#e11d48" stroke-width="1.4"/>
+<line x1="304.4" y1="605.4" x2="312.4" y2="605.4" stroke="#e11d48" stroke-width="1.4"/>
+<circle cx="308.4" cy="497.4" r="5.2" fill="#e11d48" stroke="#ffffff" stroke-width="1.4"/>
+<line x1="339.4" y1="360.9" x2="339.4" y2="571.4" stroke="#e11d48" stroke-width="1.8" opacity="0.7"/>
+<line x1="335.4" y1="360.9" x2="343.4" y2="360.9" stroke="#e11d48" stroke-width="1.4"/>
+<line x1="335.4" y1="571.4" x2="343.4" y2="571.4" stroke="#e11d48" stroke-width="1.4"/>
+<circle cx="339.4" cy="466.2" r="5.2" fill="#e11d48" stroke="#ffffff" stroke-width="1.4"/>
+<line x1="394.5" y1="249.2" x2="394.5" y2="471.9" stroke="#0d9488" stroke-width="1.8" opacity="0.7"/>
+<line x1="390.5" y1="249.2" x2="398.5" y2="249.2" stroke="#0d9488" stroke-width="1.4"/>
+<line x1="390.5" y1="471.9" x2="398.5" y2="471.9" stroke="#0d9488" stroke-width="1.4"/>
+<circle cx="394.5" cy="360.5" r="5.2" fill="#0d9488" stroke="#ffffff" stroke-width="1.4"/>
+<text x="386.5" y="352.5" text-anchor="end" font-size="10.5" font-weight="700" fill="#0f172a">D10 (+0.28)</text>
+<text x="272" y="833" text-anchor="middle" font-size="11.5" font-weight="600" fill="#334155">Ex-Ante Predicted Sleeper Point Diff (Pts)</text>
+<text x="22" y="447.5" text-anchor="middle" font-size="11.5" font-weight="600" fill="#334155" transform="rotate(-90 22 447.5)">Realized 2023-2026 Point Diff (Pts)</text>
+<text x="726" y="84" text-anchor="middle" font-size="13" font-weight="700" fill="#1e293b">B. Per-Position Standalone System Signal (t-Stat)</text>
+<line x1="805.6" y1="100" x2="805.6" y2="795" stroke="#334155" stroke-width="1.3"/>
+<line x1="840.7" y1="100" x2="840.7" y2="795" stroke="#0d9488" stroke-width="1.2" stroke-dasharray="4,3"/>
+<text x="840.7" y="811" text-anchor="middle" font-size="10" fill="#0d9488" font-weight="600">t = +1.96</text>
+<text x="744" y="116.9" text-anchor="end" font-size="9.8" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-weight="700" fill="#0f172a">team_synergy (default)</text>
+<rect x="805.6" y="105.9" width="26.2" height="14" rx="3" fill="#0f766e"/>
+<text x="954" y="116.9" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-weight="700" fill="#0f766e">t=+1.47</text>
+<text x="744" y="142.6" text-anchor="end" font-size="9.8" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-weight="700" fill="#0f172a">elemental_matchup (default)</text>
+<rect x="805.6" y="131.6" width="19.1" height="14" rx="3" fill="#0f766e"/>
+<text x="954" y="142.6" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-weight="700" fill="#0f766e">t=+1.07</text>
+<text x="744" y="168.4" text-anchor="end" font-size="9.8" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-weight="700" fill="#0f172a">planetary_synastry (default)</text>
+<rect x="805.6" y="157.4" width="19.6" height="14" rx="3" fill="#0f766e"/>
+<text x="954" y="168.4" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-weight="700" fill="#0f766e">t=+1.10</text>
+<text x="744" y="194.1" text-anchor="end" font-size="9.8" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-weight="700" fill="#0f172a">solar_lunar_transits (default)</text>
+<rect x="805.6" y="183.1" width="7.4" height="14" rx="3" fill="#0f766e"/>
+<text x="954" y="194.1" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-weight="700" fill="#0f766e">t=+0.41</text>
+<text x="744" y="219.8" text-anchor="end" font-size="9.8" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-weight="400" fill="#475569">witchcraft_sabbats_esbats</text>
+<rect x="805.6" y="208.8" width="6.0" height="14" rx="3" fill="#64748b"/>
+<text x="954" y="219.8" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-weight="500" fill="#64748b">t=+0.34</text>
+<text x="744" y="245.6" text-anchor="end" font-size="9.8" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-weight="400" fill="#475569">medieval_geomancy</text>
+<rect x="805.0" y="234.6" width="2.0" height="14" rx="3" fill="#e11d48"/>
+<text x="954" y="245.6" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-weight="500" fill="#e11d48">t=-0.03</text>
+<text x="744" y="271.3" text-anchor="end" font-size="9.8" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-weight="400" fill="#475569">runes_ogham</text>
+<rect x="793.1" y="260.3" width="12.5" height="14" rx="3" fill="#e11d48"/>
+<text x="954" y="271.3" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-weight="500" fill="#e11d48">t=-0.70</text>
+<text x="744" y="297.1" text-anchor="end" font-size="9.8" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-weight="400" fill="#475569">kabbalah_gematria</text>
+<rect x="805.6" y="286.1" width="7.3" height="14" rx="3" fill="#64748b"/>
+<text x="954" y="297.1" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-weight="500" fill="#64748b">t=+0.41</text>
+<text x="744" y="322.8" text-anchor="end" font-size="9.8" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-weight="400" fill="#475569">vedic_jyotish</text>
+<rect x="796.1" y="311.8" width="9.6" height="14" rx="3" fill="#e11d48"/>
+<text x="954" y="322.8" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-weight="500" fill="#e11d48">t=-0.54</text>
+<text x="744" y="348.5" text-anchor="end" font-size="9.8" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-weight="400" fill="#475569">contest_horary</text>
+<rect x="795.2" y="337.5" width="10.4" height="14" rx="3" fill="#e11d48"/>
+<text x="954" y="348.5" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-weight="500" fill="#e11d48">t=-0.58</text>
+<text x="744" y="374.3" text-anchor="end" font-size="9.8" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-weight="400" fill="#475569">secondary_progressions</text>
+<rect x="805.6" y="363.3" width="4.1" height="14" rx="3" fill="#64748b"/>
+<text x="954" y="374.3" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-weight="500" fill="#64748b">t=+0.23</text>
+<text x="744" y="400.0" text-anchor="end" font-size="9.8" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-weight="400" fill="#475569">cosmobiology_midpoints</text>
+<rect x="779.6" y="389.0" width="26.0" height="14" rx="3" fill="#e11d48"/>
+<text x="954" y="400.0" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-weight="500" fill="#e11d48">t=-1.46</text>
+<text x="744" y="425.8" text-anchor="end" font-size="9.8" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-weight="700" fill="#0f172a">annual_profections (default)</text>
+<rect x="805.6" y="414.8" width="9.7" height="14" rx="3" fill="#0f766e"/>
+<text x="954" y="425.8" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-weight="700" fill="#0f766e">t=+0.54</text>
+<text x="744" y="451.5" text-anchor="end" font-size="9.8" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-weight="400" fill="#475569">arabic_lots_manazil</text>
+<rect x="805.6" y="440.5" width="4.0" height="14" rx="3" fill="#64748b"/>
+<text x="954" y="451.5" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-weight="500" fill="#64748b">t=+0.23</text>
+<text x="744" y="477.2" text-anchor="end" font-size="9.8" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-weight="400" fill="#475569">fixed_stars_parans</text>
+<rect x="796.1" y="466.2" width="9.5" height="14" rx="3" fill="#e11d48"/>
+<text x="954" y="477.2" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-weight="500" fill="#e11d48">t=-0.53</text>
+<text x="744" y="503.0" text-anchor="end" font-size="9.8" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-weight="700" fill="#0f172a">egyptian_decans_modality (default)</text>
+<rect x="805.6" y="492.0" width="36.6" height="14" rx="3" fill="#0d9488"/>
+<text x="954" y="503.0" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-weight="700" fill="#0d9488">t=+2.05</text>
+<text x="744" y="528.7" text-anchor="end" font-size="9.8" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-weight="700" fill="#0f172a">bazi_wuxing (default)</text>
+<rect x="805.6" y="517.7" width="13.3" height="14" rx="3" fill="#0f766e"/>
+<text x="954" y="528.7" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-weight="700" fill="#0f766e">t=+0.74</text>
+<text x="744" y="554.5" text-anchor="end" font-size="9.8" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-weight="400" fill="#475569">rokuyo_tenchusatsu</text>
+<rect x="801.3" y="543.5" width="4.3" height="14" rx="3" fill="#e11d48"/>
+<text x="954" y="554.5" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-weight="500" fill="#e11d48">t=-0.24</text>
+<text x="744" y="580.2" text-anchor="end" font-size="9.8" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-weight="700" fill="#0f172a">qimen_bagua (default)</text>
+<rect x="805.6" y="569.2" width="21.9" height="14" rx="3" fill="#0f766e"/>
+<text x="954" y="580.2" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-weight="700" fill="#0f766e">t=+1.22</text>
+<text x="744" y="605.9" text-anchor="end" font-size="9.8" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-weight="700" fill="#0f172a">hellenistic_planetary (default)</text>
+<rect x="805.6" y="594.9" width="7.5" height="14" rx="3" fill="#0f766e"/>
+<text x="954" y="605.9" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-weight="700" fill="#0f766e">t=+0.42</text>
+<text x="744" y="631.7" text-anchor="end" font-size="9.8" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-weight="700" fill="#0f172a">mayan_tzolkin (default)</text>
+<rect x="805.6" y="620.7" width="13.2" height="14" rx="3" fill="#0f766e"/>
+<text x="954" y="631.7" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-weight="700" fill="#0f766e">t=+0.74</text>
+<text x="744" y="657.4" text-anchor="end" font-size="9.8" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-weight="400" fill="#475569">greco_roman_onomancy</text>
+<rect x="805.6" y="646.4" width="2.2" height="14" rx="3" fill="#64748b"/>
+<text x="954" y="657.4" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-weight="500" fill="#64748b">t=+0.12</text>
+<text x="744" y="683.2" text-anchor="end" font-size="9.8" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-weight="400" fill="#475569">biorhythms</text>
+<rect x="797.8" y="672.2" width="7.8" height="14" rx="3" fill="#e11d48"/>
+<text x="954" y="683.2" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-weight="500" fill="#e11d48">t=-0.44</text>
+<text x="744" y="708.9" text-anchor="end" font-size="9.8" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-weight="700" fill="#0f172a">numerology (default)</text>
+<rect x="805.6" y="697.9" width="27.9" height="14" rx="3" fill="#0f766e"/>
+<text x="954" y="708.9" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-weight="700" fill="#0f766e">t=+1.56</text>
+<text x="744" y="734.6" text-anchor="end" font-size="9.8" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-weight="400" fill="#475569">oracular_archetypes</text>
+<rect x="805.6" y="723.6" width="2.0" height="14" rx="3" fill="#64748b"/>
+<text x="954" y="734.6" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-weight="500" fill="#64748b">t=+0.01</text>
+<text x="744" y="760.4" text-anchor="end" font-size="10.5" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-weight="700" fill="#0f172a">ALL 25 SYSTEMS COMBINED</text>
+<rect x="805.6" y="749.4" width="36.9" height="14" rx="3" fill="#0f172a"/>
+<text x="954" y="760.4" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-weight="700" fill="#0f172a">t=+2.07</text>
+<text x="744" y="786.1" text-anchor="end" font-size="10.5" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-weight="700" fill="#0f172a">TRAIN-SCREENED (12 CONDS)</text>
+<rect x="805.6" y="775.1" width="40.1" height="14" rx="3" fill="#0f172a"/>
+<text x="954" y="786.1" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-weight="700" fill="#0f172a">t=+2.25</text>
+<text x="28" y="855" font-size="11" fill="#64748b">Note: (default) marks the 11 UI default predictors with positive 2023-2026 quintile edge (+0.08 to +0.28 pts). Ex-ante evaluation uses All 25 Systems and Train-Screened.</text>
+</svg>

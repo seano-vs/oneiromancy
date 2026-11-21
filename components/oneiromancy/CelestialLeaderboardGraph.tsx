@@ -18,13 +18,19 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
-import GlassCard from '@/components/common/GlassCard';
 import UserAvatar from '@/components/common/UserAvatar';
 import { CompetitorTeam, CosmicPlayer } from '@/types/oneiromancy';
-import { calculateTeamCelestialMetrics, classifySpiritScoreTier, hasUserSuffix, stripUserSuffix } from '@/lib/scoring';
-import { Trophy, ChevronDown, ChevronUp } from 'lucide-react';
+import { hasUserSuffix, stripUserSuffix } from '@/lib/scoring';
+import {
+  formatSignedModifier,
+  modifierTextColor,
+  playerForecast,
+  resolveActiveWeek,
+} from '@/lib/oracle';
+import { useOptionalOneiromancy } from '@/context/OneiromancyContext';
+import { ChevronDown, ChevronUp } from 'lucide-react';
 
-export type LeaderboardMetric = 'overall' | 'spirit' | 'draft' | 'harmony';
+export type LeaderboardMetric = 'overall' | 'draft' | 'spirit';
 
 export interface CelestialLeaderboardGraphProps {
   competitorTeams: CompetitorTeam[];
@@ -38,186 +44,179 @@ export interface CelestialLeaderboardGraphProps {
 export const CelestialLeaderboardGraph: React.FC<CelestialLeaderboardGraphProps> = ({
   competitorTeams,
   cosmicBoard = [],
-  userSlot,
   selectedRosterId,
   onSelectTeam,
   className = '',
 }) => {
+  const ctx = useOptionalOneiromancy();
+  const activeWeek = resolveActiveWeek(ctx?.draftState);
+  const enabledSystems = ctx?.enabledSystems;
   const [metric, setMetric] = useState<LeaderboardMetric>('overall');
   const [showAllTeams, setShowAllTeams] = useState<boolean>(true);
+
+  const effectiveBoard = useMemo(
+    () =>
+      cosmicBoard && cosmicBoard.length > 0
+        ? cosmicBoard
+        : (ctx?.draftState?.cosmic_board ?? []),
+    [cosmicBoard, ctx?.draftState?.cosmic_board],
+  );
+
+  const byId = useMemo(
+    () => new Map(effectiveBoard.map((p) => [String(p.id), p])),
+    [effectiveBoard],
+  );
 
   const rankedTeams = useMemo(() => {
     const teamsWithMetrics = competitorTeams.map((team, idx) => {
       const slotNum = team.slot || team.roster_id || idx + 1;
       const isUser = team.is_user === true || hasUserSuffix(team.name);
-      const metrics = calculateTeamCelestialMetrics(team, cosmicBoard);
 
-      let sortValue = metrics.compositeScore;
-      let value = Number(metrics.compositeScore.toFixed(1));
-      let displayValue = value.toFixed(1);
-      let metricUnit = 'PTS';
+      const starterIds =
+        team.starters && team.starters.length > 0
+          ? team.starters
+          : (team.picks || []).slice(0, 8).map((pk) => pk.player_id);
+      const starters = starterIds
+        .map((id) => byId.get(String(id)))
+        .filter((p): p is CosmicPlayer => Boolean(p));
 
-      if (metric === 'spirit') {
-        sortValue = metrics.spiritScore;
-        value = Number(metrics.spiritScore.toFixed(1));
-        displayValue = value.toFixed(1);
-        metricUnit = 'SPIRIT';
-      } else if (metric === 'draft') {
-        sortValue = metrics.draftScore;
-        value = Number(metrics.draftScore.toFixed(1));
-        displayValue = value.toFixed(1);
-        metricUnit = 'DRAFT';
-      } else if (metric === 'harmony') {
-        sortValue = metrics.harmonyScore;
-        value = Math.round(metrics.harmonyScore);
-        displayValue = `${value}%`;
-        metricUnit = 'HARMONY';
+      let baseSum = 0;
+      let modSum = 0;
+      if (starters.length > 0) {
+        for (const p of starters) {
+          const f = playerForecast(p, {
+            currentWeek: activeWeek,
+            enabledSystems,
+            placeholder: true,
+            nextGameLookahead: true,
+          });
+          baseSum += Number(f.basePts.toFixed(1));
+          modSum += f.overallModifierPts;
+        }
       } else {
-        sortValue = metrics.compositeScore;
-        value = Number(metrics.compositeScore.toFixed(1));
-        displayValue = value.toFixed(1);
-        metricUnit = 'COMPOSITE';
+        baseSum = Number(team.avg_draft_score ? team.avg_draft_score * 1.45 : 112.0);
+        modSum = 0;
+      }
+
+      const baseTotal = Math.round(baseSum * 10) / 10;
+      const modTotal = Math.round(modSum * 100) / 100;
+      const projTotal = Math.round((baseSum + modSum) * 10) / 10;
+
+      let sortValue = projTotal;
+      let mobileDisplay = projTotal.toFixed(1);
+      if (metric === 'draft') {
+        sortValue = baseTotal;
+        mobileDisplay = baseTotal.toFixed(1);
+      } else if (metric === 'spirit') {
+        sortValue = modTotal;
+        mobileDisplay = formatSignedModifier(modTotal);
       }
 
       const cleanName = stripUserSuffix(team.name, 'Team');
+      const recordText =
+        typeof team.wins === 'number'
+          ? `${team.wins}-${team.losses ?? 0}${team.ties ? `-${team.ties}` : ''}`
+          : starters.length > 0
+            ? `${starters.length} starters`
+            : 'Lineup';
 
       return {
         team,
         slotNum,
         cleanName,
+        recordText,
         isUser,
-        metrics,
+        baseTotal,
+        modTotal,
+        projTotal,
         sortValue,
-        value,
-        displayValue,
-        metricUnit,
+        mobileDisplay,
       };
     });
 
     return teamsWithMetrics.sort((a, b) => b.sortValue - a.sortValue);
-  }, [competitorTeams, cosmicBoard, userSlot, metric]);
+  }, [competitorTeams, byId, activeWeek, enabledSystems, metric]);
 
   const displayedTeams = showAllTeams ? rankedTeams : rankedTeams.slice(0, 5);
 
-  const getRankBadge = (rank: number) => {
-    if (rank === 1) {
-      return (
-        <span
-          data-testid="leaderboard-row-rank-1"
-          className="w-5 h-5 rounded-full bg-amber-500/20 border border-amber-400/80 text-amber-300 font-bold text-[11px] flex items-center justify-center shrink-0 shadow-[0_0_8px_rgba(251,191,36,0.5)]"
-        >
-          🥇
-        </span>
-      );
-    }
-    if (rank === 2) {
-      return (
-        <span className="w-5 h-5 rounded-full bg-slate-400/20 border border-slate-300/80 text-slate-200 font-bold text-[11px] flex items-center justify-center shrink-0">
-          🥈
-        </span>
-      );
-    }
-    if (rank === 3) {
-      return (
-        <span className="w-5 h-5 rounded-full bg-amber-700/20 border border-amber-600/80 text-amber-400 font-bold text-[11px] flex items-center justify-center shrink-0">
-          🥉
-        </span>
-      );
-    }
-    return (
-      <span className="w-5 h-5 rounded-full bg-slate-900 border border-white/10 text-slate-400 font-mono text-[10px] flex items-center justify-center shrink-0">
-        #{rank}
-      </span>
-    );
-  };
-
   return (
-    <GlassCard
-      variant="panel"
+    <section
       data-testid="celestial-leaderboard"
-      className={`p-4 sm:p-6 space-y-4 border-amber-500/20 shadow-[0_0_20px_rgba(245,158,11,0.05)] ${className}`}
+      aria-label="Team standings"
+      className={`rounded-xl border border-white/[0.08] bg-[#16181d] overflow-hidden ${className}`}
     >
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-white/10 pb-3">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-amber-950/60 border border-amber-500/40 flex items-center justify-center text-amber-400 shrink-0 shadow-[0_0_10px_rgba(245,158,11,0.2)]">
-            <Trophy className="w-4 h-4" />
-          </div>
-          <div>
-            <h3 className="font-serif text-lg font-bold text-slate-100 flex items-center gap-2">
-              <span>Celestial Leaderboard & Standings</span>
-              <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-amber-950/80 border border-amber-500/40 text-amber-300 font-normal">
-                12-TEAM MATRIX
-              </span>
-            </h3>
-            <p className="text-[11px] font-sans text-slate-400">
-              Comparative rankings across Oracle, Stars, Stats, and Harmony metrics. Click any team to inspect their lineup.
-            </p>
-          </div>
-        </div>
+      <div className="px-4 py-3 bg-[#121418] border-b border-white/[0.08] flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2.5">
+        <h3 className="font-sans text-sm font-semibold text-zinc-100">
+          Standings
+        </h3>
 
-        <div className="flex items-center gap-1 p-1 rounded-lg bg-slate-950/80 border border-white/10 text-xs font-mono self-stretch sm:self-auto justify-between sm:justify-start">
-          <button
-            type="button"
-            data-testid="leaderboard-toggle-overall"
-            onClick={() => setMetric('overall')}
-            className={`px-2.5 py-1 rounded text-[11px] transition-all font-bold ${
-              metric === 'overall'
-                ? 'bg-amber-500 text-slate-950 shadow-[0_0_8px_rgba(245,158,11,0.4)]'
-                : 'text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            Oracle
-          </button>
-          <button
-            type="button"
-            data-testid="leaderboard-toggle-spirit"
-            onClick={() => setMetric('spirit')}
-            className={`px-2.5 py-1 rounded text-[11px] transition-all font-bold ${
-              metric === 'spirit'
-                ? 'bg-purple-500 text-slate-950 shadow-[0_0_8px_rgba(168,85,247,0.4)]'
-                : 'text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            Stars
-          </button>
-          <button
-            type="button"
-            data-testid="leaderboard-toggle-draft"
-            onClick={() => setMetric('draft')}
-            className={`px-2.5 py-1 rounded text-[11px] transition-all font-bold ${
-              metric === 'draft'
-                ? 'bg-cyan-500 text-slate-950 shadow-[0_0_8px_rgba(6,182,212,0.4)]'
-                : 'text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            Stats
-          </button>
-          <button
-            type="button"
-            data-testid="leaderboard-toggle-harmony"
-            onClick={() => setMetric('harmony')}
-            className={`px-2.5 py-1 rounded text-[11px] transition-all font-bold ${
-              metric === 'harmony'
-                ? 'bg-emerald-500 text-slate-950 shadow-[0_0_8px_rgba(16,185,129,0.4)]'
-                : 'text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            Harmony
-          </button>
+        <div className="inline-flex items-center gap-0.5 p-0.5 rounded-lg bg-zinc-900 border border-white/10 text-xs font-sans self-stretch sm:self-auto justify-between sm:justify-start">
+          {(
+            [
+              { id: 'overall', label: 'Projected', testId: 'leaderboard-toggle-projected' },
+              { id: 'draft', label: 'Base', testId: 'leaderboard-toggle-base' },
+              { id: 'spirit', label: 'Modifier', testId: 'leaderboard-toggle-modifier' },
+            ] as const
+          ).map((btn) => (
+            <button
+              key={btn.id}
+              type="button"
+              data-testid={btn.testId}
+              aria-pressed={metric === btn.id}
+              onClick={() => setMetric(btn.id)}
+              className={`px-2.5 py-1 rounded-md text-xs transition-colors cursor-pointer ${
+                metric === btn.id
+                  ? 'bg-zinc-800 text-zinc-100 font-semibold'
+                  : 'text-zinc-400 hover:text-zinc-200 font-medium'
+              }`}
+            >
+              {btn.label}
+            </button>
+          ))}
         </div>
       </div>
 
-      <div className="space-y-2">
+      {/* Column Headers */}
+      <div className="px-4 py-2 border-b border-white/[0.06] flex items-center justify-between gap-2 text-[11px] font-sans font-medium text-zinc-400">
+        <div className="flex items-center gap-2.5">
+          <span className="w-6 text-right">#</span>
+          <span>Team</span>
+        </div>
+        <div className="flex items-center gap-3 sm:gap-5 shrink-0 text-right">
+          <span className={`hidden sm:inline-block w-12 ${metric === 'draft' ? 'text-zinc-200 font-semibold' : ''}`}>Base</span>
+          <span className={`hidden sm:inline-block w-14 ${metric === 'spirit' ? 'text-zinc-200 font-semibold' : ''}`}>Modifier</span>
+          <span className={`w-16 ${metric === 'overall' ? 'text-zinc-200 font-semibold' : ''}`}>
+            <span className="sm:hidden">
+              {metric === 'spirit' ? 'Modifier' : metric === 'draft' ? 'Base' : 'Projected'}
+            </span>
+            <span className="hidden sm:inline">Projected</span>
+          </span>
+        </div>
+      </div>
+
+      <div className="divide-y divide-white/[0.05]">
         {displayedTeams.map((item, index) => {
           const rank = index + 1;
           const isRankOne = rank === 1;
-          const barWidth = Math.min(100, Math.max(15, ((item.value - 50) / 50) * 100));
-          const rowTier = classifySpiritScoreTier(item.value);
+          const isSelected = selectedRosterId === item.team.roster_id;
 
           return (
             <div
               key={item.slotNum}
+              role={onSelectTeam ? 'button' : undefined}
+              tabIndex={onSelectTeam ? 0 : undefined}
+              aria-pressed={onSelectTeam ? isSelected : undefined}
               onClick={() => onSelectTeam?.(item.team.roster_id)}
+              onKeyDown={
+                onSelectTeam
+                  ? (e: React.KeyboardEvent) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        onSelectTeam(item.team.roster_id);
+                      }
+                    }
+                  : undefined
+              }
               data-testid={
                 item.isUser
                   ? 'leaderboard-user-team'
@@ -225,110 +224,82 @@ export const CelestialLeaderboardGraph: React.FC<CelestialLeaderboardGraphProps>
                   ? 'leaderboard-row-rank-1'
                   : `leaderboard-row-slot-${item.slotNum}`
               }
-              className={`p-2.5 rounded-xl border text-xs font-mono transition-all relative overflow-hidden ${
-                onSelectTeam ? 'cursor-pointer' : ''
+              title={`${item.cleanName} · ${item.projTotal.toFixed(1)} projected pts`}
+              className={`px-4 py-2.5 text-xs font-sans transition-colors flex items-center justify-between gap-2 ${
+                onSelectTeam ? 'cursor-pointer focus:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-amber-400/70' : ''
               } ${
                 item.isUser
-                  ? 'bg-purple-950/40 border-purple-400 ring-2 ring-purple-500/70 shadow-lg shadow-purple-500/20'
-                  : selectedRosterId === item.team.roster_id
-                  ? 'bg-cyan-950/30 border-cyan-400/60 ring-1 ring-cyan-400/40'
-                  : isRankOne
-                  ? 'bg-amber-950/20 border-amber-500/30'
-                  : 'bg-slate-900/60 border-white/5 hover:border-white/10'
+                  ? 'bg-amber-500/[0.05] hover:bg-amber-500/[0.08]'
+                  : isSelected
+                  ? 'bg-white/[0.04] hover:bg-white/[0.06]'
+                  : 'hover:bg-white/[0.025]'
               }`}
             >
-              <div className="flex items-center justify-between gap-2 relative z-10">
-                <div className="flex items-center gap-2 min-w-0 flex-1">
-                  {getRankBadge(rank)}
-                  <UserAvatar
-                    src={item.team.avatar_url || item.team.avatar}
-                    alt={`${item.cleanName} avatar`}
-                    fallbackText={item.cleanName}
-                    size="sm"
-                    isUser={item.isUser}
-                    testId={`leaderboard-avatar-slot-${item.slotNum}`}
-                    data-testid={`leaderboard-avatar-slot-${item.slotNum}`}
-                  />
-                  <div className="truncate flex items-center gap-1.5 min-w-0">
-                    <span className="text-[10px] text-slate-500 font-mono shrink-0">
-                      Slot {item.slotNum}
-                    </span>
-                    <span
-                      className={`font-bold truncate ${
-                        item.isUser
-                          ? 'text-purple-200 font-extrabold drop-shadow-[0_0_6px_rgba(168,85,247,0.4)]'
-                          : isRankOne
-                          ? 'text-amber-200'
-                          : 'text-slate-200'
-                      }`}
-                    >
-                      {item.cleanName}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2 shrink-0">
+              <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                <span
+                  data-testid={isRankOne && item.isUser ? 'leaderboard-row-rank-1' : undefined}
+                  className={`w-6 text-right font-mono tabular-nums shrink-0 ${
+                    isRankOne ? 'text-amber-300 font-semibold' : 'text-zinc-400'
+                  }`}
+                >
+                  {rank}
+                </span>
+                <UserAvatar
+                  src={item.team.avatar_url || item.team.avatar}
+                  alt={`${item.cleanName} avatar`}
+                  fallbackText={item.cleanName}
+                  size="sm"
+                  isUser={item.isUser}
+                  testId={`leaderboard-avatar-slot-${item.slotNum}`}
+                  data-testid={`leaderboard-avatar-slot-${item.slotNum}`}
+                />
+                <div className="min-w-0 flex flex-col">
                   <span
-                    className={`text-[9px] px-1.5 py-0.5 rounded-full border whitespace-nowrap hidden sm:inline ${
-                      rowTier.tier === 'Favorable'
-                        ? 'bg-emerald-950/60 border-emerald-500/30 text-emerald-300'
-                        : rowTier.tier === 'Discordant'
-                        ? 'bg-rose-950/60 border-rose-500/30 text-rose-300'
-                        : 'bg-sky-950/60 border-sky-500/30 text-sky-300'
+                    className={`font-sans break-words leading-snug ${
+                      item.isUser ? 'text-zinc-100 font-semibold' : 'text-zinc-200 font-medium'
                     }`}
                   >
-                    {rowTier.badgeLabel}
+                    {item.cleanName}
                   </span>
-
-                  <span
-                    className={`font-mono font-bold text-xs px-2 py-0.5 rounded ${
-                      item.isUser
-                        ? 'bg-purple-900/60 text-amber-300 border border-amber-400/40'
-                        : isRankOne
-                        ? 'bg-amber-950/60 text-amber-300 border border-amber-500/40'
-                        : 'bg-slate-950/80 text-cyan-300 border border-white/5'
-                    }`}
-                  >
-                    {item.displayValue}
+                  <span className="text-[11px] font-mono tabular-nums text-zinc-400 leading-tight">
+                    {item.recordText}
                   </span>
                 </div>
               </div>
 
-              <div
-                title="75.0 Equilibrium Baseline"
-                className="w-full h-1.5 bg-slate-950/80 rounded-full overflow-hidden mt-2 border border-white/5"
-              >
-                <div
-                  className={`h-full rounded-full transition-all duration-500 ${
-                    item.isUser
-                      ? 'bg-gradient-to-r from-purple-500 via-amber-400 to-purple-400 shadow-[0_0_8px_rgba(234,179,8,0.5)]'
-                      : isRankOne
-                      ? 'bg-gradient-to-r from-amber-500 to-emerald-400'
-                      : metric === 'spirit'
-                      ? 'bg-gradient-to-r from-purple-600 to-sky-400'
-                      : metric === 'harmony'
-                      ? 'bg-gradient-to-r from-emerald-500 to-cyan-400'
-                      : 'bg-gradient-to-r from-cyan-600 to-sky-400'
-                  }`}
-                  style={{ width: `${barWidth}%` }}
-                />
+              <div className="flex items-center gap-3 sm:gap-5 shrink-0 font-mono tabular-nums text-right">
+                <span className={`hidden sm:inline-block w-12 ${metric === 'draft' ? 'text-zinc-100 font-semibold' : 'text-zinc-300'}`}>
+                  {item.baseTotal.toFixed(1)}
+                </span>
+                <span className={`hidden sm:inline-block w-14 font-medium ${modifierTextColor(item.modTotal)}`}>
+                  {formatSignedModifier(item.modTotal)}
+                </span>
+                <span className="w-16 text-sm font-semibold text-zinc-100">
+                  <span className="sm:hidden">{item.mobileDisplay}</span>
+                  <span className={`hidden sm:inline ${metric === 'overall' ? 'text-amber-200' : 'text-zinc-200'}`}>
+                    {item.projTotal.toFixed(1)}
+                  </span>
+                </span>
               </div>
             </div>
           );
         })}
       </div>
 
-      <div className="text-center pt-1 border-t border-white/5">
-        <button
-          type="button"
-          onClick={() => setShowAllTeams((prev) => !prev)}
-          className="text-xs font-mono text-cyan-400 hover:text-cyan-300 inline-flex items-center gap-1 transition-colors px-3 py-1 rounded bg-slate-900/60 border border-white/5"
-        >
-          <span>{showAllTeams ? 'Collapse to Top 5 Teams' : 'Show All 12 Teams'}</span>
-          {showAllTeams ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
-        </button>
-      </div>
-    </GlassCard>
+      {rankedTeams.length > 5 && (
+        <div className="px-4 py-2 border-t border-white/[0.06] flex justify-center">
+          <button
+            type="button"
+            aria-expanded={showAllTeams}
+            onClick={() => setShowAllTeams((prev) => !prev)}
+            className="text-xs font-sans font-medium text-zinc-400 hover:text-zinc-200 inline-flex items-center gap-1 transition-colors py-0.5 cursor-pointer"
+          >
+            <span>{showAllTeams ? 'Show top 5' : `Show all ${rankedTeams.length} teams`}</span>
+            {showAllTeams ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+          </button>
+        </div>
+      )}
+    </section>
   );
 };
 

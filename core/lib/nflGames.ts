@@ -16,12 +16,9 @@
  */
 
 /**
- * Real NFL games for the matchup cards: kickoff, venue and opponent, plus the
- * moon and planetary hour at that kickoff. Sleeper's schedule has dates and
- * home/away teams only, so kickoffs and venues come from ESPN's public
- * scoreboard (CORS-open). If ESPN is unavailable, cards fall back to Sleeper's
- * date and the home team's stadium, with the time shown as TBA. Nothing here is
- * invented per player: everyone in the same game shares the same values.
+ * NFL game registry and local astronomical kickoff helpers.
+ * Games come strictly from Sleeper's schedule and local stadium data without
+ * calling external NFL or ESPN scoreboard APIs.
  */
 
 export interface NflGame {
@@ -35,10 +32,6 @@ export interface NflGame {
   venue: { name: string; city: string; state?: string; indoor?: boolean } | null;
   neutral: boolean;
 }
-
-// ESPN abbreviations that differ from Sleeper's.
-const ESPN_TO_SLEEPER: Record<string, string> = { WSH: 'WAS', LA: 'LAR', JAC: 'JAX' };
-const toSleeper = (abbr: string) => ESPN_TO_SLEEPER[abbr] ?? abbr;
 
 const gamesByWeek = new Map<number, Map<string, NflGame>>();
 
@@ -68,9 +61,6 @@ export function teamGame(week: number, team?: string | null): NflGame | undefine
   return gamesByWeek.get(week)?.get(team);
 }
 
-const espnCache = new Map<string, { at: number; games: Promise<NflGame[] | null> }>();
-const ESPN_TTL_MS = 5 * 60 * 1000;
-
 export function raceWithAbort<T>(
   promise: Promise<T>,
   signal: AbortSignal | undefined,
@@ -98,62 +88,7 @@ export function raceWithAbort<T>(
   });
 }
 
-/** ESPN scoreboard for one regular-season week; null on any failure. */
-export function fetchEspnWeek(
-  season: string,
-  week: number,
-  final = false,
-  signal?: AbortSignal,
-): Promise<NflGame[] | null> {
-  if (signal?.aborted) return Promise.resolve(null);
-  const key = `${season}:${week}`;
-  const hit = espnCache.get(key);
-  if (hit && (final || Date.now() - hit.at < ESPN_TTL_MS)) {
-    return raceWithAbort(hit.games, signal, null);
-  }
-  const games = (async (): Promise<NflGame[] | null> => {
-    try {
-      const res = await fetch(
-        `https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?dates=${season}&seasontype=2&week=${week}`,
-      );
-      if (!res.ok) return null;
-      const data = await res.json();
-      const out: NflGame[] = [];
-      for (const e of data?.events ?? []) {
-        const c = e?.competitions?.[0];
-        const home = c?.competitors?.find((t: any) => t.homeAway === 'home')?.team?.abbreviation;
-        const away = c?.competitors?.find((t: any) => t.homeAway === 'away')?.team?.abbreviation;
-        if (!home || !away) continue;
-        out.push({
-          week,
-          home: toSleeper(home),
-          away: toSleeper(away),
-          kickoff: typeof e.date === 'string' ? e.date : null,
-          date: typeof e.date === 'string' ? e.date.slice(0, 10) : null,
-          venue: c?.venue?.fullName
-            ? {
-                name: c.venue.fullName,
-                city: c.venue.address?.city ?? '',
-                state: c.venue.address?.state,
-                indoor: typeof c.venue.indoor === 'boolean' ? c.venue.indoor : undefined,
-              }
-            : null,
-          neutral: Boolean(c?.neutralSite),
-        });
-      }
-      return out.length ? out : null;
-    } catch {
-      return null;
-    }
-  })();
-  espnCache.set(key, { at: Date.now(), games });
-  games.then((g) => {
-    if (!g) espnCache.delete(key);
-  });
-  return raceWithAbort(games, signal, null);
-}
-
-/** Coordinates of international / neutral-site venues ESPN reports by name. */
+/** Coordinates of international / neutral-site venues. */
 const NEUTRAL_VENUES: [string, number, number][] = [
   ['Tottenham', 51.6043, -0.0664],
   ['Wembley', 51.556, -0.2796],
@@ -162,8 +97,8 @@ const NEUTRAL_VENUES: [string, number, number][] = [
   ['Olympiastadion', 52.5147, 13.2395],
   ['Azteca', 19.3029, -99.1505],
   ['Banorte', 19.3029, -99.1505],
-  ['Neo Química', -23.5453, -46.4742],
-  ['Bernabéu', 40.4531, -3.6883],
+  ['Neo Quimica', -23.5453, -46.4742],
+  ['Bernabeu', 40.4531, -3.6883],
   ['Croke Park', 53.3607, -6.2512],
   ['Melbourne Cricket Ground', -37.82, 144.983],
 ];
@@ -178,7 +113,7 @@ export function neutralVenueCoords(name?: string | null): { lat: number; lon: nu
 // Kickoff text
 // ---------------------------------------------------------------------------
 
-/** "Sun, Oct 11 · 1:00 PM ET", or "Sun, Oct 11 · time TBA" without a time. */
+/** "Sun, Oct 11 · 1:00 PM ET", or "Sun, Oct 11" without a time. */
 export function kickoffLabel(game: NflGame): string {
   if (game.kickoff) {
     const d = new Date(game.kickoff);

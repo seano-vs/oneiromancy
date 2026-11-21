@@ -104,7 +104,7 @@ export const DIVINATION_PILLARS: readonly DivinationPillarMeta[] = [
     desc: 'Sun-sign cosmic profile & transit alignment',
     whatItMeasures: 'Player sun-sign cosmic profile and weekly astrological transit alignment.',
     whyItMatters: 'Harmonious transits boost explosive scoring ceiling; conflicting aspects signal turnover and fatigue risk.',
-    color: 'bg-cyan-400',
+    color: 'bg-sky-400/85',
     defaultVal: Math.round(DEFAULT_ORACLE_WEIGHTS.celestial * 100),
   },
   {
@@ -114,7 +114,7 @@ export const DIVINATION_PILLARS: readonly DivinationPillarMeta[] = [
     desc: 'Travel distance, stadium compass axis, roof, and surface',
     whatItMeasures: 'Travel distance (60%) paired with a 40% stadium feng-shui sub-score for axis (N-S vs. E-W), roof (open, retractable, dome), and surface (grass vs. turf).',
     whyItMatters: 'Shorter trips raise the travel component (60%); the 40% venue sub-score favors N-S alignment (+15 vs -10 E-W), open sky (+10 open, 0 retractable, +5 dome), and grass (+10 vs -5 turf).',
-    color: 'bg-emerald-400',
+    color: 'bg-teal-400/80',
     defaultVal: Math.round(DEFAULT_ORACLE_WEIGHTS.geomantic * 100),
   },
   {
@@ -124,7 +124,7 @@ export const DIVINATION_PILLARS: readonly DivinationPillarMeta[] = [
     desc: 'Pythagorean numerology of birth date digits and jersey number',
     whatItMeasures: 'Pythagorean numerology combining birth date digits and season-year alignment with uniform jersey numbers.',
     whyItMatters: 'Master life-path numbers (11, 22, 33: +15), season-year alignment (up to +20), and harmonious life-path to jersey totals score higher.',
-    color: 'bg-purple-400',
+    color: 'bg-violet-400/85',
     defaultVal: Math.round(DEFAULT_ORACLE_WEIGHTS.numeric * 100),
   },
   {
@@ -134,7 +134,7 @@ export const DIVINATION_PILLARS: readonly DivinationPillarMeta[] = [
     desc: 'Same-team QB + WR/TE stacks and shared zodiac elements',
     whatItMeasures: 'Same-team QB + WR/TE stacks and 3+ starters sharing Fire, Earth, Air, or Water.',
     whyItMatters: 'Rewards game-day passing correlations and balanced squad synergy.',
-    color: 'bg-amber-400',
+    color: 'bg-amber-400/90',
     defaultVal: Math.round(DEFAULT_ORACLE_WEIGHTS.harmony * 100),
   },
   {
@@ -144,7 +144,7 @@ export const DIVINATION_PILLARS: readonly DivinationPillarMeta[] = [
     desc: 'Major Arcana tarot card omens and archetype alignment',
     whatItMeasures: 'Major Arcana tarot card omens and archetype vibrations drawn for each player.',
     whyItMatters: 'Separates surging breakout roles (The Chariot, The Sun) from volatile lineup traps.',
-    color: 'bg-rose-400',
+    color: 'bg-indigo-400/85',
     defaultVal: Math.round(DEFAULT_ORACLE_WEIGHTS.oracular * 100),
   },
 ] as const;
@@ -953,7 +953,7 @@ export function classifySpiritScoreTier(spiritScore: number): {
   if (spiritScore >= 85.0) {
     return {
       tier: 'Favorable',
-      badgeLabel: '✨ Favorable (Apex)',
+      badgeLabel: 'Favorable',
       glowColor: 'green',
       description: 'Celestial Alignment & Astral Momentum',
     };
@@ -961,14 +961,14 @@ export function classifySpiritScoreTier(spiritScore: number): {
   if (spiritScore >= 75.0) {
     return {
       tier: 'Harmonic',
-      badgeLabel: '⚖️ Harmonic (Stable)',
+      badgeLabel: 'Harmonic',
       glowColor: 'blue',
       description: 'Elemental Equilibrium & Stable Floor',
     };
   }
   return {
     tier: 'Discordant',
-    badgeLabel: '⚠️ Discordant (At Risk)',
+    badgeLabel: 'Discordant',
     glowColor: 'rose',
     description: 'Planetary Discord & Elemental Conflicts',
   };
@@ -1520,5 +1520,241 @@ export function stripUserSuffix(name?: string | null, fallback = ''): string {
 /** Identifies user-owned competitor teams regardless of suffix casing. */
 export function hasUserSuffix(name?: string | null): boolean {
   return /\(You\)/i.test(name ?? '');
+}
+
+// ============================================================================
+// Sleeper Multi-Format Stat Hydrator & Point-Differential Scoring Presets
+// ============================================================================
+
+/** Sleeper stat-key multiplier map (e.g. `rec`, `pass_yd`, `rush_td`). */
+export type SleeperScoringSettings = Readonly<Record<string, number>>;
+
+/** Canonical Sleeper 1.0 PPR league scoring weights. */
+export const DEFAULT_SLEEPER_PPR_SCORING: SleeperScoringSettings = {
+  pass_yd: 0.04,
+  pass_td: 4,
+  pass_int: -1,
+  pass_2pt: 2,
+  rush_yd: 0.1,
+  rush_td: 6,
+  rush_2pt: 2,
+  rec: 1.0,
+  rec_yd: 0.1,
+  rec_td: 6,
+  rec_2pt: 2,
+  fum_lost: -2,
+  fum_rec_td: 6,
+  st_td: 6,
+  fgm_0_19: 3,
+  fgm_20_29: 3,
+  fgm_30_39: 3,
+  fgm_40_49: 4,
+  fgm_50p: 5,
+  fgmiss: -1,
+  xpm: 1,
+  xpmiss: -1,
+  sack: 1,
+  int: 2,
+  fum_rec: 2,
+  def_td: 6,
+  def_st_td: 6,
+  def_st_fum_rec: 1,
+  def_st_ff: 1,
+  ff: 1,
+  safe: 2,
+  blk_kick: 2,
+  pts_allow_0: 10,
+  pts_allow_1_6: 7,
+  pts_allow_7_13: 4,
+  pts_allow_14_20: 1,
+  pts_allow_21_27: 0,
+  pts_allow_28_34: -1,
+  pts_allow_35p: -4,
+};
+
+/** Sleeper 0.5 Half-PPR league scoring weights. */
+export const SLEEPER_HALF_PPR_SCORING: SleeperScoringSettings = {
+  ...DEFAULT_SLEEPER_PPR_SCORING,
+  rec: 0.5,
+};
+
+/** Sleeper 0.0 Standard (non-PPR) league scoring weights. */
+export const SLEEPER_STD_SCORING: SleeperScoringSettings = {
+  ...DEFAULT_SLEEPER_PPR_SCORING,
+  rec: 0.0,
+};
+
+/** Sleeper 6-pt Passing TD / -2 INT 1.0 PPR league scoring weights. */
+export const SLEEPER_6PT_PASS_TD_PPR_SCORING: SleeperScoringSettings = {
+  ...DEFAULT_SLEEPER_PPR_SCORING,
+  pass_td: 6,
+  pass_int: -2,
+};
+
+const DEF_ONLY_STAT_KEYS = new Set<string>([
+  'sack',
+  'int',
+  'fum_rec',
+  'def_td',
+  'def_st_td',
+  'def_st_fum_rec',
+  'def_st_ff',
+  'ff',
+  'safe',
+  'blk_kick',
+  'pts_allow_0',
+  'pts_allow_1_6',
+  'pts_allow_7_13',
+  'pts_allow_14_20',
+  'pts_allow_21_27',
+  'pts_allow_28_34',
+  'pts_allow_35p',
+  'yds_allow_0_100',
+  'yds_allow_100_199',
+  'yds_allow_200_299',
+  'yds_allow_300_349',
+  'yds_allow_350_399',
+  'yds_allow_400_449',
+  'yds_allow_450_499',
+  'yds_allow_500_549',
+  'yds_allow_550p',
+  'def_3_and_out',
+  'def_4_and_stop',
+  'def_forced_punts',
+  'def_pass_def',
+  'qb_hit',
+  'tkl_loss',
+]);
+
+/** Scores a Sleeper stat dictionary under custom or default 1.0 PPR league rules. */
+export function scoreSleeperStats(
+  stats?: Readonly<Record<string, number>> | null,
+  scoringSettings?: SleeperScoringSettings | null,
+  position?: string | null,
+): number {
+  if (!stats || typeof stats !== 'object') return 0.0;
+  const weights = scoringSettings ?? DEFAULT_SLEEPER_PPR_SCORING;
+  const pos = position ? String(position).toUpperCase() : null;
+  const inferredNonDef =
+    pos !== null
+      ? pos !== 'DEF'
+      : Boolean(
+          stats['pass_att'] ||
+            stats['pass_yd'] ||
+            stats['rush_att'] ||
+            stats['rush_yd'] ||
+            stats['rec'] ||
+            stats['rec_yd'] ||
+            stats['fgm'] ||
+            stats['xpm'],
+        );
+
+  let hasComponentKey = false;
+  let total = 0.0;
+
+  for (const [statKey, multiplier] of Object.entries(weights)) {
+    if (!multiplier || typeof multiplier !== 'number' || !Number.isFinite(multiplier)) continue;
+    if (inferredNonDef && DEF_ONLY_STAT_KEYS.has(statKey)) continue;
+
+    let statVal = stats[statKey];
+    if (statKey === 'pass_int' && inferredNonDef && statVal == null) {
+      statVal = stats['int'] ?? stats['idp_int'];
+    }
+
+    if (typeof statVal === 'number' && Number.isFinite(statVal)) {
+      hasComponentKey = true;
+      total += statVal * multiplier;
+    }
+  }
+
+  const fallbackPpr = stats['pts_ppr'];
+  if (
+    !hasComponentKey &&
+    !scoringSettings &&
+    typeof fallbackPpr === 'number' &&
+    Number.isFinite(fallbackPpr)
+  ) {
+    return Number(fallbackPpr.toFixed(2));
+  }
+
+  return Number(total.toFixed(2));
+}
+
+/** Input payload for hydrating projected and actual Sleeper fantasy points per game. */
+export interface SleeperGameScoringInput {
+  readonly position?: string | null;
+  readonly projectedPts?: number | null;
+  readonly actualPts?: number | null;
+  readonly projStats?: Readonly<Record<string, number>> | null;
+  readonly actualStats?: Readonly<Record<string, number>> | null;
+}
+
+/** Computes Sleeper projected points, actual points, and point differential for a player-game. */
+export function computeSleeperPointDiff(
+  gameRow?: SleeperGameScoringInput | null,
+  scoringSettings?: SleeperScoringSettings | null,
+): { projectedPts: number | null; actualPts: number | null; pointDiff: number | null } {
+  if (!gameRow || typeof gameRow !== 'object') {
+    return { projectedPts: null, actualPts: null, pointDiff: null };
+  }
+  const pos = gameRow.position ?? undefined;
+
+  if (!scoringSettings) {
+    const proj =
+      typeof gameRow.projectedPts === 'number' && Number.isFinite(gameRow.projectedPts)
+        ? gameRow.projectedPts
+        : gameRow.projStats
+          ? scoreSleeperStats(gameRow.projStats, DEFAULT_SLEEPER_PPR_SCORING, pos)
+          : null;
+    const act =
+      typeof gameRow.actualPts === 'number' && Number.isFinite(gameRow.actualPts)
+        ? gameRow.actualPts
+        : gameRow.actualStats
+          ? scoreSleeperStats(gameRow.actualStats, DEFAULT_SLEEPER_PPR_SCORING, pos)
+          : null;
+    if (proj === null || act === null) {
+      return {
+        projectedPts: proj !== null ? Number(proj.toFixed(2)) : null,
+        actualPts: act,
+        pointDiff: null,
+      };
+    }
+    return {
+      projectedPts: Number(proj.toFixed(2)),
+      actualPts: Number(act.toFixed(2)),
+      pointDiff: Number((act - proj).toFixed(2)),
+    };
+  }
+
+  if (gameRow.projStats) {
+    const projectedPts = scoreSleeperStats(gameRow.projStats, scoringSettings, pos);
+    const actualPts = gameRow.actualStats
+      ? scoreSleeperStats(gameRow.actualStats, scoringSettings, pos)
+      : typeof gameRow.actualPts === 'number'
+        ? gameRow.actualPts
+        : null;
+    return {
+      projectedPts,
+      actualPts,
+      pointDiff: actualPts !== null ? Number((actualPts - projectedPts).toFixed(2)) : null,
+    };
+  }
+
+  const fallbackProj =
+    typeof gameRow.projectedPts === 'number' && Number.isFinite(gameRow.projectedPts)
+      ? Number(gameRow.projectedPts.toFixed(2))
+      : null;
+  const fallbackAct =
+    typeof gameRow.actualPts === 'number' && Number.isFinite(gameRow.actualPts)
+      ? Number(gameRow.actualPts.toFixed(2))
+      : null;
+  return {
+    projectedPts: fallbackProj,
+    actualPts: fallbackAct,
+    pointDiff:
+      fallbackProj !== null && fallbackAct !== null
+        ? Number((fallbackAct - fallbackProj).toFixed(2))
+        : null,
+  };
 }
 

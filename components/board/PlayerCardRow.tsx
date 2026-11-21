@@ -22,19 +22,15 @@ import PositionalBadge from '@/components/common/PositionalBadge';
 import PlayerHeadshot, { TeamLogo } from '@/components/common/PlayerHeadshot';
 import OraclePlaceholderMarker from '@/components/common/OraclePlaceholderMarker';
 import { CosmicPlayer } from '@/types/oneiromancy';
-import { User } from 'lucide-react';
-import { DEFAULT_CHAOS_LAMBDA, isPlayerOnByeWeek, stripUserSuffix } from '@/lib/scoring';
+import { isPlayerOnByeWeek, stripUserSuffix } from '@/lib/scoring';
 import { getSeasonContext } from '@/lib/sleeper';
 import { MAX_COMPARE_PLAYERS, useOptionalOneiromancy } from '@/context/OneiromancyContext';
 import {
-  TONE_LABEL,
-  TONE_PILL,
-  favorabilityTone,
+  formatSignedModifier,
+  modifierTextColor,
   oraclePlaceholderInfo,
-  oracleScore,
+  playerForecast,
   resolveActiveWeek,
-  starsScore,
-  statsPoints,
 } from '@/lib/oracle';
 
 export interface PlayerCardRowProps {
@@ -44,17 +40,13 @@ export interface PlayerCardRowProps {
   onDraft?: (playerId: string) => void;
   isDrafting?: boolean;
   className?: string;
-  /** Oracle λ used for the blended score. */
   lambda?: number;
-  /** Active NFL week override when season context is not populated. */
   activeWeek?: number;
-  /** Optional waiver upgrade context when viewing Waivers filter. */
   waiverHint?: {
     dropName: string;
     oracleGain: number;
     wouldStart?: boolean;
   };
-  /** Optional trade partner context when viewing Trades filter. */
   tradeHint?: {
     partnerName: string;
     give?: CosmicPlayer;
@@ -62,25 +54,20 @@ export interface PlayerCardRowProps {
     gain?: number;
     oracleGain?: number;
   };
-  /** Whether the player is currently selected for multi-player comparison */
   isCompared?: boolean;
-  /** Whether selecting for comparison is disabled (e.g. reached 6 player cap) */
   isCompareDisabled?: boolean;
-  /** Callback to toggle comparison selection */
   onToggleCompare?: (id: string) => void;
 }
 
 /**
  * Compact player row: single click opens PlayerDetailModal directly.
- * Rostered user players use the canonical purple border; displays strictly
- * the 3 canonical player metrics (Stats, Oracle, Stars).
+ * Displays strictly next-game Base projected points and the combined 25-predictor Modifier.
  */
 export const PlayerCardRow: React.FC<PlayerCardRowProps> = ({
   player,
   rank,
   onInspect,
   className = '',
-  lambda = DEFAULT_CHAOS_LAMBDA,
   activeWeek: propActiveWeek,
   waiverHint,
   tradeHint,
@@ -98,161 +85,199 @@ export const PlayerCardRow: React.FC<PlayerCardRowProps> = ({
   const activeWk = resolveActiveWeek(ctx?.draftState, propActiveWeek);
   const onByeNow = isPlayerOnByeWeek(activeWk, player.bye_week, player.team, seasonCtx?.byeWeeks);
   const placeholder = oraclePlaceholderInfo(player, activeWk);
-  const stars = starsScore(player, activeWk);
-  const tone = favorabilityTone(stars);
-  const oracleVal = oracleScore(player, lambda, { currentWeek: activeWk });
+  const forecast = playerForecast(player, {
+    currentWeek: activeWk,
+    enabledSystems: ctx?.enabledSystems,
+    placeholder: true,
+    nextGameLookahead: true,
+  });
+  const basePts = onByeNow ? 0 : forecast.basePts;
+  const modPts = forecast.overallModifierPts;
+
+  const tradeGiveName = tradeHint?.give?.name || tradeHint?.giveName;
+  const tradePartner = tradeHint ? stripUserSuffix(tradeHint.partnerName) : '';
+  const tradeGain = tradeHint ? (tradeHint.gain ?? tradeHint.oracleGain) : undefined;
+  const tradeSummary = [
+    tradeGiveName ? `Send ${tradeGiveName}` : '',
+    tradePartner,
+  ]
+    .filter(Boolean)
+    .join(' · ');
 
   return (
     <div
       onClick={() => onInspect(player)}
       data-testid={`player-card-row-${player.id}`}
-      className={`group p-2.5 rounded-xl border transition-all cursor-pointer select-none flex items-center gap-2 ${
+      className={`relative group px-3 py-2.5 transition-colors cursor-pointer select-none flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 ${
         isCompared
-          ? 'bg-amber-500/10 border-amber-500/30 ring-1 ring-amber-500/20'
+          ? 'bg-amber-500/[0.08]'
           : onByeNow
-          ? 'bg-slate-950/70 border-slate-700/50 opacity-50 grayscale hover:opacity-75'
+          ? 'opacity-50 grayscale bg-zinc-950/40'
           : isMyTeam
-          ? 'bg-purple-950/25 border-purple-500/60 ring-1 ring-purple-500/20'
-          : isAvailable
-          ? 'bg-slate-900/70 border-white/10 hover:border-cyan-500/40'
-          : 'bg-slate-900/50 border-white/10 hover:border-cyan-500/30'
+          ? 'bg-amber-500/[0.04] hover:bg-amber-500/[0.07]'
+          : 'hover:bg-white/[0.025]'
       } ${className}`}
     >
-      {onToggleCompare && (
-        <label
-          onClick={(e: React.MouseEvent) => {
-            e.stopPropagation();
-            if (e.target === e.currentTarget) {
-              e.preventDefault();
-              if (!isCompareDisabled || isCompared) {
-                onToggleCompare(String(player.id));
-              }
-            }
-          }}
-          className="shrink-0 flex items-center justify-center min-w-[24px] min-h-[24px] p-1 -m-1 cursor-pointer"
-        >
-          <input
-            type="checkbox"
-            checked={Boolean(isCompared)}
-            disabled={isCompareDisabled}
-            title={isCompareDisabled ? `Maximum of ${MAX_COMPARE_PLAYERS} players compared` : undefined}
-            onChange={() => {}}
+      <button
+        type="button"
+        aria-label={`Inspect ${player.name}`}
+        onClick={(e: React.MouseEvent) => {
+          e.stopPropagation();
+          onInspect(player);
+        }}
+        className="absolute inset-0 z-0 focus:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-amber-400/70"
+      />
+      <div className="flex items-center gap-2.5 min-w-0 flex-1">
+        {onToggleCompare && (
+          <label
             onClick={(e: React.MouseEvent) => {
               e.stopPropagation();
-              if (!isCompareDisabled || isCompared) {
-                onToggleCompare(String(player.id));
+              if (e.target === e.currentTarget) {
+                e.preventDefault();
+                if (!isCompareDisabled || isCompared) {
+                  onToggleCompare(String(player.id));
+                }
               }
             }}
-            aria-label={`Compare ${player.name}`}
-            className={`w-4 h-4 rounded border-slate-700 bg-slate-900 text-cyan-500 focus:ring-cyan-500/50 ${
-              isCompareDisabled ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'
-            }`}
-          />
-        </label>
-      )}
-      <span className="font-mono text-xs text-slate-500 min-w-[1.25rem] shrink-0 text-right tabular-nums">{rank}</span>
-      <PlayerHeadshot player={player} size="row" />
-      <div className="min-w-0 flex-1 flex flex-col gap-0.5">
-        <div className="flex items-center gap-1.5 flex-wrap">
-          <span className="font-sans font-semibold text-sm text-slate-100 break-words">
-            {player.name}
-          </span>
-          {isCompared && (
-            <span
-              className="text-[9px] font-bold px-1.5 py-0.5 rounded border border-amber-500/50 bg-amber-950/70 text-amber-200"
-              aria-label="Pinned comparison"
-            >
-              PINNED
-            </span>
-          )}
-          {isMyTeam && (
-            <span
-              className="text-[9px] font-bold px-1.5 py-0.5 rounded border border-purple-500/50 bg-purple-950/70 text-purple-200 flex items-center gap-1"
-              aria-hidden="true"
-            >
-              <User className="w-2.5 h-2.5 text-purple-300" aria-hidden="true" />
-              <span>Roster</span>
-            </span>
-          )}
-          {isMyTeam && <span className="sr-only"> (On your roster)</span>}
-        </div>
-        <span className="flex items-center gap-1.5 font-mono text-[11px] text-slate-400 flex-wrap">
-          <PositionalBadge position={player.position} size="sm" depth={player.depth_chart_order} />
-          <span>
-            <TeamLogo team={player.team} className="mr-1" />
-            {player.team} · Bye {player.bye_week || '-'}
-          </span>
-          {player.injury_status && player.injury_status !== 'Healthy' && (
-            <span
-              className={`text-[9px] font-bold px-1.5 py-0.5 rounded border ${
-                isSevereInjury
-                  ? 'text-rose-300 bg-rose-950/70 border-rose-500/50'
-                  : 'text-amber-300 bg-amber-950/70 border-amber-500/50'
+            className="relative z-10 shrink-0 flex items-center justify-center min-w-[24px] min-h-[24px] p-1 -m-1 cursor-pointer"
+          >
+            <input
+              type="checkbox"
+              checked={Boolean(isCompared)}
+              disabled={isCompareDisabled}
+              title={isCompareDisabled ? `Maximum of ${MAX_COMPARE_PLAYERS} players compared` : undefined}
+              onChange={() => {}}
+              onClick={(e: React.MouseEvent) => {
+                e.stopPropagation();
+                if (!isCompareDisabled || isCompared) {
+                  onToggleCompare(String(player.id));
+                }
+              }}
+              aria-label={`Compare ${player.name}`}
+              className={`checkbox-matte ${
+                isCompareDisabled ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'
               }`}
-            >
-              {player.injury_status.toUpperCase()}
+            />
+          </label>
+        )}
+        <span className="relative z-[1] font-mono text-xs text-zinc-400 min-w-[1.25rem] shrink-0 text-right tabular-nums">{rank}</span>
+        <PlayerHeadshot player={player} size="row" className="relative z-[1]" />
+        <div className="relative z-[1] min-w-0 flex-1 flex flex-col gap-0.5">
+          <div className="flex flex-wrap items-center gap-1.5 min-w-0">
+            <span className="font-sans font-medium text-sm text-zinc-100 break-words">
+              {player.name}
             </span>
-          )}
-          {onByeNow && (
-            <>
-              <span className="text-[9px] font-bold px-1.5 py-0.5 rounded border text-amber-300 bg-amber-950/70 border-amber-500/50">
+            {isCompared && (
+              <span
+                className="text-[10px] font-medium px-1.5 py-0.5 rounded border border-amber-400/30 bg-amber-500/15 text-amber-300 shrink-0"
+                aria-label="Pinned comparison"
+              >
+                Pinned
+              </span>
+            )}
+            {player.injury_status && player.injury_status !== 'Healthy' && (
+              <span
+                className={`text-[10px] font-mono font-medium px-1.5 py-0.5 rounded border shrink-0 ${
+                  isSevereInjury
+                    ? 'text-rose-300 bg-rose-950/50 border-rose-500/30'
+                    : 'text-amber-300 bg-amber-950/50 border-amber-500/30'
+                }`}
+              >
+                {player.injury_status.toUpperCase()}
+              </span>
+            )}
+            {onByeNow && (
+              <span className="text-[10px] font-mono font-medium px-1.5 py-0.5 rounded border text-amber-300 bg-amber-950/50 border-amber-500/30 shrink-0">
                 {`BYE WK ${player.bye_week || activeWk}`}
               </span>
-              <span className="text-[10px] font-mono text-slate-500">· On Bye</span>
-            </>
-          )}
-          {!isAvailable && !isMyTeam && (
-            <span className="text-[9px] px-1.5 py-0.5 rounded border border-cyan-500/30 bg-slate-900 text-cyan-200">
-              {stripUserSuffix(player.drafted_by) || stripUserSuffix(tradeHint?.partnerName) || 'Rostered'}
+            )}
+          </div>
+          <div className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 font-mono tabular-nums text-[10.5px] sm:text-[11px] tracking-tight text-zinc-400 min-w-0">
+            <span className="inline-flex items-center gap-1 sm:gap-1.5 shrink-0">
+              <PositionalBadge position={player.position} size="sm" className="shrink-0" depth={player.depth_chart_order} />
+              <span>
+                <TeamLogo team={player.team} className="mr-1" />
+                {player.team} · Bye {player.bye_week || '-'}
+              </span>
             </span>
-          )}
+            {isMyTeam && (
+              <>
+                <span aria-hidden="true">·</span>
+                <span className="font-sans text-amber-300 font-medium break-words" aria-hidden="true">
+                  My Roster
+                </span>
+              </>
+            )}
+            {isMyTeam && <span className="sr-only"> (On your roster)</span>}
+            {!isAvailable && !isMyTeam && !tradeHint && (
+              <>
+                <span aria-hidden="true">·</span>
+                <span className="font-sans text-zinc-400 break-words">
+                  {stripUserSuffix(player.drafted_by) || 'Rostered'}
+                </span>
+              </>
+            )}
+          </div>
           {waiverHint && (
-            <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-emerald-950/70 text-emerald-300 border border-emerald-500/40">
-              Drop {waiverHint.dropName} (+{waiverHint.oracleGain.toFixed(1)} Oracle)
-            </span>
+            <div className="text-[11px] font-sans text-emerald-300 leading-snug break-words">
+              {`Drop ${waiverHint.dropName} `}
+              <span className="font-mono tabular-nums">(+{waiverHint.oracleGain.toFixed(1)} pts)</span>
+            </div>
           )}
-          {tradeHint && (
-            <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-purple-950/70 text-purple-200 border border-purple-500/40">
-              {stripUserSuffix(tradeHint.partnerName)}
-              {tradeHint.give?.name || tradeHint.giveName
-                ? ` • Send ${tradeHint.give?.name || tradeHint.giveName}`
-                : ''}
-              {(tradeHint.gain ?? tradeHint.oracleGain)
-                ? ` (+${(tradeHint.gain ?? tradeHint.oracleGain)!.toFixed(1)} Oracle)`
-                : ''}
-            </span>
+          {!isAvailable && !isMyTeam && tradeHint && tradeSummary && (
+            <div className="text-[11px] font-sans text-zinc-400 leading-snug break-words">
+              {tradeSummary}
+              {tradeGain ? (
+                <>
+                  {' '}
+                  <span className="font-mono tabular-nums">(+{tradeGain.toFixed(1)} pts)</span>
+                </>
+              ) : (
+                ''
+              )}
+            </div>
           )}
-        </span>
+        </div>
       </div>
-      {/* Strictly 3 Canonical Player Metrics: Stats, Oracle, Stars */}
-      <div className="shrink-0 grid grid-cols-3 gap-2 text-right font-mono">
+
+      {/* Canonical Player Metrics: Base, Modifier & Projected */}
+      <div className="relative z-[1] shrink-0 self-end sm:self-auto flex items-center gap-3 sm:gap-3.5 text-right font-mono tabular-nums">
         <span
-          className="flex flex-col"
-          title={placeholder.hasPlaceholder ? placeholder.statsTooltipText : undefined}
+          className="flex flex-col w-8 sm:w-12"
+          title={placeholder.hasPlaceholder ? placeholder.statsTooltipText : 'Projected base points'}
         >
-          <span className="text-[9px] text-slate-500 uppercase">Stats</span>
-          <span className="text-sm font-bold text-slate-100 tabular-nums">
-            {statsPoints(player).toFixed(1)}
-          </span>
-        </span>
-        <span
-          className="flex flex-col"
-        >
-          <span className="text-[9px] text-slate-500 uppercase">Oracle</span>
-          <span className="text-sm font-bold text-cyan-300 tabular-nums">
-            {oracleVal.toFixed(1)}
+          <span className="text-[10px] font-sans text-zinc-400">Base</span>
+          <span className="text-xs font-medium text-zinc-200 inline-flex items-center justify-end">
+            {basePts.toFixed(1)}
             {placeholder.hasPlaceholder && (
-              <OraclePlaceholderMarker placeholder={placeholder} />
+              <span className="relative z-10 inline-flex">
+                <OraclePlaceholderMarker placeholder={placeholder} kind="stats" />
+              </span>
             )}
           </span>
         </span>
         <span
-          className="flex flex-col items-end"
-          title={placeholder.hasPlaceholder ? placeholder.tooltipText : TONE_LABEL[tone]}
+          className="flex flex-col w-10 sm:w-14"
+          title="Combined +/- point differential across active predictors"
         >
-          <span className="text-[9px] text-slate-500 uppercase">Stars</span>
-          <span className={`text-xs font-bold px-1.5 py-0.5 rounded border ${TONE_PILL[tone]}`}>
-            {stars.toFixed(0)}
+          <span className="text-[9.5px] sm:text-[10px] tracking-tight font-sans text-zinc-400">Modifier</span>
+          <span className={`text-xs sm:text-sm font-semibold inline-flex items-center justify-end ${modifierTextColor(modPts)}`}>
+            {formatSignedModifier(modPts)}
+          </span>
+        </span>
+        <span
+          data-testid="row-projected-cell"
+          className="flex flex-col w-11 sm:w-14"
+          title={`Projected net points (${forecast.basePts.toFixed(1)} base ${formatSignedModifier(modPts)} mod)`}
+        >
+          <span className="text-[9.5px] sm:text-[10px] tracking-tight font-sans text-amber-200/90">Projected</span>
+          <span className="text-xs sm:text-sm font-semibold text-amber-200 inline-flex items-center justify-end">
+            {forecast.adjustedPts.toFixed(1)}
+            {placeholder.hasPlaceholder && (
+              <span className="relative z-10 inline-flex">
+                <OraclePlaceholderMarker placeholder={placeholder} />
+              </span>
+            )}
           </span>
         </span>
       </div>

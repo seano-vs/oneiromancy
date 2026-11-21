@@ -26,7 +26,7 @@ import MatchupsScreen from '@/components/screens/MatchupsScreen';
 import LeagueScreen from '@/components/screens/LeagueScreen';
 import SettingsDrawer from '@/components/settings/SettingsDrawer';
 import OraclePanel from '@/components/oracle/OraclePanel';
-import { DEFAULT_CHAOS_LAMBDA } from '@/lib/scoring';
+import { DEFAULT_ENABLED_PREDICTOR_SYSTEM_IDS } from '@/lib/oracle';
 
 function OneiromancyApp() {
   const {
@@ -42,6 +42,7 @@ function OneiromancyApp() {
     syncWarning,
     refreshDraft,
     draftState,
+    enabledSystems,
   } = useOneiromancy();
 
   const [isOracleOpen, setIsOracleOpen] = useState(false);
@@ -97,7 +98,7 @@ function OneiromancyApp() {
       leagueId={draftState.settings?.league_id || '9000000000000000001'}
       draftId={draftState.draft_id}
       userAvatarUrl={draftState.user_avatar_url || draftState.avatar_url}
-      oracleLambda={draftState.settings?.chaos_lambda ?? DEFAULT_CHAOS_LAMBDA}
+      activePredictorsCount={enabledSystems?.length ?? DEFAULT_ENABLED_PREDICTOR_SYSTEM_IDS.length}
       onOpenOracle={() => setIsOracleOpen(true)}
     >
       {/* 4 Consolidated Top-Level Sections: Roster, Matchup, Players, League */}

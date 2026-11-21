@@ -39,7 +39,7 @@ export const PlayerLink: React.FC<{
     type="button"
     onClick={() => onOpen({ player, vs })}
     aria-label={vs ? `Compare ${player.name} with ${vs.name}` : `View ${player.name} details`}
-    className={`inline text-left underline decoration-dotted decoration-slate-500 underline-offset-2 hover:text-cyan-300 hover:decoration-cyan-400 ${className}`}
+    className={`inline text-left underline decoration-zinc-600 underline-offset-2 hover:text-amber-200 hover:decoration-amber-400/60 ${className}`}
   >
     {player.name}
   </button>

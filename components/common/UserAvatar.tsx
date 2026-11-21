@@ -76,15 +76,15 @@ export const UserAvatar: React.FC<UserAvatarProps> = ({
   const initial = (fallbackText || alt || 'Seeker').trim().charAt(0).toUpperCase() || 'S';
 
   const userRing = isUser
-    ? 'ring-1 ring-purple-400/80 shadow-[0_0_8px_rgba(168,85,247,0.4)]'
+    ? 'ring-1 ring-amber-400/50'
     : 'ring-1 ring-white/10';
 
   const showImage = Boolean(effectiveSrc) && !hasError;
 
   return (
     <div
-      data-testid={testId}
-      className={`relative rounded-full overflow-hidden flex items-center justify-center shrink-0 bg-purple-950/50 ${sizeCfg.container} ${userRing} ${className}`}
+      data-testid={testId || dataTestId}
+      className={`relative rounded-full overflow-hidden flex items-center justify-center shrink-0 bg-zinc-800 ${sizeCfg.container} ${userRing} ${className}`}
     >
       {showImage ? (
         <img
@@ -97,8 +97,8 @@ export const UserAvatar: React.FC<UserAvatarProps> = ({
         />
       ) : (
         <span
-          className={`w-full h-full flex items-center justify-center font-serif font-bold select-none ${sizeCfg.text} ${
-            isUser ? 'text-purple-200' : 'text-slate-300'
+          className={`w-full h-full flex items-center justify-center font-sans font-semibold select-none ${sizeCfg.text} ${
+            isUser ? 'text-amber-200' : 'text-zinc-300'
           }`}
         >
           {initial}

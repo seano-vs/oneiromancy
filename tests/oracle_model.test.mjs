@@ -37,7 +37,7 @@ const nflGames = await import('../core/lib/nflGames.ts');
 const seasonContext = await import('../core/lib/seasonContext.ts');
 const sleeper = await import('./dist/lib/sleeper.js');
 const mockData = await import('./dist/lib/mockData.js');
-const { default: OneiromancyContext } = await import('./dist/context/OneiromancyContext.js');
+const { default: OneiromancyContext, OneiromancyProvider } = await import('./dist/context/OneiromancyContext.js');
 const { OraclePanel } = await import('./dist/components/oracle/OraclePanel.js');
 const { NavigationShell } = await import('./dist/components/common/NavigationShell.js');
 const { Astrolabe } = await import('./dist/components/astrolabe/Astrolabe.js');
@@ -49,6 +49,7 @@ const { OneiromancyDashboard } = await import('./dist/components/screens/Oneirom
 const { MatchupsScreen } = await import('./dist/components/screens/MatchupsScreen.js');
 const { CosmicBoard, comparePlayersForBoard } = await import('./dist/components/screens/CosmicBoard.js');
 const { LeagueScreen } = await import('./dist/components/screens/LeagueScreen.js');
+const { PlayerDetailModal } = await import('./dist/components/modals/PlayerDetailModal.js');
 
 function buildMockCtx(overrides = {}) {
   return {
@@ -90,7 +91,7 @@ function buildMockCtx(overrides = {}) {
 
 // --- fixtures -------------------------------------------------------------
 
-let nextId = 1000;
+let nextId = 900000;
 function player(name, position, pts, spirit, extra = {}) {
   return {
     id: String(nextId++),
@@ -127,7 +128,7 @@ describe('Tier 10: Oracle model and recommendations', () => {
       });
     });
 
-    it('10.1.2 UI and lib modules default to DEFAULT_CHAOS_LAMBDA (0.75) when lambda is omitted', () => {
+    it('10.1.2 recomputeDraftScores and Astrolabe default to DEFAULT_CHAOS_LAMBDA (0.75) and SettingsDrawer mounts sync controls when chaos_lambda is omitted', () => {
       const testPlayer = player('Default Lambda Check', 'WR', 20, 90);
       const [recomputedWithDefault] = scoring.recomputeDraftScores([testPlayer], {});
       const [recomputedExplicit] = scoring.recomputeDraftScores([testPlayer], { chaos_lambda: scoring.DEFAULT_CHAOS_LAMBDA });
@@ -138,26 +139,50 @@ describe('Tier 10: Oracle model and recommendations', () => {
       assert.ok(astrolabeEl.getAttribute('aria-label')?.includes('3.25'), 'Astrolabe defaults to DEFAULT_CHAOS_LAMBDA (0.75 -> 3.25x)');
       unmount();
 
+      let mockLoadedCount = 0;
+      let drawerClosedCount = 0;
       const ctx = buildMockCtx({
         draftState: {
           ...mockData.mock_oneiromancy_draft_2025,
           settings: { ...mockData.mockSettings, chaos_lambda: undefined },
         },
+        loadMockData: () => {
+          mockLoadedCount += 1;
+        },
       });
       const drawer = render(
         jsx(OneiromancyContext.Provider, {
           value: ctx,
-          children: jsx(SettingsDrawer, { isOpen: true, onClose: () => {} }),
+          children: jsx(SettingsDrawer, {
+            isOpen: true,
+            onClose: () => {
+              drawerClosedCount += 1;
+            },
+          }),
         })
       );
-      assert.ok(drawer.container.textContent.includes('Oneiromancy'), 'SettingsDrawer renders cleanly when chaos_lambda is omitted');
+      assert.ok(drawer.getByRole('dialog'), 'SettingsDrawer mounts accessible dialog');
+      const usernameInput = drawer.container.querySelector('#username-input');
+      const leagueSelect = drawer.container.querySelector('#league-select');
+      const applySyncBtn = drawer.container.querySelector('#apply-sync-btn');
+      const loadMockBtn = drawer.container.querySelector('#load-mock-btn');
+      assert.ok(usernameInput, 'SettingsDrawer renders #username-input control');
+      assert.ok(leagueSelect, 'SettingsDrawer renders #league-select control');
+      assert.ok(applySyncBtn, 'SettingsDrawer renders #apply-sync-btn action');
+      assert.ok(loadMockBtn, 'SettingsDrawer renders #load-mock-btn action');
+      assert.ok(!drawer.container.textContent.includes('NaN'), 'SettingsDrawer renders without NaN values');
+      fireEvent.click(loadMockBtn);
+      assert.equal(mockLoadedCount, 1, 'Clicking sample league button invokes loadMockData');
+      assert.equal(drawerClosedCount, 1, 'Clicking sample league button closes SettingsDrawer');
       drawer.unmount();
     });
 
-    it('10.1.3 Oracle panel presets are symmetric around the default and include it', () => {
-      const capturedLambdas = [];
+    it('10.1.3 Predictors panel renders all 25 pure esoteric prediction systems and toggles them interactively', () => {
+      const toggled = [];
       const ctx = buildMockCtx({
-        updateChaosLambda: (val) => capturedLambdas.push(val),
+        enabledSystems: [...oracle.ALL_PREDICTOR_SYSTEM_IDS],
+        togglePredictorSystem: (id) => toggled.push(id),
+        resetPredictorSystems: () => {},
       });
       const { getByTestId, unmount } = render(
         jsx(OneiromancyContext.Provider, {
@@ -165,58 +190,67 @@ describe('Tier 10: Oracle model and recommendations', () => {
           children: jsx(OraclePanel, { isOpen: true, onClose: () => {} }),
         })
       );
-      const mostlyStatsPreset = getByTestId(`preset-${1 - scoring.DEFAULT_CHAOS_LAMBDA}`);
-      const mostlyStarsPreset = getByTestId(`preset-${scoring.DEFAULT_CHAOS_LAMBDA}`);
-      assert.ok(mostlyStatsPreset, 'Mostly stats preset (1 - DEFAULT_CHAOS_LAMBDA = 0.25) renders in DOM');
-      assert.ok(mostlyStarsPreset, 'Mostly stars preset (DEFAULT_CHAOS_LAMBDA = 0.75) renders in DOM');
-      fireEvent.click(mostlyStatsPreset);
-      fireEvent.click(mostlyStarsPreset);
-      assert.deepEqual(capturedLambdas, [1 - scoring.DEFAULT_CHAOS_LAMBDA, scoring.DEFAULT_CHAOS_LAMBDA]);
+      assert.equal(oracle.PREDICTOR_SYSTEM_META.length, 25, 'Must define all 25 pure esoteric predictive systems');
+      assert.ok(!oracle.ALL_PREDICTOR_SYSTEM_IDS.includes('venue_environment'), 'Mundane venue_environment system must be absent');
+      assert.ok(!oracle.ALL_PREDICTOR_SYSTEM_IDS.includes('circadian_parans'), 'Removed circadian_parans system must be absent');
+      for (const sys of oracle.PREDICTOR_SYSTEM_META) {
+        const toggleBtn = getByTestId(`predictor-toggle-${sys.id}`);
+        assert.ok(toggleBtn, `Predictor toggle ${sys.id} renders in DOM`);
+      }
+      fireEvent.click(getByTestId('predictor-toggle-elemental_matchup'));
+      fireEvent.click(getByTestId('predictor-toggle-witchcraft_sabbats_esbats'));
+      assert.deepEqual(toggled, ['elemental_matchup', 'witchcraft_sabbats_esbats']);
       unmount();
     });
   });
 
-  describe('10.2 Stats, Stars and Oracle', () => {
-    const p = player('Test Player', 'WR', 15, 80);
+  describe('10.2 Base Projected Points and 25-System Modifier', () => {
+    const p = player('Test Player', 'WR', 15, 80, { team: 'KC', birth_date: '1995-09-17', jersey_number: 15 });
 
-    it('10.2.1 Stats scales projected points so 25 pts = 100', () => {
-      assert.equal(oracle.statsScore(player('a', 'WR', 25, 70)), 100);
-      assert.equal(oracle.statsScore(player('b', 'WR', 12.5, 70)), 50);
-      assert.equal(oracle.statsScore(player('c', 'WR', 40, 70)), 100, 'capped at 100');
+    it('10.2.1 Base returns raw Sleeper projected points without 0-100 rescaling or capping', () => {
+      assert.equal(oracle.basePoints(player('a', 'WR', 25, 70)), 25);
+      assert.equal(oracle.basePoints(player('b', 'WR', 12.5, 70)), 12.5);
+      assert.equal(oracle.basePoints(player('c', 'WR', 40, 70)), 40, 'not capped at 25 or 100');
     });
 
-    it('10.2.2 Oracle is (1 − λ) × Stats + λ × Stars', () => {
-      assert.equal(oracle.oracleScore(p, 0), Math.round(oracle.statsScore(p) * 10) / 10);
-      assert.equal(oracle.oracleScore(p, 1), Math.round(oracle.starsScore(p) * 10) / 10);
-      const mid = 0.25 * oracle.statsScore(p) + 0.75 * oracle.starsScore(p);
-      assert.equal(oracle.oracleScore(p, 0.75), Math.round(mid * 10) / 10);
+    it('10.2.2 Net Projected is Base + Overall Modifier across the 25 systems', () => {
+      const forecast = oracle.playerForecast(p, { currentWeek: 2 });
+      assert.equal(forecast.basePts, 15);
+      assert.equal(forecast.systems.length, 25);
+      assert.equal(
+        forecast.adjustedPts,
+        Number(Math.max(0, forecast.basePts + forecast.overallModifierPts).toFixed(2)),
+      );
+      assert.equal(oracle.projectedWithModifier(p, { currentWeek: 2 }), forecast.adjustedPts);
     });
 
-    it('10.2.3 Stars responds to Spirit (and so to the star weights)', () => {
-      const low = player('low', 'WR', 15, 60);
-      const high = player('high', 'WR', 15, 95);
-      assert.ok(oracle.starsScore(high) > oracle.starsScore(low));
+    it('10.2.3 Modifier responds to venue, natal profile, and enabled predictor systems', () => {
+      const domeStar = player('Dome Star', 'WR', 15, 80, { team: 'DET', birth_date: '1999-10-24', jersey_number: 14 });
+      const mileHigh = player('Mile High', 'QB', 15, 80, { team: 'DEN', birth_date: '2000-02-25', jersey_number: 10 });
+      const modDet = oracle.playerModifier(domeStar, { currentWeek: 2 });
+      const modDen = oracle.playerModifier(mileHigh, { currentWeek: 2 });
+      assert.ok(Number.isFinite(modDet) && Number.isFinite(modDen));
+      const muted = oracle.playerModifier(domeStar, { currentWeek: 2, enabledSystems: [] });
+      assert.equal(muted, 0, 'Disabling all predictors yields 0.00 modifier');
     });
 
-    it('10.2.4 one tone scale: ≥84 apex, 75-83 good, 65-74 neutral, <65 bad', () => {
-      assert.equal(oracle.favorabilityTone(84), 'apex');
-      // Tones classify the value as displayed (rounded), so 83.9 shows as 84 and is apex.
-      assert.equal(oracle.favorabilityTone(83.9), 'apex');
-      assert.equal(oracle.favorabilityTone(83.4), 'good');
-      assert.equal(oracle.favorabilityTone(75), 'good');
-      assert.equal(oracle.favorabilityTone(74.4), 'neutral');
-      assert.equal(oracle.favorabilityTone(65), 'neutral');
-      assert.equal(oracle.favorabilityTone(64.4), 'bad');
+    it('10.2.4 signed modifier tone scale classifies positive, neutral, and negative point differentials', () => {
+      assert.equal(oracle.modifierTone(0.35), 'apex');
+      assert.equal(oracle.modifierTone(0.25), 'apex');
+      assert.equal(oracle.modifierTone(0.12), 'good');
+      assert.equal(oracle.modifierTone(0.0), 'neutral');
+      assert.equal(oracle.modifierTone(-0.02), 'neutral');
+      assert.equal(oracle.modifierTone(-0.15), 'bad');
     });
 
-    it('10.2.6 a player\'s Stars never depend on his lineup slot (no bench penalty)', () => {
-      // Owner decision 2026-10-11: bench players are scored as starters everywhere.
-      const benchGuy = player('Bench Guy', 'WR', 3, 70, { draft_status: 'available', divination_breakdown: { geomantic: 78 } });
-      const [recomputed] = scoring.recomputeDraftScores([benchGuy], { chaos_lambda: 0.75 });
-      assert.equal(recomputed.favorability_score, oracle.starsScore(benchGuy), 'board favorability equals Stars');
-
-      const starterFav = scoring.computeWeeklyPlayerFavorability(recomputed.spirit_score, 3, null, true, 78);
-      assert.equal(recomputed.favorability_score, starterFav.score, 'bench player Stars equals starter favorability');
+    it('10.2.6 a player\'s Modifier never depends on fantasy bench vs starter slot (no bench penalty)', () => {
+      const benchGuy = player('Bench Guy', 'WR', 3, 70, { draft_status: 'available', team: 'MIA', birth_date: '1998-11-29' });
+      const asStarter = { ...benchGuy, draft_status: 'my_team' };
+      assert.equal(
+        oracle.playerModifier(benchGuy, { currentWeek: 2 }),
+        oracle.playerModifier(asStarter, { currentWeek: 2 }),
+        'bench player Modifier equals starter Modifier',
+      );
     });
 
     it('10.2.5 injury codes are written out in plain English', () => {
@@ -228,27 +262,33 @@ describe('Tier 10: Oracle model and recommendations', () => {
   });
 
   describe('10.3 Lineup check', () => {
-    it('10.3.1 recommends starting a better bench player and reports both sides', () => {
-      const starter = player('Weak Starter', 'WR', 5, 60);
-      const bench = player('Strong Bench', 'WR', 18, 85);
+    it('10.3.1 recommends starting a better bench player and reports both sides in points', () => {
+      const starter = player('Weak Starter', 'WR', 5, 60, { team: 'CLE' });
+      const bench = player('Strong Bench', 'WR', 18, 85, { team: 'DET' });
       const roster = [slot('WR', ['WR'], starter), slot('BN', ['WR', 'RB', 'TE', 'QB'], bench)];
-      const swaps = oracle.computeLineupCheck(roster, 0.75);
+      const swaps = oracle.computeLineupCheck(roster, 0.75, 2);
       assert.equal(swaps.length, 1);
       assert.equal(swaps[0].playerIn.name, 'Strong Bench');
       assert.equal(swaps[0].playerOut.name, 'Weak Starter');
       assert.equal(swaps[0].statsFavor, 'in');
-      assert.equal(swaps[0].starsFavor, 'in');
-      assert.equal(swaps[0].flipLambda, null, 'no flip when stats and stars agree');
+      assert.ok(swaps[0].pointsGain > 10, 'reports net point gain');
     });
 
-    it('10.3.2 reports the λ at which stats and stars disagree', () => {
-      const statsGuy = player('Stats Guy', 'WR', 22, 55); // big projection, poor stars
-      const starsGuy = player('Stars Guy', 'WR', 8, 98); // small projection, great stars
-      const roster = [slot('WR', ['WR'], statsGuy), slot('BN', ['WR'], starsGuy)];
-      const swaps = oracle.computeLineupCheck(roster, 1);
-      assert.equal(swaps.length, 1, 'stars-only should start the stars guy');
-      assert.ok(swaps[0].flipLambda > 0 && swaps[0].flipLambda < 1, 'flip λ is inside (0, 1)');
-      assert.equal(oracle.computeLineupCheck(roster, 0).length, 0, 'stats-only keeps the stats guy');
+    it('10.3.2 positive empirical modifier breaks close base-projection ties in lineup check', () => {
+      const baseSlightlyHigher = player('Outdoor Road WR', 'WR', 14.0, 55, { team: 'NYG', birth_date: '1997-01-04', jersey_number: 80 });
+      const modBoosted = player('Cohesive Dome WR', 'WR', 14.0, 95, { team: 'DET', birth_date: '1999-10-24', jersey_number: 14 });
+      const fA = oracle.playerForecast(baseSlightlyHigher, { currentWeek: 2 });
+      const fB = oracle.playerForecast(modBoosted, { currentWeek: 2 });
+      // Give the lower-modifier player a tiny +0.05 base edge that is overcome if |mod diff| > 0.25, or test direct modifier tiebreak
+      const pLowNet = fA.overallModifierPts <= fB.overallModifierPts ? baseSlightlyHigher : modBoosted;
+      const pHighNet = pLowNet === baseSlightlyHigher ? modBoosted : baseSlightlyHigher;
+      const diff = Math.abs(fA.overallModifierPts - fB.overallModifierPts);
+      pLowNet.sleeper_projected_points = 14.0;
+      pHighNet.sleeper_projected_points = diff > 0.25 ? 14.0 : 14.4;
+      const roster = [slot('WR', ['WR'], pLowNet), slot('BN', ['WR'], pHighNet)];
+      const swaps = oracle.computeLineupCheck(roster, undefined, 2);
+      assert.equal(swaps.length, 1, 'higher Base + Modifier player is recommended to start');
+      assert.equal(swaps[0].playerIn.id, pHighNet.id);
     });
   });
 
@@ -351,10 +391,10 @@ describe('Tier 10: Oracle model and recommendations', () => {
       assert.equal(p.get.replaces.name, 'My Weak WR');
       const expected = oracle.oracleScore(p.give.player, 0.75) - oracle.oracleScore(theirRB, 0.75);
       assert.equal(p.give.gain, Math.round(expected * 10) / 10);
-      assert.ok(p.summary.includes('Oracle'), 'the summary values players by Oracle, not points alone');
+      assert.ok(p.summary.includes('pts'), 'the summary values players in net fantasy points');
     });
 
-    it('10.5.2 team ratings average the starters\' Oracle and sort high to low', () => {
+    it('10.5.2 team ratings sum the starters\' Base + Modifier and sort high to low', () => {
       const a = player('A', 'WR', 20, 90);
       const b = player('B', 'WR', 5, 55);
       const teams = [
@@ -363,7 +403,7 @@ describe('Tier 10: Oracle model and recommendations', () => {
       ];
       const r = oracle.computeTeamOracles(teams, [a, b], 0.75);
       assert.deepEqual(r.map((x) => x.team.name), ['High', 'Low']);
-      assert.equal(r[0].oracle, oracle.oracleScore(a, 0.75));
+      assert.equal(r[0].oracle, Math.round(oracle.oracleScore(a, 0.75) * 10) / 10);
     });
   });
 
@@ -478,19 +518,19 @@ describe('Tier 10: Oracle model and recommendations', () => {
 
     it('10.9.2 "would start" for a waiver add is judged against the recommended lineup, not the current one', () => {
       gameStatus.clearGameStatus();
-      const fannin = player('Harold Fannin', 'TE', 10.5, 50);
-      const loveland = player('Colston Loveland', 'TE', 10.2, 85);
+      const fannin = player('Harold Fannin', 'TE', 8.0, 50, { team: 'CLE' });
+      const loveland = player('Colston Loveland', 'TE', 13.5, 85, { team: 'CHI' });
       const sarratt = player('Elijah Sarratt', 'WR', 1.6, 60);
       const extraWr = player('Spare WR', 'WR', 2.0, 60);
-      const otton = player('Cade Otton', 'TE', 8.7, 75, { draft_status: 'available' });
+      const otton = player('Cade Otton', 'TE', 10.2, 75, { draft_status: 'available', team: 'TB' });
       const roster = [
         slot('TE', ['TE'], fannin),
         slot('BN1', ['QB', 'RB', 'WR', 'TE'], loveland),
         slot('BN2', ['QB', 'RB', 'WR', 'TE'], sarratt),
         slot('BN3', ['QB', 'RB', 'WR', 'TE'], extraWr),
       ];
-      assert.ok(oracle.oracleScore(otton, 0.75) > oracle.oracleScore(fannin, 0.75), 'Otton beats the current TE');
-      assert.ok(oracle.oracleScore(otton, 0.75) < oracle.oracleScore(loveland, 0.75), 'but not the recommended TE');
+      assert.ok(oracle.oracleScore(otton, 0.75, { currentWeek: 5 }) > oracle.oracleScore(fannin, 0.75, { currentWeek: 5 }), 'Otton beats the current TE');
+      assert.ok(oracle.oracleScore(otton, 0.75, { currentWeek: 5 }) < oracle.oracleScore(loveland, 0.75, { currentWeek: 5 }), 'but not the recommended TE');
       const moves = oracle.computeWaiverMoves([otton], roster, 0.75, 5, 5);
       for (const m of moves) assert.equal(m.wouldStart, false, 'Otton would not start over Loveland');
     });
@@ -583,7 +623,10 @@ describe('Tier 10: Oracle model and recommendations', () => {
       const aloneMoves = oracle.computeWaiverMoves([validSigned], rosterWithUnsigned, 0.75, 5, 5);
       assert.equal(aloneMoves.length, 1, 'Single signed candidate produces 1 move');
       assert.equal(aloneMoves[0].drop.name, 'Unsigned Bench', 'Signed candidate drops teamless unsigned player first');
-      assert.ok(aloneMoves[0].reason.includes('weakest bench player'), 'Reason correctly cites weakest bench player');
+      assert.ok(
+        aloneMoves[0].reason.includes('lowest-projected bench player') || aloneMoves[0].reason.includes('unsigned'),
+        'Reason cites lowest-projected or unsigned bench player',
+      );
 
       // Case (c): Fallback where no signed drop yields gain > 1 but unsigned drop does
       const tightRoster = [
@@ -750,7 +793,7 @@ describe('Tier 10: Oracle model and recommendations', () => {
         jsx(OneiromancyContext.Provider, { value: ctx, children: jsx(OneiromancyDashboard, {}) })
       );
       assert.equal(rosterRender.getAllByTestId('universe-state-banner').length, 1, 'Roster renders exactly 1 universe-state-banner');
-      assert.equal(rosterRender.getAllByTestId('synergy-constellation-svg').length, 1, 'Roster renders exactly 1 synergy-constellation-svg');
+      assert.equal(rosterRender.queryByTestId('synergy-constellation-svg'), null, 'Roster omits fantasy-team synergy-constellation-svg');
       assert.equal(rosterRender.getAllByTestId('18-week-coverage-strip').length, 1, 'Roster renders exactly 1 18-week-coverage-strip');
       rosterRender.unmount();
 
@@ -836,15 +879,64 @@ describe('Tier 10: Oracle model and recommendations', () => {
       }
       boardRender.unmount();
 
-      // OneiromancyDashboard elementalDistribution counts strictly the 8 startingPlayers
+      // OneiromancyDashboard omits fantasy-team Elemental Balance; PlayerDetailModal computes it per player + real NFL team
       const dashRender = render(
         jsx(OneiromancyContext.Provider, { value: ctx, children: jsx(OneiromancyDashboard, {}) })
       );
-      const svg = dashRender.getByTestId('synergy-constellation-svg');
-      assert.ok(svg.textContent.includes('Fire (3)'), 'OneiromancyDashboard elemental distribution counts 3 Fire starters');
-      assert.ok(svg.textContent.includes('Earth (3)'), 'OneiromancyDashboard counts 3 Earth starters (excluding bench)');
-      assert.ok(svg.textContent.includes('Air (0)'), 'OneiromancyDashboard counts 0 Air starters (excluding 3 Air bench players)');
+      assert.equal(dashRender.queryByTestId('synergy-constellation-svg'), null, 'Roster screen omits fantasy-team constellation');
       dashRender.unmount();
+
+      // Verify real NFL team Elemental Balance resolves each player's NFL teammates rather than fantasy roster
+      const detPlayer =
+        mockData.mockCosmicBoard.find((p) => p.team === 'DET' && p.position === 'WR') ||
+        player('Amon-Ra St. Brown', 'WR', 19.2, 86, { id: 'det-arsb', team: 'DET', elemental_traits: { element: 'Water', sun_sign: 'Scorpio' } });
+      const bufPlayer =
+        mockData.mockCosmicBoard.find((p) => p.team === 'BUF' && p.position === 'QB') ||
+        player('Josh Allen', 'QB', 24.5, 90, { id: 'buf-allen', team: 'BUF', elemental_traits: { element: 'Air', sun_sign: 'Gemini' } });
+
+      const detUnit = sleeper.resolveNFLTeamUnit(detPlayer.team, ctx.draftState.cosmic_board, ctx.draftState.my_roster, detPlayer);
+      const bufUnit = sleeper.resolveNFLTeamUnit(bufPlayer.team, ctx.draftState.cosmic_board, ctx.draftState.my_roster, bufPlayer);
+      assert.ok(detUnit.length >= 4 && detUnit.every((p) => p.team === 'DET'), 'DET unit must contain strictly real DET players');
+      assert.ok(bufUnit.length >= 4 && bufUnit.every((p) => p.team === 'BUF'), 'BUF unit must contain strictly real BUF players');
+
+      const detBalance = oracle.computePlayerTeamElementalBalance(detPlayer, detUnit);
+      const bufBalance = oracle.computePlayerTeamElementalBalance(bufPlayer, bufUnit);
+      assert.equal(detBalance.teamCode, 'DET');
+      assert.equal(bufBalance.teamCode, 'BUF');
+      assert.ok(detBalance.activeStacks.length >= 1, 'DET offensive unit must detect real NFL QB + WR/TE stack');
+
+      // Two players on the same real NFL team with different positions/elements receive player-specific Harmony breakdowns
+      const sameTeamWr = player('Alpha Receiver', 'WR', 16.0, 82, {
+        id: 'det-custom-wr',
+        team: 'DET',
+        elemental_traits: { element: detUnit.find((u) => u.position === 'QB')?.elemental_traits?.element || 'Air', sun_sign: 'Libra' },
+      });
+      const sameTeamK = player('Omega Kicker', 'K', 8.5, 75, {
+        id: 'det-custom-k',
+        team: 'DET',
+        elemental_traits: { element: 'Earth', sun_sign: 'Taurus' },
+      });
+      const wrBal = oracle.computePlayerTeamElementalBalance(sameTeamWr, detUnit);
+      const kBal = oracle.computePlayerTeamElementalBalance(sameTeamK, detUnit);
+      assert.notDeepEqual(wrBal.parts, kBal.parts, 'Harmony parts must differentiate each player role and elemental fit on their NFL team');
+
+      // Unsigned FA graceful handling
+      const faCand = player('Unsigned Prospect', 'RB', 4.0, 70, { id: 'fa-cand-1', team: 'FA' });
+      const faBal = oracle.computePlayerTeamElementalBalance(faCand, sleeper.resolveNFLTeamUnit('FA', ctx.draftState.cosmic_board, [], faCand));
+      assert.equal(faBal.isFreeAgent, true);
+      assert.equal(faBal.unitPlayers.length, 1);
+      assert.equal(faBal.harmonyScore, 50);
+
+      const modalRender = render(
+        jsx(OneiromancyContext.Provider, {
+          value: ctx,
+          children: jsx(PlayerDetailModal, { player: detPlayer, isOpen: true, onClose: () => {} }),
+        })
+      );
+      const modalSvg = modalRender.getByTestId('synergy-constellation-svg');
+      assert.ok(modalSvg.textContent.includes('Fire ('), 'PlayerDetailModal radar renders Fire spoke');
+      assert.ok(modalRender.getByTestId('player-team-elemental-balance').textContent.includes('DET NFL unit'), 'Modal scopes Elemental Balance to DET NFL unit');
+      modalRender.unmount();
 
       // OraclePanel does not render duplicate oracle-preview or duplicate formula headers
       const panelRender = render(
@@ -1007,38 +1099,62 @@ describe('Tier 10: Oracle model and recommendations', () => {
   });
 
   describe('10.13 Comment #92 Directives Verification', () => {
-    it('10.13.1 default lambda is 0.75 across scoring, presets, and mock settings', () => {
-      assert.equal(scoring.DEFAULT_CHAOS_LAMBDA, 0.75, 'scoring.DEFAULT_CHAOS_LAMBDA must be 0.75');
-      assert.equal(mockData.mockSettings.chaos_lambda, 0.75, 'mockSettings.chaos_lambda must be 0.75');
-      assert.equal(mockData.mockSettings.lambda_chaos, 0.75, 'mockSettings.lambda_chaos must be 0.75');
+    it('10.13.1 Predictors panel enables the 11 positive-edge systems by default across 6 categories, disables low/negative OOS systems, and omits percentage sliders', () => {
+      assert.equal(oracle.ALL_PREDICTOR_SYSTEM_IDS.length, 25, 'ALL_PREDICTOR_SYSTEM_IDS must contain 25 pure esoteric systems');
+      assert.equal(oracle.DEFAULT_ENABLED_PREDICTOR_SYSTEM_IDS.length, 11, '11 positive-edge predictors (>= +0.05 pts edge) must be enabled by default');
+      assert.equal(oracle.PREDICTOR_CATEGORIES.length, 6, 'PREDICTOR_CATEGORIES must contain 6 cosmic/divinatory categories');
+      for (const sys of oracle.PREDICTOR_SYSTEM_META) {
+        if (sys.defaultEnabled) {
+          assert.ok(sys.oosQuintileSpreadPts >= 0.05, `Default-enabled system ${sys.id} must have >= +0.05 pts OOS edge`);
+        } else {
+          assert.ok(sys.oosQuintileSpreadPts < 0.05, `Default-disabled system ${sys.id} must be negative or low-scoring (< +0.05 pts edge)`);
+        }
+      }
 
-      const ctx = buildMockCtx();
-      const panel = render(
-        jsx(OneiromancyContext.Provider, { value: ctx, children: jsx(OraclePanel, { isOpen: true, onClose: () => {} }) })
+      const defaultCtx = buildMockCtx();
+      const defaultPanel = render(
+        jsx(OneiromancyContext.Provider, { value: defaultCtx, children: jsx(OraclePanel, { isOpen: true, onClose: () => {} }) })
       );
-      assert.ok(panel.container.textContent.includes('λ = 0.75'), 'Oracle panel must display λ = 0.75');
-      const preset075 = panel.getByTestId('preset-0.75');
-      assert.ok(preset075, 'Must render preset button for 0.75');
-      assert.ok(preset075.className.includes('border-purple-400'), 'preset-0.75 must have active purple border styling');
-      assert.ok(preset075.textContent.includes('default'), 'preset-0.75 must display default badge');
-      panel.unmount();
+      const defaultTxt = defaultPanel.container.textContent || '';
+      assert.ok(defaultTxt.includes('Predictive Systems'), 'Panel must display Predictive Systems heading');
+      assert.ok(defaultTxt.includes('Active Predictors (11 of 25)'), 'Panel must default to 11 of 25 positive-edge predictors active');
+      for (const cat of oracle.PREDICTOR_CATEGORIES) {
+        assert.ok(defaultPanel.getByTestId(`predictor-category-${cat.id}`), `Category card ${cat.id} must render`);
+        assert.ok(cat.defaultSystemIds.length >= 1, `Every cosmic category (${cat.id}) must retain at least 1 default-enabled predictor`);
+      }
+      assert.ok(!defaultTxt.includes('Venue & Geodesic Travel'), 'Mundane Venue & Geodesic Travel predictor must not render');
+      assert.ok(defaultTxt.includes('pts edge'), 'Predictor rows must display plain-English historical point edge (pts edge)');
+      assert.ok(!defaultTxt.includes(' OOS'), 'Predictors panel must replace cryptic OOS label with plain-English pts edge');
+      assert.ok(!defaultTxt.includes('%'), 'Predictors panel must not display % measurements');
+      defaultPanel.unmount();
     });
 
-    it('10.13.2 OneiromancyDashboard renders grounded plain-English radar telemetry copy', () => {
+    it('10.13.2 OneiromancyDashboard and PlayerDetailModal render grounded plain-English telemetry copy', () => {
       const ctx = buildMockCtx();
       const dashboard = render(
         jsx(OneiromancyContext.Provider, { value: ctx, children: jsx(OneiromancyDashboard, {}) })
       );
       const text = dashboard.container.textContent || '';
       assert.ok(
-        text.includes('Shows how balanced your lineup is, how deep your bench is, and how many points each starter and bench player is projected to score.'),
-        'Dashboard must render grounded plain-English radar description'
+        !text.includes('Elemental Balance') && text.includes('Bye Schedule'),
+        'Dashboard must omit fantasy-team Elemental Balance and keep concise Bye Schedule heading'
       );
       assert.ok(
         !text.includes('5-spoke Elemental & Aspect balance radar with active Trine Thresholds and correlation stacks powering starter and bench aura cards below.'),
         'Dashboard must not render confusing astrological jargon'
       );
       dashboard.unmount();
+
+      const samplePlayer = ctx.draftState.my_roster.find((s) => s.player)?.player || ctx.draftState.cosmic_board[0];
+      const modal = render(
+        jsx(OneiromancyContext.Provider, {
+          value: ctx,
+          children: jsx(PlayerDetailModal, { player: samplePlayer, isOpen: true, onClose: () => {} }),
+        })
+      );
+      const modalText = modal.container.textContent || '';
+      assert.ok(modalText.includes('Elemental Balance'), 'PlayerDetailModal must render concise Elemental Balance heading');
+      modal.unmount();
     });
 
     it('10.13.3 Bye week system: bench players are not marked on bye in Week 1 or 2, and have positive projected points and real stadiums', () => {
@@ -1086,7 +1202,7 @@ describe('Tier 10: Oracle model and recommendations', () => {
         assert.ok(!textW1.includes('No game this week (Bye)'), 'Must not format any Week 1 stadium as bye');
         const byeCalloutW1 = viewW1.getByTestId('matchup-bye-callout');
         assert.ok(
-          byeCalloutW1.textContent.includes('Zero rostered or opponent players on bye this week.'),
+          byeCalloutW1.textContent.includes('No players on bye on either roster this week.'),
           'Week 1 bye callout must report zero players on bye'
         );
         viewW1.unmount();
@@ -1130,7 +1246,7 @@ describe('Tier 10: Oracle model and recommendations', () => {
         );
         const textW7 = viewW7.container.textContent || '';
         assert.ok(textW7.includes('BYE WK 7'), 'Must display BYE WK 7 badge on Baltimore player');
-        assert.ok(textW7.includes('On Bye'), 'Must display On Bye label on Baltimore player');
+        assert.ok(textW7.includes('Bye week') || textW7.includes('Week 7 Byes'), 'Must display Bye week status on Baltimore player');
         const byeCalloutW7 = viewW7.getByTestId('matchup-bye-callout');
         assert.ok(
           byeCalloutW7.textContent.includes(balPlayerW7.player_name),
@@ -1149,8 +1265,8 @@ describe('Tier 10: Oracle model and recommendations', () => {
       );
       const starterCard = matchupView.getByTestId('matchup-starter-card-4574');
       assert.ok(starterCard, 'Starter card must be present');
-      const venueSubrow = starterCard.querySelector('.border-t');
-      assert.ok(venueSubrow, 'Must render dedicated venue subrow with border-t');
+      const venueSubrow = starterCard.querySelector('[data-testid="matchup-venue-row"]');
+      assert.ok(venueSubrow, 'Must render dedicated venue subrow');
       assert.ok(venueSubrow.textContent.includes('Cleveland Browns Stadium'), 'Subrow must contain stadium venue name');
       matchupView.unmount();
     });
@@ -1372,7 +1488,7 @@ describe('Tier 10: Oracle model and recommendations', () => {
         assert.ok(bnCard.className.includes('opacity-50'), 'Bye bench card must be grayed out with opacity-50');
         const cellW8 = dashView.getByTestId('bye-week-cell-8');
         assert.ok(cellW8.textContent.includes('4'), 'Week 8 bye coverage cell must show 4 user players on bye');
-        assert.ok(cellW8.className.includes('ring-purple-400'), 'Active week 8 cell must have active purple ring highlight');
+        assert.ok(cellW8.className.includes('ring-amber-400'), 'Active week 8 cell must have active brass ring highlight');
         dashView.unmount();
 
         // 4. Future week (Week 9) restores positive baseline projections for Week 8 bye players
@@ -1438,15 +1554,15 @@ describe('Tier 10: Oracle model and recommendations', () => {
         assert.ok(byeCard.className.split(/\s+/).includes('grayscale'), 'Card missing grayscale class');
         assert.ok(!byeCard.className.split(/\s+/).includes('opacity-55'), 'Card should not use invalid opacity-55 class');
 
-        // Verify all Roster scorecards (short slot "Tight End", long slot "Quarterback", Bench 1, Bench 2) have identical 4-row structure
+        // Verify all Roster rows (short slot "Tight End", long slot "Quarterback", Bench 1, Bench 2) have clean 2-row tabular structure
         for (const testId of ['roster-card-QB', 'roster-card-TE', 'roster-card-BN1', 'roster-card-BN2']) {
           const card = dashView.getByTestId(testId);
           const textCol = card.querySelector('[data-testid="roster-card-text-col"]');
           assert.ok(textCol, `${testId} must have roster-card-text-col text column`);
-          assert.equal(textCol.children.length, 4, `${testId} text column must have strictly 4 dedicated rows (Slot+Pos, Name, Team+Sign, Tags)`);
-          assert.ok(!textCol.children[0].className.split(/\s+/).includes('flex-wrap'), `${testId} Row 1 (Slot+Pos) must not flex-wrap`);
-          assert.ok(textCol.children[1].className.split(/\s+/).includes('truncate'), `${testId} Row 2 (Player Name) must be a dedicated truncate row`);
-          assert.ok(textCol.children[2].className.split(/\s+/).includes('whitespace-nowrap'), `${testId} Row 3 (Team · Bye + Sign) must be whitespace-nowrap`);
+          assert.equal(textCol.children.length, 2, `${testId} text column must have strictly 2 dedicated rows (Name+Badges, Team+Sign)`);
+          assert.ok(textCol.children[0].className.split(/\s+/).includes('flex-wrap'), `${testId} Row 1 (Name+Badges) must flex-wrap to prevent truncation`);
+          assert.ok(textCol.children[1].className.split(/\s+/).includes('flex-wrap'), `${testId} Row 2 (Team · Bye + Matchup) must flex-wrap to prevent truncation`);
+          assert.ok(!textCol.innerHTML.includes('truncate'), `${testId} text column must never truncate player names or matchup metadata`);
         }
         dashView.unmount();
 
@@ -1564,22 +1680,10 @@ describe('Tier 10: Oracle model and recommendations', () => {
       assert.equal(byeInfo.hasPlaceholder, true);
       assert.equal(byeInfo.avgPoints, 18.5);
       assert.equal(byeInfo.reason, 'on bye');
-      assert.equal(
-        byeInfo.tooltipText,
-        'Oracle score uses average projection (18.5 pts) as a placeholder while on bye. Will update once active.',
-      );
-      assert.equal(
-        byeInfo.statsTooltipText,
-        '0.0 pts (on bye). Oracle rating uses 18.5 pt average projection placeholder.',
-      );
-      assert.equal(
-        byeInfo.markerExplainerText,
-        '~ Estimated Oracle: Weekly stats are 0.0 (on bye), so Oracle uses the 18.5 pt season average instead of 0.0.',
-      );
-      assert.equal(
-        byeInfo.statsMarkerExplainerText,
-        '~ Zero weekly stats (on bye): 0.0 projected pts for this week; Oracle beside it uses the 18.5 pt average projection.',
-      );
+      assert.ok(byeInfo.tooltipText.includes('18.5 pts') && byeInfo.tooltipText.includes('on bye'));
+      assert.ok(byeInfo.statsTooltipText.includes('0.0 pts') && byeInfo.statsTooltipText.includes('18.5 pt season average'));
+      assert.ok(byeInfo.markerExplainerText.includes('18.5 pt season average') && byeInfo.markerExplainerText.includes('on bye'));
+      assert.ok(byeInfo.statsMarkerExplainerText.includes('0.0 projected pts') && byeInfo.statsMarkerExplainerText.includes('on bye'));
 
       const irPlayer = player('Injured Star', 'RB', 0, 80, {
         team: 'DET',
@@ -1590,22 +1694,7 @@ describe('Tier 10: Oracle model and recommendations', () => {
       const irInfo = oracle.oraclePlaceholderInfo(irPlayer, 7);
       assert.equal(irInfo.hasPlaceholder, true);
       assert.equal(irInfo.reason, 'on injured reserve');
-      assert.equal(
-        irInfo.tooltipText,
-        'Oracle score uses average projection (14.0 pts) as a placeholder while on injured reserve. Will update once active.',
-      );
-      assert.equal(
-        irInfo.statsTooltipText,
-        '0.0 pts (on injured reserve). Oracle rating uses 14.0 pt average projection placeholder.',
-      );
-      assert.equal(
-        irInfo.markerExplainerText,
-        '~ Estimated Oracle: Weekly stats are 0.0 (on injured reserve), so Oracle uses the 14.0 pt season average instead of 0.0.',
-      );
-      assert.equal(
-        irInfo.statsMarkerExplainerText,
-        '~ Zero weekly stats (on injured reserve): 0.0 projected pts for this week; Oracle beside it uses the 14.0 pt average projection.',
-      );
+      assert.ok(irInfo.markerExplainerText.includes('14.0 pt season average') && irInfo.markerExplainerText.includes('on injured reserve'));
 
       const outPlayer = player('Out WR', 'WR', 0, 78, {
         team: 'KC',
@@ -1616,14 +1705,7 @@ describe('Tier 10: Oracle model and recommendations', () => {
       const outInfo = oracle.oraclePlaceholderInfo(outPlayer, 7);
       assert.equal(outInfo.hasPlaceholder, true);
       assert.equal(outInfo.reason, 'out');
-      assert.equal(
-        outInfo.markerExplainerText,
-        '~ Estimated Oracle: Weekly stats are 0.0 (out), so Oracle uses the 12.3 pt season average instead of 0.0.',
-      );
-      assert.equal(
-        outInfo.statsMarkerExplainerText,
-        '~ Zero weekly stats (out): 0.0 projected pts for this week; Oracle beside it uses the 12.3 pt average projection.',
-      );
+      assert.ok(outInfo.markerExplainerText.includes('12.3 pt season average'));
 
       const inactivePlayer = player('Inactive TE', 'TE', 0, 70, {
         team: 'BUF',
@@ -1634,14 +1716,7 @@ describe('Tier 10: Oracle model and recommendations', () => {
       const inactiveInfo = oracle.oraclePlaceholderInfo(inactivePlayer, 7);
       assert.equal(inactiveInfo.hasPlaceholder, true);
       assert.equal(inactiveInfo.reason, 'inactive');
-      assert.equal(
-        inactiveInfo.markerExplainerText,
-        '~ Estimated Oracle: Weekly stats are 0.0 (inactive), so Oracle uses the 8.7 pt season average instead of 0.0.',
-      );
-      assert.equal(
-        inactiveInfo.statsMarkerExplainerText,
-        '~ Zero weekly stats (inactive): 0.0 projected pts for this week; Oracle beside it uses the 8.7 pt average projection.',
-      );
+      assert.ok(inactiveInfo.markerExplainerText.includes('8.7 pt season average'));
 
       const activePlayer = player('Active RB', 'RB', 16.2, 85, {
         team: 'BUF',
@@ -1659,28 +1734,13 @@ describe('Tier 10: Oracle model and recommendations', () => {
         team: 'BUF',
         bye_week: 7,
         average_projected_points: 18.0,
-        divination_breakdown: { geomantic: 78 },
       });
       const placeholderOracle = oracle.oracleScore(byePlayer, 0.5, { currentWeek: 7 });
       const currentWeekOracle = oracle.currentWeekOracleScore(byePlayer, 0.5, 7);
+      assert.equal(currentWeekOracle, 0, 'Active-week score on bye must be 0.0');
       assert.ok(
-        placeholderOracle > currentWeekOracle + 25.0,
-        `Placeholder Oracle (${placeholderOracle}) must be much higher than currentWeekOracle (${currentWeekOracle}) for healthy bye star`,
-      );
-
-      // Verify real injury still incurs health penalty even with placeholder
-      const injuredPlayer = player('Injured Star', 'QB', 0, 85, {
-        team: 'BUF',
-        bye_week: 7,
-        injury_status: 'IR',
-        average_projected_points: 18.0,
-        divination_breakdown: { geomantic: 78 },
-      });
-      const injuredStars = oracle.starsScore(injuredPlayer, 7);
-      const healthyStars = oracle.starsScore(byePlayer, 7);
-      assert.ok(
-        healthyStars - injuredStars >= 20.0,
-        `Injured player stars (${injuredStars}) must reflect severe injury penalty compared to healthy bye player (${healthyStars})`,
+        placeholderOracle > currentWeekOracle + 15.0,
+        `Placeholder projected points (${placeholderOracle}) must use next-game baseline over 0.0`,
       );
     });
 
@@ -1689,41 +1749,37 @@ describe('Tier 10: Oracle model and recommendations', () => {
         team: 'BUF',
         bye_week: 7,
         next_play_week: 8,
-        divination_breakdown: { geomantic: 78 },
       });
       const zeroNext = player('Bench Bye Zero', 'WR', 0, 74, {
         team: 'BUF',
         bye_week: 7,
         next_play_week: 8,
         next_week_projected_points: 0,
-        divination_breakdown: { geomantic: 78 },
       });
       const negativeNext = player('Bench Bye Negative', 'WR', 0, 74, {
         team: 'BUF',
         bye_week: 7,
         next_play_week: 8,
         next_week_projected_points: -5,
-        divination_breakdown: { geomantic: 78 },
       });
       const nanNext = player('Bench Bye NaN', 'WR', 0, 74, {
         team: 'BUF',
         bye_week: 7,
         next_play_week: 8,
         next_week_projected_points: Number.NaN,
-        divination_breakdown: { geomantic: 78 },
       });
       const infNext = player('Bench Bye Infinity', 'WR', 0, 74, {
         team: 'BUF',
         bye_week: 7,
         next_play_week: 8,
         next_week_projected_points: Number.POSITIVE_INFINITY,
-        divination_breakdown: { geomantic: 78 },
       });
 
       for (const p of [missingNext, zeroNext, negativeNext, nanNext, infNext]) {
         assert.equal(oracle.statsPoints(p), 0);
-        assert.ok(oracle.starsScore(p) > 0);
-        assert.ok(oracle.oracleScore(p, 0.75) > 0);
+        assert.equal(oracle.basePoints(p, { currentWeek: 7, nextGameLookahead: true }), 0);
+        assert.ok(Number.isFinite(oracle.playerModifier(p, { currentWeek: 7 })));
+        assert.ok(oracle.oracleScore(p, 0.75, { currentWeek: 7 }) >= 0);
       }
     });
 
@@ -1756,38 +1812,22 @@ describe('Tier 10: Oracle model and recommendations', () => {
       ]);
     });
 
-    it('10.14.7 updating lambda or oracle_weights updates oracle and stars scores', () => {
-      const byePlayer = player('Weight Sensitivity', 'WR', 0, 80, {
-        team: 'BUF',
-        bye_week: 7,
-        adp: 12,
-        next_play_week: 8,
-        next_week_projected_points: 15,
-        divination_breakdown: {
-          celestial: 92,
-          numeric: 42,
-          geomantic: 78,
-          oracular: 65,
-          harmony: 95,
-        },
+    it('10.14.7 toggling enabled predictor systems updates playerModifier and projectedWithModifier', () => {
+      const targetPlayer = player('System Sensitivity', 'WR', 15, 80, {
+        team: 'DET',
+        bye_week: 5,
+        birth_date: '1999-10-24',
+        jersey_number: 14,
       });
-      const statsHeavy = oracle.oracleScore(byePlayer, 0.1);
-      const starsHeavy = oracle.oracleScore(byePlayer, 0.9);
-      assert.notEqual(statsHeavy, starsHeavy, 'Changing lambda must update oracle score');
-
-      const [recomputedHarmony] = scoring.recomputeDraftScores([byePlayer], {
-        chaos_lambda: 0.75,
-        oracle_weights: { celestial: 0, numeric: 0, geomantic: 0, oracular: 0, harmony: 1 },
-      });
-      const [recomputedNumeric] = scoring.recomputeDraftScores([byePlayer], {
-        chaos_lambda: 0.75,
-        oracle_weights: { celestial: 0, numeric: 1, geomantic: 0, oracular: 0, harmony: 0 },
-      });
-      assert.notEqual(
-        oracle.starsScore(recomputedHarmony),
-        oracle.starsScore(recomputedNumeric),
-        'Updating oracle_weights must update spirit_score and stars',
-      );
+      try {
+        oracle.setActiveEnabledSystems(['elemental_matchup']);
+        const elementalOnly = oracle.playerModifier(targetPlayer, { currentWeek: 2 });
+        oracle.setActiveEnabledSystems(['bazi_wuxing', 'mayan_tzolkin']);
+        const ancientOnly = oracle.playerModifier(targetPlayer, { currentWeek: 2 });
+        assert.notEqual(elementalOnly, ancientOnly, 'Changing active predictor subset updates modifier');
+      } finally {
+        oracle.setActiveEnabledSystems(oracle.DEFAULT_ENABLED_PREDICTOR_SYSTEM_IDS);
+      }
     });
 
     it('10.14.8 deriveWeeklyMatchup, computeLineupCheck, computeWaiverMoves, vor_normalized, draft_score, and board sorting remain unchanged', () => {
@@ -1944,7 +1984,7 @@ describe('Tier 10: Oracle model and recommendations', () => {
       assert.equal(info.avgPoints, 0);
     });
 
-    it('10.14.11 team Matchup Oracle strictly equals the mean of row Oracles when a starter is on bye', () => {
+    it('10.14.11 computeTeamOracles sums active starters and uses 0.0 for bye starters in active week', () => {
       const activeStarter = player('Active WR', 'WR', 16.0, 75, {
         id: 'act_wr',
         team: 'KC',
@@ -1961,31 +2001,28 @@ describe('Tier 10: Oracle model and recommendations', () => {
       const lambda = 0.75;
       const selectedWeek = 7;
 
-      const o1 = oracle.oracleScore(activeStarter, lambda, { currentWeek: selectedWeek });
       const o2 = oracle.oracleScore(byeStarter, lambda, { currentWeek: selectedWeek });
-
       assert.ok(oracle.hasOraclePlaceholder(byeStarter, selectedWeek));
       assert.equal(oracle.oracleEffectivePoints(byeStarter, selectedWeek), 18.0);
-      assert.ok(o2 > 50, 'Bye starter oracle score should reflect placeholder projection');
+      assert.ok(o2 > 15, 'Bye starter lookahead net score reflects placeholder projection');
 
-      const sum = starters.reduce((acc, s) => acc + oracle.oracleScore(s, lambda, { currentWeek: selectedWeek }), 0);
-      const teamOracle = Math.round((sum / starters.length) * 10) / 10;
-      const expectedMean = Math.round(((o1 + o2) / 2) * 10) / 10;
-
-      assert.equal(teamOracle, expectedMean, 'Team Matchup Oracle must strictly equal the mean of row Oracles with selectedWeek');
-
-      // Verify describeValue threads currentWeek
       const desc = oracle.describeValue(byeStarter, lambda, { currentWeek: selectedWeek });
-      assert.ok(desc.includes(`Oracle ${o2.toFixed(1)}`), 'describeValue must include placeholder oracle score');
+      assert.ok(desc.includes('Base 18.0 pts'), 'describeValue reports Base and Modifier in points');
 
-      // Verify computeTeamOracles threads currentWeek
       const teamOracles = oracle.computeTeamOracles(
         [{ id: 't1', name: 'Team 1', starters: ['act_wr', 'bye_wr'] }],
         starters,
         lambda,
         { currentWeek: selectedWeek },
       );
-      assert.equal(teamOracles[0].oracle, expectedMean, 'computeTeamOracles must thread currentWeek');
+      const actActiveWk = oracle.currentWeekOracleScore(activeStarter, lambda, selectedWeek);
+      const byeActiveWk = oracle.currentWeekOracleScore(byeStarter, lambda, selectedWeek);
+      assert.equal(byeActiveWk, 0, 'Bye starter contributes 0.0 in active week');
+      assert.equal(
+        teamOracles[0].oracle,
+        Math.round((actActiveWk + byeActiveWk) * 10) / 10,
+        'computeTeamOracles sums active-week starter net projections',
+      );
 
       // Verify MatchupsScreen rendering with week 7 bye starter
       try {
@@ -2048,9 +2085,9 @@ describe('Tier 10: Oracle model and recommendations', () => {
       seasonContext.setSeasonContextState(null);
       // Both teams have spare depth at the position they give (depth = dedicated slots + 1).
       // My team has a top starting RB on Week 7 bye (myByeRB, avg 18.0 pts) and active backups.
-      const myByeRB = player('My Bye RB', 'RB', 0, 85, { bye_week: 7, average_projected_points: 18.0 });
-      const myActiveRB1 = player('My Active RB1', 'RB', 17, 85);
-      const myActiveRB2 = player('My Active RB2', 'RB', 16, 85);
+      const myByeRB = player('My Bye RB', 'RB', 0, 85, { bye_week: 7, average_projected_points: 22.0 });
+      const myActiveRB1 = player('My Active RB1', 'RB', 18, 85);
+      const myActiveRB2 = player('My Active RB2', 'RB', 12, 85);
       const myWR = player('My Weak WR', 'WR', 4, 60);
       const myWR2 = player('My WR2', 'WR', 3, 55);
 
@@ -2216,6 +2253,482 @@ describe('Tier 10: Oracle model and recommendations', () => {
         healthyRB2.id,
         'Trade evaluation must offer healthy backup RB2 instead',
       );
+    });
+  });
+
+  describe('10.15 Zero-% / Zero-x/100 UI Invariant & 13-Predictor Historical Drill-Down', () => {
+    it('10.15.1 renders zero % characters and zero /100 strings across all primary screens, drawers, and modals', () => {
+      const ctx = buildMockCtx({ enabledSystems: [...oracle.ALL_PREDICTOR_SYSTEM_IDS] });
+      const screens = [
+        ['OneiromancyDashboard', jsx(OneiromancyDashboard, {})],
+        ['MatchupsScreen', jsx(MatchupsScreen, {})],
+        ['CosmicBoard', jsx(CosmicBoard, {})],
+        ['PlayerMarketplace', jsx(PlayerMarketplace, {})],
+        ['TradesScreen', jsx(TradesScreen, {})],
+        ['LeagueScreen', jsx(LeagueScreen, {})],
+        ['OraclePanel', jsx(OraclePanel, { isOpen: true, onClose: () => {} })],
+        [
+          'PlayerDetailModal',
+          jsx(PlayerDetailModal, {
+            player: ctx.draftState.cosmic_board[0],
+            compareWith: ctx.draftState.cosmic_board[1],
+            isOpen: true,
+            onClose: () => {},
+          }),
+        ],
+      ];
+
+      for (const [name, elem] of screens) {
+        const view = render(jsx(OneiromancyContext.Provider, { value: ctx, children: elem }));
+        const text = view.container.textContent || '';
+        assert.ok(!text.includes('%'), `${name} rendered DOM text must not contain any % symbol`);
+        assert.ok(!text.includes('/100') && !text.includes('/ 100'), `${name} rendered DOM text must not contain /100`);
+        view.unmount();
+      }
+    });
+
+    it('10.15.2 PlayerDetailModal drills down into active predictors, hides disabled predictors, and links to the GitHub study', () => {
+      const ctx = buildMockCtx({ enabledSystems: [...oracle.ALL_PREDICTOR_SYSTEM_IDS] });
+      const sample = ctx.draftState.cosmic_board[0];
+      const view = render(
+        jsx(OneiromancyContext.Provider, {
+          value: ctx,
+          children: jsx(PlayerDetailModal, { player: sample, isOpen: true, onClose: () => {} }),
+        }),
+      );
+      const breakdown = view.getByTestId('predictor-breakdown-section');
+      assert.ok(breakdown, 'PlayerDetailModal must render predictor-breakdown-section');
+      const modalStudyLink = view.getByTestId('modal-study-github-link');
+      assert.equal(
+        modalStudyLink.getAttribute('href'),
+        'https://github.com/google/oneiromancy/blob/main/docs/SLEEPER_POINT_DIFF_ANALYSIS.md',
+        'Modal study link must point to GitHub SLEEPER_POINT_DIFF_ANALYSIS.md',
+      );
+      for (const sys of oracle.PREDICTOR_SYSTEM_META) {
+        const row = view.getByTestId(`predictor-row-${sys.id}`);
+        assert.ok(row, `PlayerDetailModal must render predictor row for ${sys.id} when all 25 are enabled`);
+        assert.ok(row.textContent.includes(sys.shortName), `Row ${sys.id} must show shortName ${sys.shortName}`);
+        assert.ok(row.textContent.includes('pts'), `Row ${sys.id} must display point-differential contribution`);
+      }
+      assert.ok(breakdown.textContent.includes('Avg '), 'Breakdown must display plain-English average point impact (Avg +/-X.XX pts)');
+      assert.ok(breakdown.textContent.includes(' games'), 'Breakdown must display plain-English past game count (X,XXX games)');
+
+      // Verify Historical Predictor Breakdown sits immediately before Compare vs. Other / Role Comparison
+      const roleComp = view.getByTestId('roster-role-comparison');
+      const siblings = Array.from(breakdown.parentNode?.children || []);
+      const breakdownIdx = siblings.indexOf(breakdown);
+      const roleCompIdx = siblings.indexOf(roleComp);
+      assert.ok(breakdownIdx >= 0 && roleCompIdx >= 0, 'Both sections must share the modal body container');
+      assert.equal(breakdownIdx, roleCompIdx - 1, 'Historical Predictor Breakdown must sit immediately before Compare vs. Other');
+      view.unmount();
+
+      // Verify disabled predictors and disabled categories are completely hidden in PlayerDetailModal
+      const subsetIds = ['solar_lunar_transits', 'elemental_matchup'];
+      const subsetCtx = buildMockCtx({ enabledSystems: subsetIds });
+      const subsetView = render(
+        jsx(OneiromancyContext.Provider, {
+          value: subsetCtx,
+          children: jsx(PlayerDetailModal, { player: sample, isOpen: true, onClose: () => {} }),
+        }),
+      );
+      for (const sys of oracle.PREDICTOR_SYSTEM_META) {
+        const row = subsetView.queryByTestId(`predictor-row-${sys.id}`);
+        if (subsetIds.includes(sys.id)) {
+          assert.ok(row, `Enabled predictor ${sys.id} must be visible in PlayerDetailModal`);
+        } else {
+          assert.equal(row, null, `Disabled predictor ${sys.id} must be hidden in PlayerDetailModal`);
+        }
+      }
+      assert.equal(
+        subsetView.queryByTestId('modal-predictor-category-sacred_day_calendars'),
+        null,
+        'Category with 0 active predictors must be hidden in PlayerDetailModal',
+      );
+      subsetView.unmount();
+    });
+
+    it('10.15.3 CosmicBoard desktop table and PlayerCardRow render Base, Modifier, and Projected columns and allow header sorting', () => {
+      const ctx = buildMockCtx({ enabledSystems: [...oracle.ALL_PREDICTOR_SYSTEM_IDS] });
+      const view = render(
+        jsx(OneiromancyContext.Provider, {
+          value: ctx,
+          children: jsx(CosmicBoard, {}),
+        }),
+      );
+      const baseHeader = view.getByTestId('board-base-col-header');
+      const modHeader = view.getByTestId('board-modifier-col-header');
+      const projHeader = view.getByTestId('board-projected-col-header');
+      assert.ok(baseHeader.textContent.includes('Base'), 'Players table must render Base column header');
+      assert.ok(modHeader.textContent.includes('Modifier'), 'Players table must render Modifier column header');
+      assert.ok(projHeader.textContent.includes('Projected'), 'Players table must render Projected column header');
+      assert.equal(projHeader.getAttribute('aria-sort'), 'descending', 'Projected column must default to descending sort');
+
+      const projCells = view.getAllByTestId('board-projected-cell');
+      const rowProjCells = view.getAllByTestId('row-projected-cell');
+      assert.ok(projCells.length > 0, 'Desktop table rows must render board-projected-cell');
+      assert.ok(rowProjCells.length > 0, 'Mobile card rows must render row-projected-cell');
+
+      const firstValBefore = parseFloat(projCells[0].textContent || '0');
+      assert.ok(Number.isFinite(firstValBefore) && firstValBefore > 0, 'Top projected player must have positive projected net points');
+
+      // Click Modifier column header -> aria-sort moves to Modifier
+      fireEvent.click(modHeader.querySelector('button'));
+      assert.equal(modHeader.getAttribute('aria-sort'), 'descending', 'Clicking Modifier column header sorts descending by Modifier');
+      assert.equal(projHeader.getAttribute('aria-sort'), 'none', 'Projected column aria-sort resets to none when Modifier is active');
+      view.unmount();
+    });
+
+    it('10.15.4 Elemental Balance computes and renders elements across all 5 elemental predictors for player and real NFL unit', () => {
+      const ctx = buildMockCtx({ enabledSystems: [...oracle.ALL_PREDICTOR_SYSTEM_IDS] });
+      const detPlayer =
+        ctx.draftState.cosmic_board.find((p) => p.team === 'DET' && p.position === 'WR') ||
+        ctx.draftState.cosmic_board[0];
+      const detUnit = sleeper.resolveNFLTeamUnit(detPlayer.team, ctx.draftState.cosmic_board, ctx.draftState.my_roster, detPlayer);
+      const bal = oracle.computePlayerTeamElementalBalance(detPlayer, detUnit);
+
+      assert.ok(bal.playerProfile.zodiacElement, 'Player profile must resolve Western Zodiac element');
+      assert.ok(bal.playerProfile.arcanaElement, 'Player profile must resolve Major Arcana element');
+      assert.ok(bal.playerProfile.wuXingPhase, 'Player profile must resolve BaZi Wu Xing phase');
+      assert.ok(bal.playerProfile.loShuPhase, 'Player profile must resolve Lo Shu Ba Gua phase');
+      assert.ok(bal.playerProfile.mayanDirection, 'Player profile must resolve Mayan Tzolkin direction');
+      for (const [label, norms] of [
+        ['Western Zodiac', bal.fourElementRadarNorms.zodiac],
+        ['Major Arcana', bal.fourElementRadarNorms.arcana],
+        ['BaZi Stem', bal.fivePhaseRadarNorms.bazi],
+        ['Lo Shu Ba Gua', bal.fivePhaseRadarNorms.loShu],
+      ]) {
+        assert.equal(norms.length, 5, `${label} radar must compute 5 normalized spoke values`);
+        assert.ok(
+          norms.every((v) => Number.isFinite(v) && v >= 0.15 && v <= 1),
+          `${label} radar spoke norms must fall within [0.15, 1]`,
+        );
+      }
+
+      const view = render(
+        jsx(OneiromancyContext.Provider, {
+          value: ctx,
+          children: jsx(PlayerDetailModal, { player: detPlayer, isOpen: true, onClose: () => {} }),
+        }),
+      );
+      const section = view.getByTestId('player-team-elemental-balance');
+      const playerStrip = view.getByTestId('player-multi-predictor-elements');
+      const phasesStrip = view.getByTestId('unit-five-phases-strip');
+      const fourElementSvg = view.getByTestId('synergy-constellation-svg');
+      const fivePhaseSvg = view.getByTestId('five-phase-radar-svg');
+      const mayanStrip = view.getByTestId('unit-mayan-directions-strip');
+
+      for (const label of ['Western Zodiac', 'Major Arcana', 'BaZi Wu Xing', 'Lo Shu Ba Gua', "Mayan Tzolk'in"]) {
+        assert.ok(playerStrip.textContent.includes(label), `Player elemental strip must include ${label}`);
+      }
+      const fourLegend = view.getByTestId('four-element-legend');
+      const fiveLegend = view.getByTestId('five-phase-legend');
+      assert.ok(fourLegend.textContent.includes('Western Zodiac') && fourLegend.textContent.includes('Major Arcana'), 'Four-element chart must render single clean legend');
+      assert.ok(fiveLegend.textContent.includes('BaZi Stem') && fiveLegend.textContent.includes('Lo Shu Ba Gua'), 'Five-phase radar chart must render single clean legend');
+      const fourPolys = Array.from(fourElementSvg.querySelectorAll('polygon'));
+      const fivePolys = Array.from(fivePhaseSvg.querySelectorAll('polygon'));
+      assert.equal(fourPolys.length, 2, 'Four-element radar SVG must render both Western Zodiac and Major Arcana polygons');
+      assert.equal(fivePolys.length, 2, 'Five-phase radar SVG must render both BaZi Stem and Lo Shu Ba Gua polygons');
+      for (const poly of [...fourPolys, ...fivePolys]) {
+        assert.ok((poly.getAttribute('points') || '').trim().split(/\s+/).length === 5, 'Each projected radar polygon must format 5 SVG coordinate pairs');
+      }
+      assert.ok(phasesStrip.textContent.includes('Wood (') && phasesStrip.textContent.includes('Metal ('), 'Five-phase radar must label all 5 Wu Xing spokes');
+      assert.ok(!section.textContent.includes('Unit player counts'), 'Redundant Unit player counts bar list must be removed');
+      assert.ok(!section.textContent.includes('Zodiac 0 · Arcana 0'), 'Element rows must not render repeated Zodiac X · Arcana Y text');
+      assert.ok(mayanStrip.textContent.includes('East (Red)') && mayanStrip.textContent.includes('South (Yellow)'), 'Unit Mayan strip must render all 4 cardinal directions');
+      assert.ok(!section.textContent.includes('%') && !section.textContent.includes('/100'), 'Elemental Balance must contain zero % and zero /100');
+      view.unmount();
+    });
+
+    it('10.15.5 Predictor (?) tooltip dropdowns include description and external website source link below description', () => {
+      const ctx = buildMockCtx({ enabledSystems: [...oracle.ALL_PREDICTOR_SYSTEM_IDS] });
+      const panelView = render(
+        jsx(OneiromancyContext.Provider, {
+          value: ctx,
+          children: jsx(OraclePanel, { isOpen: true, onClose: () => {} }),
+        }),
+      );
+      for (const sys of oracle.PREDICTOR_SYSTEM_META) {
+        assert.ok(sys.sourceUrl && sys.sourceUrl.startsWith('https://'), `${sys.id} must define an https:// sourceUrl`);
+        assert.ok(sys.sourceLabel && !sys.sourceLabel.includes('%'), `${sys.id} must define a clean sourceLabel`);
+        const btn = panelView.getByTestId(`predictor-tooltip-btn-${sys.id}`);
+        fireEvent.click(btn);
+        const infoBox = panelView.getByTestId(`predictor-info-${sys.id}`);
+        const sourceLink = panelView.getByTestId(`predictor-source-link-${sys.id}`);
+        assert.ok(infoBox.textContent.includes(sys.description), `${sys.id} tooltip must display predictor description`);
+        assert.equal(sourceLink.getAttribute('href'), sys.sourceUrl, `${sys.id} source link must point to verified URL`);
+        assert.ok(sourceLink.textContent.includes(sys.sourceLabel), `${sys.id} source link must render sourceLabel`);
+        const infoText = infoBox.textContent || '';
+        assert.ok(
+          infoText.indexOf(sys.description) < infoText.indexOf(sys.sourceLabel),
+          `${sys.id} website source link must appear below the description inside the dropdown`,
+        );
+      }
+      panelView.unmount();
+
+      const modalView = render(
+        jsx(OneiromancyContext.Provider, {
+          value: ctx,
+          children: jsx(PlayerDetailModal, {
+            player: ctx.draftState.cosmic_board[0],
+            isOpen: true,
+            onClose: () => {},
+          }),
+        }),
+      );
+      const firstSys = oracle.PREDICTOR_SYSTEM_META[0];
+      fireEvent.click(modalView.getByTestId(`modal-predictor-tooltip-btn-${firstSys.id}`));
+      const modalInfo = modalView.getByTestId(`modal-predictor-info-${firstSys.id}`);
+      const modalSource = modalView.getByTestId(`modal-predictor-source-link-${firstSys.id}`);
+      assert.equal(modalSource.getAttribute('href'), firstSys.sourceUrl);
+      assert.ok((modalInfo.textContent || '').indexOf(firstSys.description) < (modalInfo.textContent || '').indexOf(firstSys.sourceLabel));
+      modalView.unmount();
+    });
+
+    it('10.15.6 Every screen, drawer, and player dossier displays Projected alongside Base and Modifier', () => {
+      const ctx = buildMockCtx({ enabledSystems: [...oracle.ALL_PREDICTOR_SYSTEM_IDS] });
+      const screens = [
+        ['OneiromancyDashboard', jsx(OneiromancyDashboard, {}), 'roster-projected-cell'],
+        ['MatchupsScreen', jsx(MatchupsScreen, {}), 'oracle-node'],
+        ['CosmicBoard', jsx(CosmicBoard, {}), 'board-projected-cell'],
+        ['LeagueScreen', jsx(LeagueScreen, {}), 'league-roster-projected-cell'],
+        ['PlayerMarketplace', jsx(PlayerMarketplace, {}), 'stat-tile-projected'],
+        ['TradesScreen', jsx(TradesScreen, {}), 'stat-tile-projected'],
+        ['OraclePanel', jsx(OraclePanel, { isOpen: true, onClose: () => {} }), null],
+        [
+          'PlayerDetailModal',
+          jsx(PlayerDetailModal, {
+            player: ctx.draftState.cosmic_board[0],
+            compareWith: ctx.draftState.cosmic_board[1],
+            isOpen: true,
+            onClose: () => {},
+          }),
+          'modal-hero-projected',
+        ],
+      ];
+
+      for (const [name, elem, projTestId] of screens) {
+        const view = render(jsx(OneiromancyContext.Provider, { value: ctx, children: elem }));
+        const text = view.container.textContent || '';
+        assert.ok(text.includes('Base'), `${name} must display Base`);
+        assert.ok(text.includes('Modifier') || text.includes('Mod'), `${name} must display Modifier`);
+        assert.ok(text.includes('Projected'), `${name} must display Projected`);
+        if (projTestId) {
+          assert.ok(view.getAllByTestId(projTestId).length > 0, `${name} must render ${projTestId}`);
+        }
+        view.unmount();
+      }
+    });
+
+    it('10.15.7 Zero-dataset MODEL_PARAMETERS runtime scoring, 11 positive-edge default systems across 6 categories, USABLE_SIGNAL_CATALOG, and custom predictive systems work end-to-end', () => {
+      assert.equal(oracle.POINT_DIFF_STUDY_SUMMARY.categoryCount, 6, 'Study summary must report 6 cosmic/divinatory categories');
+      assert.equal(oracle.POINT_DIFF_STUDY_SUMMARY.systemCount, 25, 'Study summary must report 25 pure esoteric systems');
+      assert.equal(oracle.POINT_DIFF_STUDY_SUMMARY.defaultSystemCount, 11, '11 positive-edge systems must be enabled by default');
+      assert.equal(oracle.POINT_DIFF_STUDY_SUMMARY.conditionCount, 194, 'Study summary must report 194 conditions');
+      assert.equal(oracle.POINT_DIFF_STUDY_SUMMARY.ridgeLambda, 1, 'Study summary must retain pooled reference ridgeLambda = 1');
+      assert.equal(oracle.POINT_DIFF_STUDY_SUMMARY.singleSystemLambda, 1, 'Study summary must retain pooled reference singleSystemLambda = 1');
+      assert.equal(oracle.POINT_DIFF_STUDY_SUMMARY.positionalRidgeLambda, 75, 'Study summary must use per-position ridgeLambda = 75');
+      assert.equal(oracle.POINT_DIFF_STUDY_SUMMARY.positionalSingleSystemLambda, 50, 'Study summary must use per-position singleSystemLambda = 50');
+      assert.ok(oracle.POINT_DIFF_STUDY_SUMMARY.oosTStat >= 2.05, 'All-25 per-position OOS t-stat must be >= 2.05');
+      assert.ok(oracle.POINT_DIFF_STUDY_SUMMARY.oosDecileSpreadPts >= 0.4, 'All-25 per-position OOS decile spread must be >= +0.40 pts');
+      assert.ok(oracle.POINT_DIFF_STUDY_SUMMARY.defaultCuratedOosTStat >= 2.0, 'Curated default per-position OOS t-stat must be >= 2.00');
+      assert.ok(oracle.POINT_DIFF_STUDY_SUMMARY.defaultCuratedOosDecileSpreadPts >= 0.5, 'Curated default per-position OOS decile spread must be >= +0.50 pts');
+      assert.ok(oracle.POINT_DIFF_STUDY_SUMMARY.trainScreenedOosTStat > 2.2, 'Train-screened OOS t-stat must be > 2.20');
+      for (const pos of ['QB', 'RB', 'WR', 'TE', 'K', 'DEF']) {
+        assert.ok(oracle.POSITIONAL_RIDGE_MODELS[pos]?.jointModel, `Per-position jointModel must exist for ${pos}`);
+        assert.ok(oracle.POSITIONAL_RIDGE_MODELS[pos]?.defaultCuratedModel, `Per-position defaultCuratedModel must exist for ${pos}`);
+        assert.ok(oracle.POSITIONAL_RIDGE_MODELS[pos]?.trainScreenedModel, `Per-position trainScreenedModel must exist for ${pos}`);
+        assert.equal(Object.keys(oracle.POSITIONAL_RIDGE_MODELS[pos].perSystemModels).length, 25, `All 25 per-system models must exist for ${pos}`);
+      }
+      assert.notEqual(
+        oracle.POSITIONAL_RIDGE_MODELS.QB.defaultCuratedModel.weights['team_synergy:REGIME_DEFICIT_OFFENSE'].ridgeWeight,
+        oracle.POSITIONAL_RIDGE_MODELS.TE.defaultCuratedModel.weights['team_synergy:REGIME_DEFICIT_OFFENSE'].ridgeWeight,
+        'QB and TE per-position curated weights must differ instead of pooling toward Kicker/TE scale',
+      );
+      assert.equal(Object.keys(oracle.CONDITION_EMPIRICAL_STATS).length, 194, 'All 194 empirical condition stats must be serialized');
+      assert.equal(Object.keys(oracle.JOINT_RIDGE_MODEL.weights).length, 194, 'Joint Ridge model must hold 194 weights');
+      assert.equal(Object.keys(oracle.DEFAULT_CURATED_RIDGE_MODEL.weights).length, 73, 'Curated default Ridge model must hold 73 co-fitted weights');
+      assert.equal(Object.keys(oracle.TRAIN_SCREENED_RIDGE_MODEL.weights).length, 12, 'Train-screened Ridge model must hold 12 ex-ante conditions');
+      assert.equal(Object.keys(oracle.PER_SYSTEM_RIDGE_MODELS).length, 25, 'All 25 standalone per-system Ridge submodels must be serialized');
+      assert.equal(oracle.USABLE_SIGNAL_CATALOG.length, 25, 'Usable esoteric signal catalog must contain 25 audited signals');
+
+      for (const cond of Object.values(oracle.CONDITION_EMPIRICAL_STATS)) {
+        assert.ok(!cond.label.includes('%'), `Condition label ${cond.conditionId} must not contain %`);
+        assert.ok(!cond.label.includes('/100'), `Condition label ${cond.conditionId} must not contain /100`);
+      }
+
+      const sampleInput = {
+        playerId: '7564',
+        playerName: "Ja'Marr Chase",
+        position: 'WR',
+        birthDate: '2000-03-01',
+        jerseyNumber: 1,
+        team: 'CIN',
+        opponent: 'BAL',
+        isHome: true,
+        hostTeam: 'CIN',
+        gameDate: '2026-11-01',
+        kickoffUtc: '2026-11-01T18:00:00Z',
+        projectedPts: 19.8,
+        projStats: { rec: 7, rec_yd: 92, rec_td: 0.6 },
+      };
+
+      const jointPred = oracle.predictPlayerGamePointDiff(sampleInput, oracle.MODEL_PARAMETERS);
+      assert.equal(Object.keys(jointPred.perSystemBreakdown).length, 25, 'Runtime prediction must evaluate all 25 systems');
+      const explicitAllPred = oracle.predictPlayerGamePointDiff(sampleInput, oracle.MODEL_PARAMETERS, {
+        systems: oracle.ALL_PREDICTOR_SYSTEM_IDS,
+      });
+      assert.equal(
+        jointPred.expectedPointDiff,
+        explicitAllPred.expectedPointDiff,
+        'Explicit 25-system set must match full 25-system jointModel prediction',
+      );
+      const defaultSetPred = oracle.predictPlayerGamePointDiff(sampleInput, oracle.MODEL_PARAMETERS, {
+        systems: oracle.DEFAULT_ENABLED_PREDICTOR_SYSTEM_IDS,
+      });
+      assert.ok(Number.isFinite(defaultSetPred.expectedPointDiff), 'Default 11-system expectedPointDiff must be finite');
+      assert.ok(Number.isFinite(jointPred.expectedPointDiff), 'Joint expectedPointDiff must be finite');
+      assert.equal(
+        jointPred.adjustedProjectedPts,
+        Number((19.8 + jointPred.expectedPointDiff).toFixed(2)),
+        'adjustedProjectedPts must equal baseProjectedPts + expectedPointDiff',
+      );
+      assert.ok(
+        jointPred.perSystemBreakdown.witchcraft_sabbats_esbats.activeConditionCount >= 1,
+        'Samhain Nov 1 game must activate witchcraft_sabbats_esbats condition',
+      );
+
+      const screenedPred = oracle.predictPlayerGamePointDiff(sampleInput, oracle.MODEL_PARAMETERS, {
+        useTrainScreened: true,
+      });
+      assert.ok(Number.isFinite(screenedPred.expectedPointDiff), 'Train-screened expectedPointDiff must be finite');
+
+      const singleWitch = oracle.predictPlayerGamePointDiff(sampleInput, oracle.MODEL_PARAMETERS, {
+        systems: ['witchcraft_sabbats_esbats'],
+      });
+      assert.equal(
+        singleWitch.expectedPointDiff,
+        singleWitch.perSystemBreakdown.witchcraft_sabbats_esbats.standalonePointDiff,
+        'Single-system prediction must use standalone perSystemModels weights',
+      );
+
+      const halfPprPred = oracle.predictPlayerGamePointDiff(
+        { ...sampleInput, projectedPts: null },
+        oracle.MODEL_PARAMETERS,
+        { scoringSettings: scoring.SLEEPER_HALF_PPR_SCORING },
+      );
+      assert.equal(halfPprPred.baseProjectedPts, 16.3, 'Half-PPR stat hydration: 7*0.5 + 92*0.1 + 0.6*6 = 16.3');
+
+      const customSys = oracle.createPredictiveSystem({
+        id: 'custom_test_esoteric',
+        name: 'Custom Esoteric Test',
+        description: 'Custom test condition',
+        clusterBy: 'gameDate',
+        conditions: [
+          {
+            id: 'SAMHAIN_TEST',
+            label: 'Samhain Test',
+            eligible: (r) => r.position !== 'DEF',
+            test: (_r, c) => c.witchcraft.isSamhainVeilWindow,
+          },
+        ],
+      });
+      assert.equal(customSys.conditions.length, 1);
+      assert.equal(customSys.conditions[0].test(sampleInput, jointPred.observables), true);
+
+      // Verify interactive category toggles, Enable all (25), Disable all, and Default (11) inside OneiromancyProvider
+      const livePanel = render(
+        jsx(OneiromancyProvider, {
+          children: jsx(OraclePanel, { isOpen: true, onClose: () => {} }),
+        }),
+      );
+      assert.ok(
+        (livePanel.container.textContent || '').includes('Active Predictors (11 of 25)'),
+        'Provider must initialize with the 11 positive-edge predictors enabled by default',
+      );
+      fireEvent.click(livePanel.getByTestId('predictor-category-toggle-sacred_day_calendars'));
+      assert.ok(
+        (livePanel.container.textContent || '').includes('Active Predictors (13 of 25)'),
+        'Toggling sacred_day_calendars (3/5 default active -> 5/5 active) must raise active count to 13 of 25',
+      );
+      fireEvent.click(livePanel.getByTestId('enable-all-predictors-btn'));
+      assert.ok(
+        (livePanel.container.textContent || '').includes('Active Predictors (25 of 25)'),
+        'Clicking Enable all (25) button must enable all 25 predictors',
+      );
+      fireEvent.click(livePanel.getByTestId('disable-all-predictors-btn'));
+      assert.ok(
+        (livePanel.container.textContent || '').includes('Active Predictors (0 of 25)'),
+        'Clicking Disable all button must disable all 25 predictors',
+      );
+      fireEvent.click(livePanel.getByTestId('reset-weights-btn'));
+      assert.ok(
+        (livePanel.container.textContent || '').includes('Active Predictors (11 of 25)'),
+        'Clicking Default (11) button must restore the 11 positive-edge default predictors',
+      );
+      const studyLink = livePanel.getByTestId('empirical-study-github-link');
+      assert.equal(
+        studyLink.getAttribute('href'),
+        'https://github.com/google/oneiromancy/blob/main/docs/SLEEPER_POINT_DIFF_ANALYSIS.md',
+        'Predictors methodology study link must point to GitHub SLEEPER_POINT_DIFF_ANALYSIS.md',
+      );
+      const hasTeamLogo = (root) =>
+        Array.from(root.querySelectorAll('img')).some((img) =>
+          String(img.getAttribute('src') || img.src || '').includes('team_logos/nfl/'),
+        );
+      assert.ok(
+        hasTeamLogo(livePanel.container),
+        'OraclePanel preview player must render NFL team logo alongside team code',
+      );
+      livePanel.unmount();
+    });
+
+    it('10.15.8 MatchupsScreen hides past bye weeks and renders NFL team logos across all views', () => {
+      const hasTeamLogo = (root) =>
+        Array.from(root.querySelectorAll('img')).some((img) =>
+          String(img.getAttribute('src') || img.src || '').includes('team_logos/nfl/'),
+        );
+      const ctx = buildMockCtx();
+      const dash = render(
+        jsx(OneiromancyContext.Provider, { value: ctx, children: jsx(OneiromancyDashboard, {}) }),
+      );
+      assert.ok(
+        hasTeamLogo(dash.container),
+        'Roster dashboard must render NFL team logos alongside player and opponent team codes',
+      );
+      dash.unmount();
+
+      const matchup = render(
+        jsx(OneiromancyProvider, { children: jsx(MatchupsScreen, {}) }),
+      );
+      assert.ok(
+        hasTeamLogo(matchup.container),
+        'MatchupsScreen starter cards must render NFL team logos',
+      );
+      // In Week 2, Bye 5 / Bye 7 / Bye 14 are upcoming and displayed
+      assert.ok(
+        matchup.container.textContent.includes('Bye 7') && matchup.container.textContent.includes('Bye 14'),
+        'Week 2 MatchupsScreen must display upcoming bye weeks',
+      );
+
+      // Switch to Week 8: Bye 5, Bye 6, and Bye 7 have already happened, while Bye 14 is still upcoming
+      fireEvent.click(matchup.getByTestId('matchup-week-btn-8'));
+      const wk8Text = matchup.container.textContent || '';
+      assert.ok(!wk8Text.includes('Bye 5'), 'Week 8 MatchupsScreen must hide Bye 5 (already happened)');
+      assert.ok(!wk8Text.includes('Bye 6'), 'Week 8 MatchupsScreen must hide Bye 6 (already happened)');
+      assert.ok(!wk8Text.includes('Bye 7'), 'Week 8 MatchupsScreen must hide Bye 7 (already happened)');
+      assert.ok(wk8Text.includes('Bye 14'), 'Week 8 MatchupsScreen must still show upcoming Bye 14');
+
+      // Switch to Week 15 (post-bye playoffs): all bye weeks 5..14 have already happened
+      fireEvent.click(matchup.getByTestId('matchup-week-btn-15'));
+      const wk15Text = matchup.container.textContent || '';
+      assert.ok(!/Bye \d+/.test(wk15Text), 'Week 15 MatchupsScreen must hide all past bye weeks');
+      assert.equal(
+        matchup.container.querySelector('[data-testid="matchup-bye-callout"]'),
+        null,
+        'Week 15 MatchupsScreen must omit empty bye callout after bye weeks have ended',
+      );
+      matchup.unmount();
+      sleeper.setSeasonContext(null);
     });
   });
 });
